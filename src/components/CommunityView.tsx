@@ -50,11 +50,11 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel, uploading }
   useEffect(() => {
     if (step !== 'warn') return;
     setCountdown(COUNTDOWN_SECONDS);
+    let current = COUNTDOWN_SECONDS;
     timerRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
-        return prev - 1;
-      });
+      current -= 1;
+      setCountdown(current);
+      if (current <= 0) clearInterval(timerRef.current);
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [step]);
