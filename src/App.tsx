@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check } from 'lucide-react';
+import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, handleFirestoreError, OperationType } from './lib/utils';
@@ -52,6 +52,7 @@ export default function App() {
   const [showShare, setShowShare] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: '', message: '', onConfirm: () => {} });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -328,9 +329,57 @@ export default function App() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
+  const handleCopyCode = async () => {
+    const note = notes.find(n => n.id === activeNoteId);
+    if (!note?.code) return;
+    const combined = `<!-- HTML -->\n${note.code.html}\n\n/* CSS */\n${note.code.css}\n\n// JS\n${note.code.js}`;
+    await navigator.clipboard.writeText(combined);
+    setIsCodeCopied(true);
+    setTimeout(() => setIsCodeCopied(false), 2000);
+  };
+
+  const onMoveNote = (noteId: string, categoryId: string | undefined) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const updated = { ...note, categoryId, updatedAt: Date.now() };
+    setNotes(prev => prev.map(n => n.id === noteId ? updated : n));
+    handleSave(updated);
+    addToast(categoryId ? 'Anteckning flyttad.' : 'Kategori borttagen från anteckning.', 'success');
+  };
+
+  const onRenameNote = (noteId: string, title: string) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const updated = { ...note, title, updatedAt: Date.now() };
+    setNotes(prev => prev.map(n => n.id === noteId ? updated : n));
+    debouncedSave(updated);
+  };
+
+  const onChangeCoverImage = (noteId: string) => {
+    // Handled via custom event from Sidebar
+  };
+
+  const onChangeColor = async (id: string, color: string) => {
+    await setDoc(doc(db, 'categories', id), { color }, { merge: true });
+  };
+
+  // Listen for cover image change from Sidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { noteId, dataUrl } = (e as CustomEvent).detail;
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const updated = { ...note, coverImage: dataUrl, updatedAt: Date.now() };
+      setNotes(prev => prev.map(n => n.id === noteId ? updated : n));
+      handleSave(updated);
+      addToast('Omslagsbild uppdaterad.', 'success');
+    };
+    window.addEventListener('nexnote:coverimage', handler);
+    return () => window.removeEventListener('nexnote:coverimage', handler);
+  }, [notes]);
   const togglePin = () => { if (!activeNote) return; updateActiveNote({ isPinned: !activeNote.isPinned }); };
+
   const addTag = (tag: string) => {
-    if (!activeNote || !tag.trim()) return;
     const clean = tag.trim().toLowerCase();
     if (activeNote.tags?.includes(clean)) return;
     updateActiveNote({ tags: [...(activeNote.tags || []), clean] });
@@ -451,6 +500,8 @@ export default function App() {
         categories={categories} activeCategoryId={activeCategoryId}
         onSelectCategory={setActiveCategoryId}
         onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}
+        onMoveNote={onMoveNote} onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
+        onChangeColor={onChangeColor}
       />
 
       <div className={cn(
@@ -552,6 +603,16 @@ export default function App() {
                         </button>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {activeCodeTab !== 'preview' && (
+                          <button
+                            onClick={handleCopyCode}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors"
+                            title="Kopiera all kod"
+                          >
+                            {isCodeCopied ? <Check size={13} className="text-green-400" /> : <ClipboardCopy size={13} />}
+                            {isCodeCopied ? 'Kopierad!' : 'Kopiera'}
+                          </button>
+                        )}
                         {activeCodeTab === 'preview' && (
                           <button onClick={capturePreview} disabled={isCapturing}
                             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors disabled:opacity-50">
