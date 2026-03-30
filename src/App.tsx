@@ -220,6 +220,10 @@ export default function App() {
     await setDoc(doc(db, 'categories', id), { name }, { merge: true });
   };
 
+  const onChangeColor = async (id: string, color: string) => {
+    await setDoc(doc(db, 'categories', id), { color }, { merge: true });
+  };
+
   const deleteCategory = (id: string) => {
     const cat = categories.find(c => c.id === id);
     setConfirm({
@@ -359,8 +363,20 @@ export default function App() {
     // Handled via custom event from Sidebar
   };
 
-  const onChangeColor = async (id: string, color: string) => {
-    await setDoc(doc(db, 'categories', id), { color }, { merge: true });
+  const onMoveManyNotes = (noteIds: string[], categoryId: string | undefined) => {
+    noteIds.forEach(id => onMoveNote(id, categoryId));
+    addToast(`${noteIds.length} anteckningar flyttade.`, 'success');
+  };
+
+  const onDeleteManyNotes = (noteIds: string[]) => {
+    noteIds.forEach(id => {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      deleteDoc(doc(db, 'notes', id));
+    });
+    setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
+    if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
+    addToast(`${noteIds.length} anteckningar borttagna.`, 'success');
   };
 
   // Listen for cover image change from Sidebar
@@ -500,7 +516,9 @@ export default function App() {
         categories={categories} activeCategoryId={activeCategoryId}
         onSelectCategory={setActiveCategoryId}
         onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}
-        onMoveNote={onMoveNote} onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
+        onMoveNote={onMoveNote} onMoveManyNotes={onMoveManyNotes}
+        onDeleteManyNotes={onDeleteManyNotes}
+        onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
         onChangeColor={onChangeColor}
       />
 
