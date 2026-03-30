@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, Moon, Sun, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen } from 'lucide-react';
+import { Plus, Search, Paperclip, Pin, Trash2, Moon, Sun, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -35,6 +35,7 @@ interface SidebarProps {
   onRenameNote: (noteId: string, title: string) => void;
   onChangeCoverImage: (noteId: string) => void;
   onChangeColor?: (id: string, color: string) => void;
+  onOpenCommunity: () => void;
 }
 
 // Submenu for category selection
@@ -128,7 +129,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor,
+  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -255,6 +256,18 @@ export default function Sidebar({
           onChangeColor={onChangeColor || (() => {})}
           noteCountByCategory={noteCountByCategory}
         />
+      </div>
+
+      {/* Community button */}
+      <div className="px-2 py-2 border-b border-zinc-100 dark:border-zinc-800">
+        <button
+          onClick={onOpenCommunity}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          <Globe size={14} className="text-blue-500" />
+          <span className="flex-1 text-left font-medium">Community</span>
+          <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full font-medium">Live</span>
+        </button>
       </div>
 
       {/* Bulk action bar */}

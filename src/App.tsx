@@ -22,6 +22,7 @@ import Toast from './components/Toast';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import SharedNote from './components/SharedNote';
+import CommunityView from './components/CommunityView';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 
@@ -50,6 +51,7 @@ export default function App() {
   const [newTag, setNewTag] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
@@ -520,6 +522,7 @@ export default function App() {
         onDeleteManyNotes={onDeleteManyNotes}
         onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
         onChangeColor={onChangeColor}
+        onOpenCommunity={() => setShowCommunity(true)}
       />
 
       <div className={cn(
@@ -688,6 +691,14 @@ export default function App() {
           onEnable={enableShare}
           onDisable={disableShare}
           onClose={() => setShowShare(false)}
+        />
+      )}
+
+      {showCommunity && (
+        <CommunityView
+          user={user}
+          userNotes={notes}
+          onClose={() => setShowCommunity(false)}
         />
       )}
 
