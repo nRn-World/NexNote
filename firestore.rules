@@ -68,7 +68,7 @@ service cloud.firestore {
     // Domain Validators
     // ===============================================================
     function isValidNote() {
-      return hasOnlyAllowedFields(['uid', 'title', 'content', 'attachments', 'code', 'coverImage', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['uid', 'title', 'content', 'attachments', 'code', 'coverImage', 'isPinned', 'tags', 'history', 'createdAt', 'updatedAt']) &&
              hasRequiredFields(['uid', 'title', 'content', 'createdAt', 'updatedAt']) &&
              isValidString('uid', 1, 128) &&
              isValidString('title', 0, 500) &&
@@ -76,6 +76,7 @@ service cloud.firestore {
              isValidOptionalString('attachments', 0, 1000000) &&
              isValidOptionalString('code', 0, 100000) &&
              isValidOptionalString('coverImage', 0, 1000000) &&
+             isValidOptionalString('history', 0, 500000) &&
              request.resource.data.createdAt is number &&
              request.resource.data.updatedAt is number;
     }

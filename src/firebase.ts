@@ -4,13 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCanAf3XY1nJDnyqfQhB6dufDp4W6Oovb0",
-  authDomain: "nexnote-1.firebaseapp.com",
-  projectId: "nexnote-1",
-  storageBucket: "nexnote-1.firebasestorage.app",
-  messagingSenderId: "950801399914",
-  appId: "1:950801399914:web:b8af074a9369d5e0da8a13",
-  measurementId: "G-7RRW673DNZ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -23,8 +22,8 @@ export const signInWithGoogle = async () => {
   try {
     await signInWithPopup(auth, provider);
   } catch (error: any) {
-    console.error("Error signing in with Google", error);
-    alert("Inloggningen misslyckades: " + error.message);
+    console.error('Error signing in with Google', error);
+    alert('Inloggningen misslyckades: ' + error.message);
   }
 };
 
@@ -32,6 +31,6 @@ export const logout = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error("Error signing out", error);
+    console.error('Error signing out', error);
   }
 };
