@@ -226,8 +226,6 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [monthlyCount, setMonthlyCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -241,13 +239,13 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
+  // Count this user's posts this month directly from loaded posts
+  const monthlyCount = user ? posts.filter(p => {
+    if (p.uid !== user.uid) return false;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const q = query(collection(db, 'community'), where('uid', '==', user.uid), where('createdAt', '>=', startOfMonth));
-    getDocs(q).then(snap => setMonthlyCount(snap.size));
-  }, [user, posts]);
+    return p.createdAt >= startOfMonth;
+  }).length : 0;
 
   const handleLike = async (post: CommunityPost) => {
     if (!user) return;
