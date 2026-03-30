@@ -29,7 +29,7 @@ interface CommunityViewProps {
 }
 
 const MAX_MONTHLY = 2;
-const COUNTDOWN_SECONDS = 15;
+const COUNTDOWN_SECONDS = 30;
 
 // Upload modal with note picker, warning and countdown
 function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel, uploading }: {
