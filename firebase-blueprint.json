@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "A user's note with optional attachments and code snippets.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user ID of the note owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the note."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the note."
+        },
+        "attachments": {
+          "type": "string",
+          "description": "JSON stringified array of attachments."
+        },
+        "code": {
+          "type": "string",
+          "description": "JSON stringified code object."
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "Base64 encoded cover image."
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp of last update."
+        }
+      },
+      "required": ["uid", "title", "content", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "A collection of notes belonging to users."
+    }
+  }
+}
