@@ -50,6 +50,8 @@ export default function App() {
   const [newTag, setNewTag] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: '', message: '', onConfirm: () => {} });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -112,11 +114,12 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleManualSave(); }
       if (e.key === 'Escape') { setActiveNoteId(null); setShowHistory(false); setShowShare(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [user]);
+  }, [user, activeNoteId, notes]);
 
   const handleSave = async (note: Note) => {
     if (!user) return;
@@ -139,6 +142,21 @@ export default function App() {
       addToast('Kunde inte spara anteckningen.', 'error');
       handleFirestoreError(error, OperationType.WRITE, `notes/${note.id}`);
     }
+  };
+
+  const handleManualSave = async () => {
+    const note = notes.find(n => n.id === activeNoteId);
+    if (!note) return;
+    // Cancel any pending debounced save
+    if (saveTimeoutRef.current[note.id]) {
+      clearTimeout(saveTimeoutRef.current[note.id]);
+      delete saveTimeoutRef.current[note.id];
+    }
+    setIsSaving(true);
+    await handleSave(note);
+    setIsSaving(false);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const debouncedSave = useCallback((note: Note) => {
@@ -443,7 +461,7 @@ export default function App() {
           <>
             <NoteHeader
               note={activeNote} isAiProcessing={isAiProcessing} showHistory={showHistory}
-              categories={categories}
+              categories={categories} isSaving={isSaving} isSaved={isSaved}
               onBack={() => setActiveNoteId(null)} onTogglePin={togglePin}
               onToggleHistory={() => setShowHistory(s => !s)}
               onAiFix={() => handleAiAction('fix')} onAiSummarize={() => handleAiAction('summarize')}
@@ -451,6 +469,7 @@ export default function App() {
               onFileClick={() => fileInputRef.current?.click()}
               onToggleCode={toggleCodeEditor}
               onShare={() => setShowShare(true)}
+              onSave={handleManualSave}
               onCategoryChange={categoryId => updateActiveNote({ categoryId })}
             />
 

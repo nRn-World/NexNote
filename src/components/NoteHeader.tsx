@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, Sparkles, FileIcon, HistoryIcon,
-  ImageIcon, Paperclip, Code, Share2, FolderOpen
+  ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2
 } from 'lucide-react';
 import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
@@ -13,6 +13,8 @@ interface NoteHeaderProps {
   isAiProcessing: boolean;
   showHistory: boolean;
   categories: Category[];
+  isSaving: boolean;
+  isSaved: boolean;
   onBack: () => void;
   onTogglePin: () => void;
   onToggleHistory: () => void;
@@ -22,13 +24,14 @@ interface NoteHeaderProps {
   onFileClick: () => void;
   onToggleCode: () => void;
   onShare: () => void;
+  onSave: () => void;
   onCategoryChange: (categoryId: string | undefined) => void;
 }
 
 export default function NoteHeader({
-  note, isAiProcessing, showHistory, categories,
+  note, isAiProcessing, showHistory, categories, isSaving, isSaved,
   onBack, onTogglePin, onToggleHistory,
-  onAiFix, onAiSummarize, onImageClick, onFileClick, onToggleCode, onShare, onCategoryChange,
+  onAiFix, onAiSummarize, onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
 }: NoteHeaderProps) {
   return (
     <div className="border-b border-zinc-200 dark:border-zinc-700 flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
@@ -46,11 +49,13 @@ export default function NoteHeader({
         <div className="flex items-center gap-1">
           <div className="hidden sm:flex items-center gap-1 mr-1 pr-1 border-r border-zinc-200 dark:border-zinc-700">
             <button onClick={onAiFix} disabled={isAiProcessing}
-              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50" title="Förbättra text med AI">
+              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
+              title="Förbättra text med AI">
               <Sparkles size={17} className={cn(isAiProcessing && 'animate-pulse')} />
             </button>
             <button onClick={onAiSummarize} disabled={isAiProcessing}
-              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50" title="Sammanfatta med AI">
+              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
+              title="Sammanfatta med AI">
               <FileIcon size={17} />
             </button>
           </div>
@@ -87,6 +92,29 @@ export default function NoteHeader({
               note.code ? 'text-blue-700 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
             )} title="Kodredigerare">
             <Code size={17} />
+          </button>
+
+          {/* Save button */}
+          <button
+            onClick={onSave}
+            disabled={isSaving || isSaved}
+            className={cn(
+              'ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              isSaved
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-50'
+            )}
+            title="Spara (Ctrl+S)"
+          >
+            {isSaving
+              ? <Loader2 size={14} className="animate-spin" />
+              : isSaved
+                ? <Check size={14} />
+                : <Save size={14} />
+            }
+            <span className="hidden sm:inline">
+              {isSaving ? 'Sparar...' : isSaved ? 'Sparat!' : 'Spara'}
+            </span>
           </button>
         </div>
       </div>
