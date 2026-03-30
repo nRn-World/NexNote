@@ -260,7 +260,21 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
     if (!noteId || !user) return;
     const note = userNotes.find(n => n.id === noteId);
     if (!note) return;
-    setUploading(true);
+
+    // Re-check monthly count right before uploading
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const q = query(
+      collection(db, 'community'),
+      where('uid', '==', user.uid),
+      where('createdAt', '>=', startOfMonth)
+    );
+    const snap = await getDocs(q);
+    if (snap.size >= MAX_MONTHLY) {
+      alert(`Du har redan delat ${MAX_MONTHLY} anteckningar denna månad. Försök igen nästa månad.`);
+      return;
+    }
+
     try {
       await addDoc(collection(db, 'community'), {
         uid: user.uid,
@@ -273,8 +287,9 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
         createdAt: Date.now(),
       });
       setShowUpload(false);
-    } finally {
-      setUploading(false);
+    } catch (err) {
+      console.error(err);
+      alert('Kunde inte dela anteckningen. Försök igen.');
     }
   };
 
