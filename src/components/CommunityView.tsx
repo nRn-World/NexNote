@@ -21,6 +21,7 @@ export interface CommunityPost {
   photoURL?: string;
   title: string;
   content: string;
+  fullCode?: string;
   coverImage?: string;
   likes: string[];
   createdAt: number;
@@ -45,21 +46,33 @@ const MAX_MONTHLY = 2;
 const COUNTDOWN_SECONDS = 30;
 const ADMIN_EMAIL = 'bynrnworld@gmail.com';
 
+// Decode HTML entities and strip wrapper <p> tags from Tiptap content
+// If content is already clean HTML (fullCode), skip decoding
+function decodeContent(raw: string): string {
+  if (raw.startsWith('<!DOCTYPE') || raw.startsWith('<html')) return raw;
+  let decoded = raw.replace(/<p>([\s\S]*?)<\/p>/g, '$1\n');
+  decoded = decoded
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+  decoded = decoded.replace(/<a[^>]*>(.*?)<\/a>/g, '$1');
+  return decoded.trim();
+}
+
 // Detects if content is HTML/SVG/code and renders live iframe, otherwise plain text
 function PostContent({ content, title }: { content: string; title: string }) {
-  const isCode = /<svg[\s\S]*?>[\s\S]*?<\/svg>|<div[\s\S]*?>[\s\S]*?<\/div>|<canvas|<script/i.test(content);
+  const decoded = decodeContent(content);
+  const isCode = /<svg[\s\S]*?>|<div[\s\S]*?>|<canvas|<script|<html|<!DOCTYPE/i.test(decoded);
   const [showPreview, setShowPreview] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
+    await navigator.clipboard.writeText(decoded);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   if (isCode) {
-    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f;}</style></head><body>${content}</body></html>`;
+    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f;}</style></head><body>${decoded}</body></html>`;
     return (
       <div className="mt-3">
         <div className="flex items-center justify-between mb-2">
@@ -97,17 +110,8 @@ function PostContent({ content, title }: { content: string; title: string }) {
     );
   }
 
-  const plain = content.replace(/<[^>]*>/g, '');
-  return (
-    <div className="mt-2">
-      <p className={cn('text-sm text-zinc-400 leading-relaxed', !expanded && 'line-clamp-3')}>{plain}</p>
-      {plain.length > 150 && (
-        <button onClick={() => setExpanded(e => !e)} className="text-xs text-blue-400 hover:text-blue-300 mt-1 flex items-center gap-1">
-          {expanded ? <><ChevronUp size={12} /> Visa mindre</> : <><ChevronDown size={12} /> Visa mer</>}
-        </button>
-      )}
-    </div>
-  );
+  const plain = decoded.replace(/<[^>]*>/g, '');
+  return <p className="mt-2 text-sm text-zinc-400 leading-relaxed line-clamp-3">{plain}</p>;
 }
 
 // Context menu for right-click on posts
@@ -192,7 +196,7 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
               <p className="text-sm text-zinc-500 mt-1">{MAX_MONTHLY - monthlyCount} av {MAX_MONTHLY} kvar denna månad</p>
             </div>
             <div className="p-4 max-h-72 overflow-y-auto space-y-2">
-              {userNotes.filter(n => n.title).map(note => (
+              {userNotes.filter(n => n.title && n.code).map(note => (
                 <button key={note.id} onClick={() => setSelectedNoteId(note.id)}
                   className={cn('w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left',
                     selectedNoteId === note.id ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-800 hover:border-zinc-600'
@@ -327,12 +331,16 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
     if (!noteId || !user || isBanned) return;
     if (monthlyCount >= MAX_MONTHLY) { alert(`Max ${MAX_MONTHLY} uppladdningar per månad.`); return; }
     const note = userNotes.find(n => n.id === noteId);
-    if (!note) return;
+    if (!note || !note.code) return;
+    // Build the full HTML from the code editor (html + css + js)
+    const fullCode = `<!DOCTYPE html><html><head><style>${note.code.css || ''}</style></head><body>${note.code.html || ''}<script>${note.code.js || ''}<\/script></body></html>`;
     try {
       await addDoc(collection(db, 'community'), {
         uid: user.uid, displayName: user.displayName || 'Anonym',
         photoURL: user.photoURL || null, title: note.title || 'Namnlös anteckning',
-        content: note.content, coverImage: note.coverImage || null,
+        content: note.code.html || '', // store raw html for display
+        fullCode, // store full combined code for iframe
+        coverImage: note.coverImage || null,
         likes: [], createdAt: Date.now(),
       });
     } catch (err) { console.error(err); alert('Kunde inte dela. Försök igen.'); }
@@ -522,7 +530,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
                       </button>
                     </div>
                     <h3 className="font-semibold text-white text-base leading-snug">{post.title}</h3>
-                    <PostContent content={post.content} title={post.title} />
+                    <PostContent content={post.fullCode || post.content} title={post.title} />
                   </div>
                 </div>
               );
