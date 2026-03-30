@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: notes
+    // Document ID: {noteId}
+    // Fields:
+    //   - uid: string (required) - The user ID of the note owner.
+    //   - title: string (required) - The title of the note.
+    //   - content: string (required) - The text content of the note.
+    //   - attachments: string (optional) - JSON stringified array of attachments.
+    //   - code: string (optional) - JSON stringified code object.
+    //   - coverImage: string (optional) - Base64 encoded cover image.
+    //   - createdAt: number (required) - Timestamp of creation.
+    //   - updatedAt: number (required) - Timestamp of last update.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidNote() {
+      return hasOnlyAllowedFields(['uid', 'title', 'content', 'attachments', 'code', 'coverImage', 'createdAt', 'updatedAt']) &&
+             hasRequiredFields(['uid', 'title', 'content', 'createdAt', 'updatedAt']) &&
+             isValidString('uid', 1, 128) &&
+             isValidString('title', 0, 500) &&
+             isValidString('content', 0, 100000) &&
+             isValidOptionalString('attachments', 0, 1000000) &&
+             isValidOptionalString('code', 0, 100000) &&
+             isValidOptionalString('coverImage', 0, 1000000) &&
+             request.resource.data.createdAt is number &&
+             request.resource.data.updatedAt is number;
+    }
+
+    match /notes/{noteId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidNote() && uidUnchanged() && request.resource.data.uid == request.auth.uid;
+      allow update: if isDocOwner() && isValidNote() && uidNotModified() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+  }
+}
