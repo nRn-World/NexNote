@@ -68,7 +68,7 @@ service cloud.firestore {
     // Domain Validators
     // ===============================================================
     function isValidNote() {
-      return hasOnlyAllowedFields(['uid', 'title', 'content', 'attachments', 'code', 'coverImage', 'isPinned', 'tags', 'history', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['uid', 'title', 'content', 'attachments', 'code', 'coverImage', 'isPinned', 'tags', 'history', 'categoryId', 'isShared', 'shareId', 'order', 'createdAt', 'updatedAt']) &&
              hasRequiredFields(['uid', 'title', 'content', 'createdAt', 'updatedAt']) &&
              isValidString('uid', 1, 128) &&
              isValidString('title', 0, 500) &&
@@ -82,10 +82,17 @@ service cloud.firestore {
     }
 
     match /notes/{noteId} {
-      allow read: if isDocOwner();
+      allow read: if isDocOwner() || (resource.data.isShared == true);
       allow create: if isAuthenticated() && isValidNote() && uidUnchanged() && request.resource.data.uid == request.auth.uid;
       allow update: if isDocOwner() && isValidNote() && uidNotModified() && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isDocOwner();
+    }
+
+    match /categories/{categoryId} {
+      allow read, write: if isAuthenticated() && (
+        !exists(/databases/$(database)/documents/categories/$(categoryId)) ||
+        resource.data.uid == request.auth.uid
+      );
     }
   }
 }

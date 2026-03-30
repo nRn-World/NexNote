@@ -3,7 +3,16 @@ export interface Attachment {
   name: string;
   type: string;
   size: number;
-  data: string; // Firebase Storage URL or Base64 encoded file data
+  data: string;
+}
+
+export interface Category {
+  id: string;
+  uid: string;
+  name: string;
+  color: string; // hex color
+  order: number;
+  createdAt: number;
 }
 
 export interface Note {
@@ -12,6 +21,7 @@ export interface Note {
   title: string;
   content: string;
   attachments: Attachment[];
+  categoryId?: string;
   code?: {
     html: string;
     css: string;
@@ -20,11 +30,14 @@ export interface Note {
   coverImage?: string;
   isPinned?: boolean;
   tags?: string[];
+  isShared?: boolean;
+  shareId?: string;
   history?: {
     title: string;
     content: string;
     updatedAt: number;
   }[];
+  order?: number;
   createdAt: number;
   updatedAt: number;
 }

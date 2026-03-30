@@ -5,6 +5,9 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Dark mode support */
+@variant dark (&:where(.dark, .dark *));
+
 
 /* Tiptap rich editor prose styles */
 .prose p { margin: 0.5rem 0; }
