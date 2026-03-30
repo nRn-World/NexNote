@@ -59,7 +59,7 @@ function PostContent({ content, title }: { content: string; title: string }) {
   };
 
   if (isCode) {
-    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;}html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#fff;}</style></head><body>${content}</body></html>`;
+    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:transparent;display:flex;align-items:center;justify-content:center;}</style></head><body>${content}</body></html>`;
     return (
       <div className="mt-3">
         <div className="flex items-center justify-between mb-2">
@@ -83,8 +83,9 @@ function PostContent({ content, title }: { content: string; title: string }) {
             <iframe
               srcDoc={iframeDoc}
               title={title}
-              className="w-full h-full border-none"
+              className="w-full h-full border-none block"
               sandbox="allow-scripts allow-same-origin"
+              style={{ display: 'block' }}
             />
             <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-green-400 text-[10px] rounded-full font-mono border border-green-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -486,7 +487,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
                   )}
                   style={{ background: isTop ? undefined : 'rgba(255,255,255,0.02)' }}
                 >
-                  {post.coverImage && (
+                  {post.coverImage && !/<[a-z][\s\S]*>/i.test(post.content) && (
                     <div className="relative h-44 overflow-hidden">
                       <img src={post.coverImage} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
