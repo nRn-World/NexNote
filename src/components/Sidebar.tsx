@@ -67,11 +67,12 @@ function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
 }
 
 function SortableNote({
-  note, activeNoteId, isSelected, isSelecting, onSelect, onToggleSelect, onContextMenu
+  note, activeNoteId, isSelected, isSelecting, onSelect, onToggleSelect, onContextMenu, onImageClick
 }: {
   note: Note; activeNoteId: string | null; isSelected: boolean; isSelecting: boolean;
   onSelect: (id: string) => void; onToggleSelect: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, note: Note) => void;
+  onImageClick: (url: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -103,6 +104,18 @@ function SortableNote({
       )}
       {note.isPinned && !isSelecting && (
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-zinc-900 dark:bg-white rounded-r-full" />
+      )}
+      {(note.coverImage || note.attachments.some(a => a.type.startsWith('image/'))) && !isSelecting && (
+        <div
+          className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-zinc-200 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 cursor-zoom-in"
+          onClick={e => {
+            e.stopPropagation();
+            const url = note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data;
+            if (url) onImageClick(url);
+          }}
+        >
+          <img src={note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data} alt="" className="w-full h-full object-cover" />
+        </div>
       )}
       <div className={cn('flex-1 min-w-0', (isSelecting || isSelected) && 'pl-5')}>
         <div className="flex items-center gap-1.5">
@@ -305,6 +318,7 @@ export default function Sidebar({
                   onSelect={id => { clearSelection(); onSelectNote(id); }}
                   onToggleSelect={toggleSelect}
                   onContextMenu={handleNoteContextMenu}
+                  onImageClick={onImageClick}
                 />
               ))}
             </SortableContext>

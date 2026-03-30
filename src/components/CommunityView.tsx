@@ -32,16 +32,16 @@ const MAX_MONTHLY = 2;
 const COUNTDOWN_SECONDS = 30;
 
 // Upload modal with note picker, warning and countdown
-function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel, uploading }: {
+function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
   userNotes: Note[];
   monthlyCount: number;
   onConfirm: (noteId: string) => void;
   onCancel: () => void;
-  uploading: boolean;
 }) {
   const [selectedNoteId, setSelectedNoteId] = useState('');
   const [step, setStep] = useState<'pick' | 'warn'>('pick');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [uploading, setUploading] = useState(false);
   const timerRef = useRef<any>(null);
 
   const selectedNote = userNotes.find(n => n.id === selectedNoteId);
@@ -192,7 +192,11 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel, uploading }
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => onConfirm(selectedNoteId)}
+                  onClick={async () => {
+                    setUploading(true);
+                    await onConfirm(selectedNoteId);
+                    setUploading(false);
+                  }}
                   disabled={countdown > 0 || uploading}
                   className={cn(
                     'flex-1 py-2.5 rounded-xl text-sm font-medium transition-all',
@@ -376,7 +380,6 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
         <UploadModal
           userNotes={userNotes}
           monthlyCount={monthlyCount}
-          uploading={uploading}
           onConfirm={handleUpload}
           onCancel={() => setShowUpload(false)}
         />
