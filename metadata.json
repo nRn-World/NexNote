@@ -1,5 +1,11 @@
 {
+<<<<<<< HEAD
   "name": "Remix: NexNote",
   "description": "En enkel och snygg webbapp för att spara anteckningar och filer lokalt på din enhet.",
   "requestFramePermissions": ["display-capture"]
+=======
+  "name": "NexNote",
+  "description": "En enkel och snygg webbapp för att spara anteckningar och filer lokalt på din enhet.",
+  "requestFramePermissions": []
+>>>>>>> origin/main
 }

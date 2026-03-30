@@ -22,9 +22,14 @@ export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   try {
     await signInWithPopup(auth, provider);
+<<<<<<< HEAD
   } catch (error: any) {
     console.error("Error signing in with Google", error);
     alert("Inloggningen misslyckades: " + error.message);
+=======
+  } catch (error) {
+    console.error("Error signing in with Google", error);
+>>>>>>> origin/main
   }
 };
 

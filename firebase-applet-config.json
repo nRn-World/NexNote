@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "projectId": "remixed-project-id",
   "appId": "remixed-app-id",
   "apiKey": "remixed-api-key",
@@ -7,4 +8,14 @@
   "storageBucket": "remixed-storage-bucket",
   "messagingSenderId": "remixed-messaging-sender-id",
   "measurementId": "remixed-measurement-id"
+=======
+  "projectId": "project-8f01dae2-4470-49d1-8d0",
+  "appId": "1:333167636156:web:2b8313b25b32d388546ab9",
+  "apiKey": "AIzaSyArGIgB4qX_cfwHUknABNHGOE7GiVngTSA",
+  "authDomain": "project-8f01dae2-4470-49d1-8d0.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-a4574547-7f1d-498a-86b0-4801a9c604a1",
+  "storageBucket": "project-8f01dae2-4470-49d1-8d0.firebasestorage.app",
+  "messagingSenderId": "333167636156",
+  "measurementId": ""
+>>>>>>> origin/main
 }
