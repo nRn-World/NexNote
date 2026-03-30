@@ -17,7 +17,6 @@ import {
   Code,
   Play,
   Camera,
-<<<<<<< HEAD
   Maximize2,
   Pin,
   History as HistoryIcon,
@@ -26,11 +25,7 @@ import {
   Clock,
   RotateCcw
 } from 'lucide-react';
-import { GoogleGenerativeAI } from "@google/genai";
-=======
-  Maximize2
-} from 'lucide-react';
->>>>>>> origin/main
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toPng } from 'html-to-image';
 import { Note, Attachment } from './types';
 import { fileToBase64 } from './lib/storage';
@@ -54,12 +49,9 @@ export default function App() {
   const [activeCodeTab, setActiveCodeTab] = useState<'html' | 'css' | 'js' | 'preview'>('html');
   const [previewDoc, setPreviewDoc] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
-<<<<<<< HEAD
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-=======
->>>>>>> origin/main
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -91,17 +83,13 @@ export default function App() {
           attachments: data.attachments ? JSON.parse(data.attachments) : [],
           code: data.code ? JSON.parse(data.code) : undefined,
           coverImage: data.coverImage,
-<<<<<<< HEAD
           isPinned: data.isPinned || false,
           tags: data.tags || [],
           history: data.history ? JSON.parse(data.history) : [],
-=======
->>>>>>> origin/main
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
         });
       });
-<<<<<<< HEAD
       
       const sortedNotes = loadedNotes.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
@@ -110,9 +98,6 @@ export default function App() {
       });
       
       setNotes(sortedNotes);
-=======
-      setNotes(loadedNotes.sort((a, b) => b.updatedAt - a.updatedAt));
->>>>>>> origin/main
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'notes');
     });
@@ -130,12 +115,9 @@ export default function App() {
         attachments: note.attachments.length > 0 ? JSON.stringify(note.attachments) : null,
         code: note.code ? JSON.stringify(note.code) : null,
         coverImage: note.coverImage || null,
-<<<<<<< HEAD
         isPinned: note.isPinned || false,
         tags: note.tags || [],
         history: note.history && note.history.length > 0 ? JSON.stringify(note.history) : null,
-=======
->>>>>>> origin/main
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,
       };
@@ -149,15 +131,11 @@ export default function App() {
 
       await setDoc(doc(db, 'notes', note.id), noteData);
     } catch (error) {
-<<<<<<< HEAD
       console.error('Kunde inte spara:', error);
-=======
->>>>>>> origin/main
       handleFirestoreError(error, OperationType.WRITE, `notes/${note.id}`);
     }
   };
 
-<<<<<<< HEAD
   // Add debounced saving
   const saveTimeoutRef = useRef<Record<string, any>>({});
 
@@ -172,8 +150,6 @@ export default function App() {
     }, 1000); // 1 second debounce
   };
 
-=======
->>>>>>> origin/main
   const handleCopyTitle = async () => {
     const activeNote = notes.find(n => n.id === activeNoteId);
     if (!activeNote) return;
@@ -219,7 +195,6 @@ export default function App() {
     if (!activeNote) return;
     
     const updatedNote = { ...activeNote, ...updates, updatedAt: Date.now() };
-<<<<<<< HEAD
     
     // Update local state immediately for responsiveness
     setNotes(prev => prev.map(n => n.id === updatedNote.id ? updatedNote : n));
@@ -313,14 +288,10 @@ export default function App() {
     } finally {
       setIsAiProcessing(false);
     }
-=======
-    handleSave(updatedNote);
->>>>>>> origin/main
   };
 
   const deleteNote = async (id: string) => {
     if (!user) return;
-<<<<<<< HEAD
     
     const noteToDelete = notes.find(n => n.id === id);
     if (!noteToDelete) return;
@@ -346,10 +317,6 @@ export default function App() {
       // 2. Delete the document from Firestore
       await deleteDoc(doc(db, 'notes', id));
       
-=======
-    try {
-      await deleteDoc(doc(db, 'notes', id));
->>>>>>> origin/main
       if (activeNoteId === id) {
         setActiveNoteId(null);
       }
@@ -495,7 +462,6 @@ export default function App() {
     try {
       setIsCapturing(true);
       
-<<<<<<< HEAD
       let dataUrl = '';
 
       // 1. Försök med Screen Capture API för att fånga live-pixlar (video/gif/animationer)
@@ -711,128 +677,6 @@ export default function App() {
         if (isTemp && body.parentNode) {
           body.parentNode.removeChild(body);
         }
-=======
-      // Vänta lite så att iframen och eventuella animationer hinner starta
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      let body: HTMLElement;
-      let isTemp = false;
-      
-      if (iframe.contentDocument && iframe.contentDocument.body) {
-        body = iframe.contentDocument.body;
-      } else {
-        console.warn('iframe.contentDocument is null, using a temporary container');
-        body = document.createElement('div');
-        body.style.position = 'absolute';
-        body.style.left = '-9999px';
-        body.style.width = iframe.clientWidth + 'px';
-        body.style.height = iframe.clientHeight + 'px';
-        body.style.backgroundColor = '#ffffff';
-        body.innerHTML = activeNote?.code.html || '';
-        const style = document.createElement('style');
-        style.textContent = activeNote?.code.css || '';
-        body.appendChild(style);
-        document.body.appendChild(body);
-        isTemp = true;
-      }
-      
-      let dataUrl = '';
-      
-      // 1. Försök med native SVG rendering om det bara är en SVG
-      const elements = Array.from(body.children).filter(el => el.tagName.toLowerCase() !== 'script' && el.tagName.toLowerCase() !== 'style');
-      
-      if (elements.length === 1 && elements[0].tagName.toLowerCase() === 'svg') {
-        try {
-          const svgEl = elements[0] as SVGSVGElement;
-          const clonedSvg = svgEl.cloneNode(true) as SVGSVGElement;
-          
-          const width = iframe.clientWidth || 800;
-          const height = iframe.clientHeight || 600;
-          
-          clonedSvg.setAttribute('width', width.toString());
-          clonedSvg.setAttribute('height', height.toString());
-          
-          const cssText = activeNote?.code.css || '';
-          if (cssText) {
-            const styleEl = document.createElement('style');
-            styleEl.textContent = cssText;
-            clonedSvg.insertBefore(styleEl, clonedSvg.firstChild);
-          }
-          
-          if (!clonedSvg.getAttribute('xmlns')) {
-            clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-          }
-          
-          const svgStr = new XMLSerializer().serializeToString(clonedSvg);
-          const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
-          
-          const img = new Image();
-          
-          dataUrl = await new Promise<string>((resolve, reject) => {
-            img.onload = () => {
-              try {
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#ffffff';
-                  ctx.fillRect(0, 0, width, height);
-                  ctx.drawImage(img, 0, 0, width, height);
-                  resolve(canvas.toDataURL('image/png'));
-                } else {
-                  reject(new Error('Kunde inte skapa canvas'));
-                }
-              } catch (err) {
-                reject(err);
-              }
-            };
-            img.onerror = (e) => reject(new Error('Kunde inte ladda SVG som bild'));
-            img.src = svgDataUrl;
-          });
-        } catch (e) {
-          console.warn('Native SVG rendering misslyckades, faller tillbaka...', e);
-        }
-      }
-      
-      // 2. Om dataUrl fortfarande är tom, använd html2canvas
-      if (!dataUrl) {
-        // Fixa SVG-dimensioner för html2canvas
-        const svgs = Array.from(body.querySelectorAll('svg'));
-        svgs.forEach(svg => {
-          const rect = svg.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0) {
-            svg.setAttribute('width', rect.width.toString());
-            svg.setAttribute('height', rect.height.toString());
-          }
-        });
-        
-        try {
-          const html2canvas = (await import('html2canvas')).default;
-          const canvas = await html2canvas(body, {
-            backgroundColor: '#ffffff',
-            useCORS: true,
-            allowTaint: false, // Måste vara false för att undvika SecurityError vid toDataURL
-            scale: 1,
-            width: iframe.clientWidth || 800,
-            height: iframe.clientHeight || 600,
-          });
-          dataUrl = canvas.toDataURL('image/png');
-        } catch (e) {
-          console.warn('html2canvas misslyckades, försöker med html-to-image', e);
-          const { toPng } = await import('html-to-image');
-          dataUrl = await toPng(body, {
-            backgroundColor: '#ffffff',
-            width: iframe.clientWidth || 800,
-            height: iframe.clientHeight || 600,
-            pixelRatio: 1
-          });
-        }
-      }
-
-      if (isTemp && body.parentNode) {
-        body.parentNode.removeChild(body);
->>>>>>> origin/main
       }
 
       if (!dataUrl || dataUrl === 'data:,') {
@@ -939,12 +783,9 @@ export default function App() {
                   activeNoteId === note.id ? "bg-zinc-100" : "hover:bg-zinc-50"
                 )}
               >
-<<<<<<< HEAD
                 {note.isPinned && (
                   <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-zinc-900 rounded-r-full" />
                 )}
-=======
->>>>>>> origin/main
                 {(note.coverImage || note.attachments.some(a => a.type.startsWith('image/'))) && (
                   <div 
                     className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-zinc-200 border border-zinc-200 relative group/img cursor-zoom-in"
@@ -964,7 +805,6 @@ export default function App() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-<<<<<<< HEAD
                   <div className="flex items-center gap-1.5">
                     {note.isPinned && <Pin size={12} className="text-zinc-400 fill-zinc-400" />}
                     <h3 className="font-medium truncate flex-1">
@@ -987,20 +827,6 @@ export default function App() {
                       <div className="flex gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-zinc-300" title={note.tags.join(', ')} />
                       </div>
-=======
-                  <h3 className="font-medium truncate pr-8">
-                    {note.title || 'Namnlös anteckning'}
-                  </h3>
-                  <p className="text-xs text-zinc-500 mt-1 truncate">
-                    {note.content || 'Ingen text...'}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400">
-                    <span>{format(note.updatedAt, 'd MMM yyyy', { locale: sv })}</span>
-                    {note.attachments.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Paperclip size={12} /> {note.attachments.length}
-                      </span>
->>>>>>> origin/main
                     )}
                   </div>
                 </div>
@@ -1036,7 +862,6 @@ export default function App() {
                   <ChevronLeft size={24} />
                 </button>
                 <div className="text-xs text-zinc-500">
-<<<<<<< HEAD
                   {activeNote.isPinned && <Pin size={12} className="inline mr-1 text-zinc-400 fill-zinc-400" />}
                   Ändrad {format(activeNote.updatedAt, 'd MMM HH:mm', { locale: sv })}
                 </div>
@@ -1084,12 +909,6 @@ export default function App() {
                   </button>
                 </div>
                 
-=======
-                  Senast ändrad {format(activeNote.updatedAt, 'd MMMM yyyy HH:mm', { locale: sv })}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
->>>>>>> origin/main
                 <input 
                   type="file" 
                   ref={imageInputRef} 
@@ -1100,17 +919,10 @@ export default function App() {
                 />
                 <button 
                   onClick={() => imageInputRef.current?.click()}
-<<<<<<< HEAD
                   className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
                   title="Lägg till bild"
                 >
                   <ImageIcon size={18} />
-=======
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
-                >
-                  <ImageIcon size={16} />
-                  <span className="hidden sm:inline">Bild</span>
->>>>>>> origin/main
                 </button>
                 <input 
                   type="file" 
@@ -1121,22 +933,14 @@ export default function App() {
                 />
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-<<<<<<< HEAD
                   className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-colors"
                   title="Bifoga fil"
                 >
                   <Paperclip size={18} />
-=======
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
-                >
-                  <Paperclip size={16} />
-                  <span className="hidden sm:inline">Fil</span>
->>>>>>> origin/main
                 </button>
                 <button 
                   onClick={toggleCodeEditor}
                   className={cn(
-<<<<<<< HEAD
                     "p-1.5 rounded-md transition-colors",
                     activeNote.code 
                       ? "text-blue-700 bg-blue-100 hover:bg-blue-200" 
@@ -1145,29 +949,11 @@ export default function App() {
                   title="Kodredigerare"
                 >
                   <Code size={18} />
-=======
-                    "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-                    activeNote.code 
-                      ? "text-blue-700 bg-blue-100 hover:bg-blue-200" 
-                      : "text-zinc-700 bg-zinc-100 hover:bg-zinc-200"
-                  )}
-                >
-                  <Code size={16} />
-                  <span className="hidden sm:inline">Kod</span>
-                </button>
-                <button 
-                  onClick={() => deleteNote(activeNote.id)}
-                  className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                  title="Ta bort anteckning"
-                >
-                  <Trash2 size={18} />
->>>>>>> origin/main
                 </button>
               </div>
             </div>
 
             {/* Editor */}
-<<<<<<< HEAD
             <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 max-w-4xl mx-auto w-full flex flex-col relative">
               
               {/* Floating History Sidebar */}
@@ -1207,30 +993,6 @@ export default function App() {
               <div className="relative pl-10 md:pl-12 flex-1 flex flex-col">
                 
                 <div className="relative flex items-start group mb-2">
-=======
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 max-w-4xl mx-auto w-full flex flex-col">
-              <div className="relative pl-10 md:pl-12 flex-1 flex flex-col">
-                {activeNote.coverImage && (
-                  <div 
-                    className="w-full h-48 md:h-64 mb-6 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 relative group cursor-zoom-in"
-                    onClick={() => setSelectedImage(activeNote.coverImage)}
-                  >
-                    <img 
-                      src={activeNote.coverImage} 
-                      alt="Cover" 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="bg-black/50 text-white px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-sm">
-                        <Maximize2 size={16} />
-                        <span className="text-sm font-medium">Visa i originalstorlek</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="relative flex items-start group mb-6">
->>>>>>> origin/main
                   <button
                     onClick={handleCopyTitle}
                     className="absolute -left-10 md:-left-12 top-1/2 -translate-y-1/2 p-2 text-zinc-300 hover:text-zinc-600 opacity-0 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-100"
@@ -1246,7 +1008,6 @@ export default function App() {
                     className="w-full text-3xl md:text-4xl font-bold text-zinc-900 placeholder:text-zinc-300 border-none outline-none bg-transparent"
                   />
                 </div>
-<<<<<<< HEAD
 
                 {/* Tags Area */}
                 <div className="flex flex-wrap items-center gap-2 mb-6 ml-0 md:ml-1 text-sm">
@@ -1272,8 +1033,6 @@ export default function App() {
                     />
                   </div>
                 </div>
-=======
->>>>>>> origin/main
                 
                 <div className="relative flex-1 flex flex-col group">
                   <button
@@ -1294,23 +1053,14 @@ export default function App() {
                 {/* Code Editor */}
                 {activeNote.code && (
                   <div className="mt-8 border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-zinc-900 text-zinc-100 flex flex-col">
-<<<<<<< HEAD
                     <div className="flex items-center justify-between bg-zinc-950 px-2 border-b border-zinc-800 overflow-x-auto scrollbar-hide">
                       <div className="flex shrink-0">
-=======
-                    <div className="flex items-center justify-between bg-zinc-950 px-2 border-b border-zinc-800">
-                      <div className="flex">
->>>>>>> origin/main
                         {(['html', 'css', 'js'] as const).map((tab) => (
                           <button
                             key={tab}
                             onClick={() => setActiveCodeTab(tab)}
                             className={cn(
-<<<<<<< HEAD
                               "px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
-=======
-                              "px-4 py-3 text-sm font-medium uppercase tracking-wider transition-colors border-b-2",
->>>>>>> origin/main
                               activeCodeTab === tab 
                                 ? "border-blue-500 text-white bg-zinc-900" 
                                 : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
@@ -1322,11 +1072,7 @@ export default function App() {
                         <button
                           onClick={generatePreview}
                           className={cn(
-<<<<<<< HEAD
                             "px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium uppercase tracking-wider transition-colors border-b-2 flex items-center gap-1 sm:gap-2 whitespace-nowrap",
-=======
-                            "px-4 py-3 text-sm font-medium uppercase tracking-wider transition-colors border-b-2 flex items-center gap-2",
->>>>>>> origin/main
                             activeCodeTab === 'preview'
                               ? "border-green-500 text-green-400 bg-zinc-900" 
                               : "border-transparent text-zinc-500 hover:text-green-400 hover:bg-zinc-900/50"
@@ -1335,20 +1081,12 @@ export default function App() {
                           <Play size={14} /> Preview
                         </button>
                       </div>
-<<<<<<< HEAD
                       <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
-=======
-                      <div className="flex items-center gap-2">
->>>>>>> origin/main
                         {activeCodeTab === 'preview' && (
                           <button
                             onClick={capturePreview}
                             disabled={isCapturing}
-<<<<<<< HEAD
                             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded-md transition-colors disabled:opacity-50 whitespace-nowrap"
-=======
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded-md transition-colors disabled:opacity-50"
->>>>>>> origin/main
                             title="Spara som anteckningsbild"
                           >
                             <Camera size={14} />
@@ -1359,11 +1097,7 @@ export default function App() {
                         )}
                         <button 
                           onClick={toggleCodeEditor}
-<<<<<<< HEAD
                           className="p-1.5 sm:p-2 text-zinc-500 hover:text-red-400 transition-colors shrink-0"
-=======
-                          className="p-2 text-zinc-500 hover:text-red-400 transition-colors"
->>>>>>> origin/main
                           title="Stäng kodredigerare"
                         >
                           <X size={16} />

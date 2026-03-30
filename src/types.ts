@@ -3,11 +3,7 @@ export interface Attachment {
   name: string;
   type: string;
   size: number;
-<<<<<<< HEAD
   data: string; // Firebase Storage URL or Base64 encoded file data
-=======
-  data: string; // Base64 encoded file data
->>>>>>> origin/main
 }
 
 export interface Note {
@@ -22,7 +18,6 @@ export interface Note {
     js: string;
   };
   coverImage?: string;
-<<<<<<< HEAD
   isPinned?: boolean;
   tags?: string[];
   history?: {
@@ -30,8 +25,6 @@ export interface Note {
     content: string;
     updatedAt: number;
   }[];
-=======
->>>>>>> origin/main
   createdAt: number;
   updatedAt: number;
 }
