@@ -47,7 +47,7 @@ const ADMIN_EMAIL = 'bynrnworld@gmail.com';
 
 // Detects if content is HTML/SVG/code and renders live iframe, otherwise plain text
 function PostContent({ content, title }: { content: string; title: string }) {
-  const isCode = /<[a-z][\s\S]*>/i.test(content);
+  const isCode = /<svg[\s\S]*?>[\s\S]*?<\/svg>|<div[\s\S]*?>[\s\S]*?<\/div>|<canvas|<script/i.test(content);
   const [showPreview, setShowPreview] = useState(true);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -59,7 +59,7 @@ function PostContent({ content, title }: { content: string; title: string }) {
   };
 
   if (isCode) {
-    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:transparent;display:flex;align-items:center;justify-content:center;}</style></head><body>${content}</body></html>`;
+    const iframeDoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f;}</style></head><body>${content}</body></html>`;
     return (
       <div className="mt-3">
         <div className="flex items-center justify-between mb-2">
@@ -487,7 +487,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
                   )}
                   style={{ background: isTop ? undefined : 'rgba(255,255,255,0.02)' }}
                 >
-                  {post.coverImage && !/<[a-z][\s\S]*>/i.test(post.content) && (
+                  {post.coverImage && !/<svg[\s\S]*?>[\s\S]*?<\/svg>|<canvas|<script/i.test(post.content) && (
                     <div className="relative h-44 overflow-hidden">
                       <img src={post.coverImage} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
