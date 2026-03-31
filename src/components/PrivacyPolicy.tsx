@@ -30,7 +30,7 @@ const sections = [
     icon: <Lock size={18} className="text-green-400" />,
     title: 'Lagring och säkerhet',
     content: [
-      'All data lagras säkert i Google Firebase (Firestore och Storage) inom EU.',
+      'All data lagras säkert i Google Firebase (Firestore och Storage). Lagringsregion beror på Firebase-projektets konfiguration.',
       'Kommunikation sker alltid via krypterad HTTPS-anslutning.',
       'Åtkomst till din data skyddas av Firebase Security Rules — endast du kan läsa och skriva dina egna anteckningar.',
       'Profilbilder och bifogade filer lagras i Firebase Storage med åtkomstkontroll per användare.',
