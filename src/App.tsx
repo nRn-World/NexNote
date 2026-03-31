@@ -23,6 +23,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import SharedNote from './components/SharedNote';
 import CommunityView from './components/CommunityView';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import UserProfilePage from './components/UserProfilePage';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
@@ -54,6 +55,7 @@ export default function App() {
   const [showShare, setShowShare] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
@@ -503,6 +505,12 @@ export default function App() {
           <button onClick={signInWithGoogle} className="w-full py-2 px-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-md hover:opacity-90 transition-opacity">
             Logga in med Google
           </button>
+          <p className="text-xs text-zinc-400 mt-4">
+            Genom att logga in godkänner du vår{' '}
+            <button onClick={() => setShowPrivacy(true)} className="underline hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+              integritetspolicy
+            </button>
+          </p>
         </div>
       </div>
     );
@@ -526,6 +534,7 @@ export default function App() {
         onChangeColor={onChangeColor}
         onOpenCommunity={() => setShowCommunity(true)}
         onOpenProfile={() => setShowProfile(true)}
+        onOpenPrivacy={() => setShowPrivacy(true)}
         user={user}
       />
 
@@ -713,6 +722,8 @@ export default function App() {
           onClose={() => setShowProfile(false)}
         />
       )}
+
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
 
       <Toast toasts={toasts} onRemove={removeToast} />
       <ConfirmDialog

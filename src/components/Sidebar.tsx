@@ -37,6 +37,7 @@ interface SidebarProps {
   onChangeColor?: (id: string, color: string) => void;
   onOpenCommunity: () => void;
   onOpenProfile: () => void;
+  onOpenPrivacy: () => void;
   user: any;
 }
 
@@ -144,7 +145,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, user,
+  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, user,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -341,6 +342,13 @@ export default function Sidebar({
       </div>
 
       <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
+
+      {/* Privacy policy link */}
+      <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-800">
+        <button onClick={onOpenPrivacy} className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+          Integritetspolicy
+        </button>
+      </div>
 
       {ctxMenu && <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenu.items} onClose={() => setCtxMenu(null)} />}
 
