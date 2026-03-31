@@ -495,12 +495,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
                   )}
                   style={{ background: isTop ? undefined : 'rgba(255,255,255,0.02)' }}
                 >
-                  {post.coverImage && !/<svg[\s\S]*?>[\s\S]*?<\/svg>|<canvas|<script/i.test(post.content) && (
-                    <div className="relative h-44 overflow-hidden">
-                      <img src={post.coverImage} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    </div>
-                  )}
+                  {/* Never show cover image in community — always show live code preview */}
                   <div className="p-5">
                     <div className="flex items-center gap-3 mb-3">
                       {isTop && (
