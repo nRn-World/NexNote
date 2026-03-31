@@ -70,10 +70,11 @@ function LivePreview({ content, title }: { content: string; title: string }) {
 }
 
 // Post card — CodePen style
-function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, onContextMenu, onExpand }: {
+function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, onContextMenu, onExpand, onProfileClick }: {
   post: CommunityPost; index: number; userId: string; isAdmin: boolean;
   following: string[]; onLike: () => void; onFollow: () => void;
   onContextMenu: (e: React.MouseEvent) => void; onExpand: () => void;
+  onProfileClick: (uid: string, name: string, photo?: string) => void;
 }) {
   const hasLiked = post.likes.includes(userId);
   const isFollowing = following.includes(post.uid);
@@ -113,10 +114,10 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
         <p className="text-sm font-medium text-white truncate mb-2 leading-snug">{post.title}</p>
         <div className="flex items-center gap-2">
           {post.photoURL
-            ? <img src={post.photoURL} alt="" className="w-6 h-6 rounded-full ring-1 ring-white/10 shrink-0" />
-            : <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 text-[10px] font-bold text-white">{post.displayName.charAt(0)}</div>
+            ? <img src={post.photoURL} alt="" onClick={e => { e.stopPropagation(); onProfileClick(post.uid, post.displayName, post.photoURL); }} className="w-6 h-6 rounded-full ring-1 ring-white/10 shrink-0 cursor-pointer hover:ring-indigo-400 transition-all" />
+            : <div onClick={e => { e.stopPropagation(); onProfileClick(post.uid, post.displayName); }} className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 text-[10px] font-bold text-white cursor-pointer hover:opacity-80 transition-opacity">{post.displayName.charAt(0)}</div>
           }
-          <span className="text-xs text-zinc-400 truncate flex-1">{post.displayName}</span>
+          <span onClick={e => { e.stopPropagation(); onProfileClick(post.uid, post.displayName, post.photoURL); }} className="text-xs text-zinc-400 truncate flex-1 cursor-pointer hover:text-white transition-colors">{post.displayName}</span>
           {!isOwn && (
             <button onClick={e => { e.stopPropagation(); onFollow(); }}
               className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0',
@@ -373,6 +374,93 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
   );
 }
 
+// User profile modal
+function UserProfile({ uid, displayName, photoURL, posts, userId, following, onFollow, onClose }: {
+  uid: string; displayName: string; photoURL?: string;
+  posts: CommunityPost[]; userId: string; following: string[];
+  onFollow: () => void; onClose: () => void;
+}) {
+  const userPosts = posts.filter(p => p.uid === uid).sort((a, b) => b.likes.length - a.likes.length || b.createdAt - a.createdAt);
+  const isFollowing = following.includes(uid);
+  const isOwn = uid === userId;
+  const [expandedPost, setExpandedPost] = useState<CommunityPost | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-[450] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-2xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Profile header */}
+        <div className="p-6 border-b border-zinc-800 flex items-center gap-4">
+          {photoURL
+            ? <img src={photoURL} alt="" className="w-14 h-14 rounded-full ring-2 ring-white/10" />
+            : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white">{displayName.charAt(0)}</div>
+          }
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-white">{displayName}</h2>
+            <p className="text-sm text-zinc-500">{userPosts.length} delade projekt</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isOwn && (
+              <button onClick={onFollow}
+                className={cn('flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all border',
+                  isFollowing
+                    ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
+                    : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700'
+                )}>
+                {isFollowing ? <><UserCheck size={14} /> Följer</> : <><UserPlus size={14} /> Följ</>}
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-xl"><X size={18} /></button>
+          </div>
+        </div>
+
+        {/* Posts grid */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {userPosts.length === 0 ? (
+            <div className="text-center py-16 text-zinc-600">
+              <Code2 size={32} className="mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Inga delade projekt ännu.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {userPosts.map(post => (
+                <div key={post.id} onClick={() => setExpandedPost(post)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-500 transition-colors">
+                  <div className="relative" style={{ paddingBottom: '56%' }}>
+                    <div className="absolute inset-0">
+                      <LivePreview content={decodeContent(post.fullCode || post.content)} title={post.title} />
+                    </div>
+                  </div>
+                  <div className="p-3 flex items-center justify-between">
+                    <p className="text-xs font-medium text-white truncate flex-1">{post.title}</p>
+                    <div className="flex items-center gap-1 text-xs text-zinc-500 shrink-0 ml-2">
+                      <Heart size={11} className={cn(post.likes.includes(userId) && 'fill-red-400 text-red-400')} />
+                      {post.likes.length}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {expandedPost && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/90 p-4" onClick={() => setExpandedPost(null)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden max-w-4xl w-full" style={{ height: '80vh' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+              <p className="text-sm font-medium text-white">{expandedPost.title}</p>
+              <button onClick={() => setExpandedPost(null)} className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg"><X size={16} /></button>
+            </div>
+            <div style={{ height: 'calc(80vh - 52px)' }}>
+              <LivePreview content={decodeContent(expandedPost.fullCode || expandedPost.content)} title={expandedPost.title} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CommunityView({ user, userNotes, onClose }: CommunityViewProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [bans, setBans] = useState<BanRecord[]>([]);
@@ -391,6 +479,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
   const [myWarning, setMyWarning] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'trending' | 'following'>('trending');
+  const [profileTarget, setProfileTarget] = useState<{ uid: string; name: string; photo?: string } | null>(null);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
   const myBan = bans.find(b => b.uid === user?.uid);
@@ -628,6 +717,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
                       onFollow={() => handleFollow(post.uid)}
                       onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post }); }}
                       onExpand={() => setExpandedPost(post)}
+                      onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
                     />
                   ))}
                 </div>
@@ -642,6 +732,15 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
           onLike={() => handleLike(expandedPost)} onFollow={() => handleFollow(expandedPost.uid)}
           onClose={() => setExpandedPost(null)}
           onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: expandedPost }); }}
+        />
+      )}
+
+      {profileTarget && (
+        <UserProfile
+          uid={profileTarget.uid} displayName={profileTarget.name} photoURL={profileTarget.photo}
+          posts={posts} userId={user?.uid || ''} following={following}
+          onFollow={() => handleFollow(profileTarget.uid)}
+          onClose={() => setProfileTarget(null)}
         />
       )}
 
