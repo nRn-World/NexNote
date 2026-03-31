@@ -443,8 +443,19 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
   const handleFollow = async (targetUid: string) => {
     if (!user || targetUid === user.uid) return;
     const ref = doc(db, 'community_following', user.uid);
-    const isFollowing = following.includes(targetUid);
-    await setDoc(ref, { uids: isFollowing ? following.filter(u => u !== targetUid) : [...following, targetUid] }, { merge: false });
+    const isNowFollowing = following.includes(targetUid);
+    const newList = isNowFollowing
+      ? following.filter(u => u !== targetUid)
+      : [...following, targetUid];
+    // Optimistic update
+    setFollowing(newList);
+    try {
+      await setDoc(ref, { uids: newList });
+    } catch (err) {
+      // Revert on error
+      setFollowing(following);
+      console.error('Follow failed:', err);
+    }
   };
 
   const handleUpload = async (noteId: string) => {
