@@ -512,6 +512,7 @@ export default function App() {
             </button>
           </p>
         </div>
+        {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
       </div>
     );
   }
