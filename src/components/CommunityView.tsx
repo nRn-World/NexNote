@@ -404,12 +404,6 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button onClick={() => {}}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors">
-                <Shield size={13} /> Admin
-              </button>
-            )}
             <button onClick={() => setShowUpload(true)} disabled={!canUpload}
               className={cn('flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all',
                 canUpload
