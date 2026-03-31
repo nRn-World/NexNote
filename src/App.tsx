@@ -23,6 +23,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import SharedNote from './components/SharedNote';
 import CommunityView from './components/CommunityView';
+import UserProfilePage from './components/UserProfilePage';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 
@@ -52,6 +53,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
@@ -523,6 +525,8 @@ export default function App() {
         onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
         onChangeColor={onChangeColor}
         onOpenCommunity={() => setShowCommunity(true)}
+        onOpenProfile={() => setShowProfile(true)}
+        user={user}
       />
 
       <div className={cn(
@@ -699,6 +703,15 @@ export default function App() {
           user={user}
           userNotes={notes}
           onClose={() => setShowCommunity(false)}
+        />
+      )}
+
+      {showProfile && user && (
+        <UserProfilePage
+          uid={user.uid}
+          currentUser={user}
+          allPosts={[]}
+          onClose={() => setShowProfile(false)}
         />
       )}
 

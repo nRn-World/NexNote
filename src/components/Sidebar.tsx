@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, Moon, Sun, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe } from 'lucide-react';
+import { Plus, Search, Paperclip, Pin, Trash2, Moon, Sun, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -36,6 +36,8 @@ interface SidebarProps {
   onChangeCoverImage: (noteId: string) => void;
   onChangeColor?: (id: string, color: string) => void;
   onOpenCommunity: () => void;
+  onOpenProfile: () => void;
+  user: any;
 }
 
 // Submenu for category selection
@@ -142,7 +144,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity,
+  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, user,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -243,6 +245,15 @@ export default function Sidebar({
           <div className="flex items-center gap-1">
             <button onClick={onToggleDark} className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button onClick={onOpenProfile}
+              className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+              title="Min profil"
+            >
+              {user?.photoURL
+                ? <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full" />
+                : <UserCircle size={16} />
+              }
             </button>
             <button onClick={onLogout} className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
               Logga ut
