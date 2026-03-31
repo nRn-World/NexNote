@@ -536,11 +536,10 @@ export default function App() {
         {activeNote ? (
           <>
             <NoteHeader
-              note={activeNote} isAiProcessing={isAiProcessing} showHistory={showHistory}
+              note={activeNote} showHistory={showHistory}
               categories={categories} isSaving={isSaving} isSaved={isSaved}
               onBack={() => setActiveNoteId(null)} onTogglePin={togglePin}
               onToggleHistory={() => setShowHistory(s => !s)}
-              onAiFix={() => handleAiAction('fix')} onAiSummarize={() => handleAiAction('summarize')}
               onImageClick={() => imageInputRef.current?.click()}
               onFileClick={() => fileInputRef.current?.click()}
               onToggleCode={toggleCodeEditor}

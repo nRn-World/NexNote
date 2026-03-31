@@ -2,7 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import {
-  ChevronLeft, Pin, Sparkles, FileIcon, HistoryIcon,
+  ChevronLeft, Pin, HistoryIcon,
   ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2
 } from 'lucide-react';
 import { Note, Category } from '../types';
@@ -10,7 +10,7 @@ import { cn } from '../lib/utils';
 
 interface NoteHeaderProps {
   note: Note;
-  isAiProcessing: boolean;
+  isAiProcessing?: boolean;
   showHistory: boolean;
   categories: Category[];
   isSaving: boolean;
@@ -18,8 +18,6 @@ interface NoteHeaderProps {
   onBack: () => void;
   onTogglePin: () => void;
   onToggleHistory: () => void;
-  onAiFix: () => void;
-  onAiSummarize: () => void;
   onImageClick: () => void;
   onFileClick: () => void;
   onToggleCode: () => void;
@@ -31,7 +29,7 @@ interface NoteHeaderProps {
 export default function NoteHeader({
   note, isAiProcessing, showHistory, categories, isSaving, isSaved,
   onBack, onTogglePin, onToggleHistory,
-  onAiFix, onAiSummarize, onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
+  onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
 }: NoteHeaderProps) {
   return (
     <div className="border-b border-zinc-200 dark:border-zinc-700 flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
@@ -47,19 +45,6 @@ export default function NoteHeader({
         </div>
 
         <div className="flex items-center gap-1">
-          <div className="hidden sm:flex items-center gap-1 mr-1 pr-1 border-r border-zinc-200 dark:border-zinc-700">
-            <button onClick={onAiFix} disabled={isAiProcessing}
-              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
-              title="Förbättra text med AI">
-              <Sparkles size={17} className={cn(isAiProcessing && 'animate-pulse')} />
-            </button>
-            <button onClick={onAiSummarize} disabled={isAiProcessing}
-              className="p-1.5 text-zinc-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
-              title="Sammanfatta med AI">
-              <FileIcon size={17} />
-            </button>
-          </div>
-
           <div className="flex items-center gap-1 mr-1 pr-1 border-r border-zinc-200 dark:border-zinc-700">
             <button onClick={onTogglePin}
               className={cn('p-1.5 rounded-md transition-colors',
