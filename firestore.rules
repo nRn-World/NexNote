@@ -55,6 +55,11 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    match /community_profiles/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     match /community_messages/{msgId} {
       allow read: if isAuthenticated() && (
         resource.data.fromUid == request.auth.uid ||

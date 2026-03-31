@@ -13,6 +13,7 @@ import { cn } from '../lib/utils';
 import { Note } from '../types';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import UserProfilePage from './UserProfilePage';
 
 export interface CommunityPost {
   id: string;
@@ -736,10 +737,10 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
       )}
 
       {profileTarget && (
-        <UserProfile
-          uid={profileTarget.uid} displayName={profileTarget.name} photoURL={profileTarget.photo}
-          posts={posts} userId={user?.uid || ''} following={following}
-          onFollow={() => handleFollow(profileTarget.uid)}
+        <UserProfilePage
+          uid={profileTarget.uid}
+          currentUser={user}
+          allPosts={posts}
           onClose={() => setProfileTarget(null)}
         />
       )}
