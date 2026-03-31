@@ -645,6 +645,18 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* My profile button */}
+          <button
+            onClick={() => setProfileTarget({ uid: user?.uid, name: user?.displayName || 'Min profil', photo: user?.photoURL })}
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs text-zinc-300 hover:text-white transition-colors"
+            title="Min profil"
+          >
+            {user?.photoURL
+              ? <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full" />
+              : <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[9px] font-bold text-white">{user?.displayName?.charAt(0)}</div>
+            }
+            Min profil
+          </button>
           <button onClick={() => setShowUpload(true)} disabled={!canUpload}
             className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
               canUpload ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
