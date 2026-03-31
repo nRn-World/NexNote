@@ -186,7 +186,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
                 <Camera size={13} className="text-white" />
               </button>
             )}
-            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            <input ref={avatarInputRef} type="file" accept="image/*,image/gif" className="hidden" onChange={handleAvatarUpload} />
           </div>
           <div className="flex-1 pb-1">
             <h1 className="text-2xl font-bold text-white">{displayName}</h1>
