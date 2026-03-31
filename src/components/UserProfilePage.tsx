@@ -107,6 +107,11 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       await setDoc(doc(db, 'community_profiles', currentUser.uid), { photoURL: url }, { merge: true });
+      // Update local state immediately
+      setProfile((prev: any) => ({ ...(prev || {}), photoURL: url }));
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+      alert('Kunde inte ladda upp bilden. Kontrollera att du är inloggad.');
     } finally { setUploading(false); e.target.value = ''; }
   };
 
@@ -119,6 +124,11 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       await setDoc(doc(db, 'community_profiles', currentUser.uid), { bannerURL: url }, { merge: true });
+      // Update local state immediately
+      setProfile((prev: any) => ({ ...(prev || {}), bannerURL: url }));
+    } catch (err) {
+      console.error('Banner upload failed:', err);
+      alert('Kunde inte ladda upp bannern.');
     } finally { setUploading(false); e.target.value = ''; }
   };
 
