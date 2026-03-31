@@ -496,11 +496,29 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
 
   const canUpload = monthlyCount < MAX_MONTHLY && !isBanned;
 
-  const filteredPosts = posts.filter(p => {
-    const matchSearch = !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.displayName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchTab = activeTab === 'trending' || (activeTab === 'following' && following.length > 0 && following.includes(p.uid));
-    return matchSearch && matchTab;
-  });
+  const filteredPosts = (() => {
+    const base = posts.filter(p => {
+      const matchSearch = !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.displayName.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchSearch) return false;
+      if (activeTab === 'trending') return true;
+      return following.length > 0 && following.includes(p.uid);
+    });
+
+    if (activeTab === 'following') {
+      // One post per user: most liked, tie-break by newest
+      const byUser = new Map<string, CommunityPost>();
+      for (const p of base) {
+        const existing = byUser.get(p.uid);
+        if (!existing) { byUser.set(p.uid, p); continue; }
+        const betterLikes = p.likes.length > existing.likes.length;
+        const sameLikesNewer = p.likes.length === existing.likes.length && p.createdAt > existing.createdAt;
+        if (betterLikes || sameLikesNewer) byUser.set(p.uid, p);
+      }
+      return Array.from(byUser.values());
+    }
+
+    return base;
+  })();
 
   // People to follow (users not yet followed, excluding self)
   const uniqueUsers = Array.from(new Map(posts.filter(p => p.uid !== user?.uid && !following.includes(p.uid)).map(p => [p.uid, p])).values()).slice(0, 6);
