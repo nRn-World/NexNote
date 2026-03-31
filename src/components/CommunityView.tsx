@@ -414,9 +414,11 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
 
   useEffect(() => {
     if (!user) return;
-    const unsub = onSnapshot(doc(db, 'community_following', user.uid), snap => {
-      setFollowing(snap.exists() ? (snap.data().uids || []) : []);
-    });
+    const ref = doc(db, 'community_following', user.uid);
+    const unsub = onSnapshot(ref,
+      snap => { setFollowing(snap.exists() ? (snap.data()?.uids || []) : []); },
+      err => { console.warn('Following read failed:', err.code); setFollowing([]); }
+    );
     return () => unsub();
   }, [user]);
 
