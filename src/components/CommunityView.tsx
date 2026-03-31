@@ -443,18 +443,16 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
   };
 
   const handleFollow = async (targetUid: string) => {
-    if (!user || targetUid === user.uid) return;
+    if (!user || !targetUid || targetUid === user.uid) return;
     const ref = doc(db, 'community_following', user.uid);
     const isNowFollowing = following.includes(targetUid);
     const newList = isNowFollowing
       ? following.filter(u => u !== targetUid)
       : [...following, targetUid];
-    // Optimistic update
     setFollowing(newList);
     try {
       await setDoc(ref, { uids: newList });
     } catch (err) {
-      // Revert on error
       setFollowing(following);
       console.error('Follow failed:', err);
     }
@@ -500,7 +498,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
 
   const filteredPosts = posts.filter(p => {
     const matchSearch = !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.displayName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchTab = activeTab === 'trending' || (activeTab === 'following' && following.includes(p.uid));
+    const matchTab = activeTab === 'trending' || (activeTab === 'following' && following.length > 0 && following.includes(p.uid));
     return matchSearch && matchTab;
   });
 
