@@ -141,10 +141,12 @@ function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn
       <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
         <p className="text-xs font-medium text-zinc-300 truncate">{post.displayName}</p>
       </div>
-      <button onClick={() => { onMessage(); onClose(); }}
-        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors">
-        <MessageSquare size={14} className="text-blue-400" /> Skicka meddelande
-      </button>
+      {isAdmin && (
+        <button onClick={() => { onMessage(); onClose(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors">
+          <MessageSquare size={14} className="text-blue-400" /> Skicka meddelande
+        </button>
+      )}
       {isAdmin && (
         <>
           <button onClick={() => { onWarn(); onClose(); }}
@@ -266,6 +268,61 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Warning banner with reply option
+function WarningBanner({ warning, userId, onDismiss }: { warning: any; userId: string; onDismiss: () => void }) {
+  const [showReply, setShowReply] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const handleReply = async () => {
+    if (!replyText.trim()) return;
+    await addDoc(collection(db, 'community_messages'), {
+      fromUid: userId, fromName: warning.name || 'Användare',
+      toUid: ADMIN_EMAIL, toName: 'Admin',
+      message: replyText, isReply: true,
+      replyToWarning: warning.message,
+      createdAt: Date.now(),
+    });
+    setSent(true);
+    setReplyText('');
+    setTimeout(() => setShowReply(false), 2000);
+  };
+
+  return (
+    <div className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/20 max-w-4xl mx-auto w-full">
+      <div className="flex items-start gap-3">
+        <AlertOctagon size={16} className="text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-amber-300">Varning från admin</p>
+          <p className="text-xs text-amber-400/70 mt-0.5">{warning.message}</p>
+          {!showReply && !sent && (
+            <button onClick={() => setShowReply(true)} className="text-xs text-blue-400 hover:text-blue-300 mt-1.5 underline">
+              Svara på varningen
+            </button>
+          )}
+          {showReply && (
+            <div className="mt-2 flex gap-2">
+              <input
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                placeholder="Skriv ditt svar..."
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+              />
+              <button onClick={handleReply} disabled={!replyText.trim()}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg disabled:opacity-40">
+                Skicka
+              </button>
+              <button onClick={() => setShowReply(false)} className="px-2 py-1.5 bg-zinc-800 text-zinc-400 text-xs rounded-lg">Avbryt</button>
+            </div>
+          )}
+          {sent && <p className="text-xs text-green-400 mt-1">Svar skickat till admin.</p>}
+        </div>
+        <button onClick={onDismiss} className="text-amber-500 hover:text-amber-300 text-xs shrink-0">Stäng</button>
       </div>
     </div>
   );
@@ -421,14 +478,7 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
 
       {/* Warning banner */}
       {myWarning && (
-        <div className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/20 flex items-start gap-3 max-w-4xl mx-auto w-full">
-          <AlertOctagon size={16} className="text-amber-400 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-300">Varning från admin</p>
-            <p className="text-xs text-amber-400/70 mt-0.5">{myWarning.message}</p>
-          </div>
-          <button onClick={() => deleteDoc(doc(db, 'community_warnings', user.uid))} className="text-amber-500 hover:text-amber-300 text-xs">Stäng</button>
-        </div>
+        <WarningBanner warning={myWarning} userId={user?.uid} onDismiss={() => deleteDoc(doc(db, 'community_warnings', user.uid))} />
       )}
 
       {/* Ban banner */}
