@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, Moon, Sun, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle } from 'lucide-react';
+import { enUS } from 'date-fns/locale';
+import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -41,7 +41,6 @@ interface SidebarProps {
   user: any;
 }
 
-// Submenu for category selection
 function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
   categories: Category[]; onSelect: (id: string | undefined) => void;
   onClose: () => void; anchorX: number; anchorY: number;
@@ -53,15 +52,15 @@ function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
     zIndex: 10000,
   };
   return (
-    <div style={style} className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl py-1 overflow-hidden">
+    <div style={style} className="w-56 glass-panel rounded-2xl shadow-2xl py-1.5 overflow-hidden border border-white/10">
       <button onClick={() => { onSelect(undefined); onClose(); }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-        <FolderOpen size={13} className="opacity-50" /> Ingen kategori
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-colors">
+        <FolderOpen size={14} className="opacity-50" /> No category
       </button>
       {categories.map(cat => (
         <button key={cat.id} onClick={() => { onSelect(cat.id); onClose(); }}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors">
+          <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ background: cat.color }} />
           {cat.name}
         </button>
       ))}
@@ -85,32 +84,26 @@ function SortableNote({
     onSelect(note.id);
   };
 
+  const isActive = activeNoteId === note.id;
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={handleClick}
       onContextMenu={e => { e.preventDefault(); onContextMenu(e, note); }}
       className={cn(
-        'w-full text-left p-3 rounded-lg transition-colors group relative cursor-pointer flex gap-3 select-none',
-        isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-300 dark:ring-blue-700'
-          : activeNoteId === note.id ? 'bg-zinc-100 dark:bg-zinc-700'
-          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+        'w-full text-left p-3.5 rounded-2xl transition-all duration-300 group relative cursor-pointer flex gap-4 select-none mb-2',
+        isSelected ? 'bg-blue-500/20 border border-blue-400/30'
+          : isActive ? 'bg-[var(--bg-panel-hover)] shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-[var(--border-glass)]'
+          : 'hover:bg-[var(--bg-panel-hover)] border border-transparent'
       )}
     >
-      {/* Checkbox for multi-select */}
-      {(isSelecting || isSelected) && (
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
-          {isSelected
-            ? <CheckSquare size={16} className="text-blue-600 dark:text-blue-400" />
-            : <Square size={16} className="text-zinc-300 dark:text-zinc-600" />
-          }
-        </div>
+      {isActive && !isSelecting && (
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyan-400 rounded-r-full shadow-[0_0_12px_rgba(34,211,238,0.8)]" />
       )}
-      {note.isPinned && !isSelecting && (
-        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-zinc-900 dark:bg-white rounded-r-full" />
-      )}
+      
       {(note.coverImage || note.attachments.some(a => a.type.startsWith('image/'))) && !isSelecting && (
         <div
-          className="w-12 h-12 shrink-0 rounded-md overflow-hidden bg-zinc-200 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 cursor-zoom-in"
+          className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-slate-800 border border-white/10 shadow-lg cursor-zoom-in group-hover:scale-105 transition-transform"
           onClick={e => {
             e.stopPropagation();
             const url = note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data;
@@ -120,20 +113,42 @@ function SortableNote({
           <img src={note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data} alt="" className="w-full h-full object-cover" />
         </div>
       )}
-      <div className={cn('flex-1 min-w-0', (isSelecting || isSelected) && 'pl-5')}>
-        <div className="flex items-center gap-1.5">
-          {note.isPinned && <Pin size={12} className="text-zinc-400 fill-zinc-400 shrink-0" />}
-          <h3 className="font-medium truncate flex-1 text-zinc-900 dark:text-zinc-100">{note.title || 'Namnlös anteckning'}</h3>
+
+      <div className={cn('flex-1 min-w-0 flex flex-col justify-center', (isSelecting || isSelected) && 'pl-2')}>
+        <div className="flex items-center gap-2">
+          {note.isPinned && <Pin size={12} className="text-cyan-400 fill-cyan-400 shrink-0" />}
+          <h3 className={cn(
+            'font-semibold truncate flex-1 tracking-tight',
+            isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
+          )}>{note.title || 'Untitled Note'}</h3>
         </div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 truncate">{note.content.replace(/<[^>]*>/g, '') || 'Ingen text...'}</p>
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-zinc-400">
-            <span>{format(note.updatedAt, 'd MMM', { locale: sv })}</span>
+        <p className="text-[11px] text-slate-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Empty note...'}</p>
+        <div className="flex items-center justify-between mt-2.5">
+          <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider text-slate-500">
+            <span>{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
             {note.attachments.length > 0 && <span className="flex items-center gap-1"><Paperclip size={10} /> {note.attachments.length}</span>}
           </div>
-          {note.tags && note.tags.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-500" title={note.tags.join(', ')} />}
+          {note.tags && note.tags.length > 0 && (
+             <div className="flex gap-1">
+                {note.tags.slice(0, 2).map(t => (
+                  <div key={t} className="w-1.5 h-1.5 rounded-full bg-cyan-500/50" />
+                ))}
+             </div>
+          )}
         </div>
       </div>
+
+      {/* Multi-select checkmark */}
+      {(isSelecting || isSelected) && (
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+           <div className={cn(
+             "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+             isSelected ? "bg-cyan-500 border-cyan-500" : "border-white/20"
+           )}>
+             {isSelected && <CheckSquare size={12} className="text-white" />}
+           </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -187,31 +202,30 @@ export default function Sidebar({
   const clearSelection = () => setSelectedIds(new Set());
 
   const handleNoteContextMenu = (e: React.MouseEvent, note: Note) => {
-    // If note is not selected, select only it; if already in selection keep all
     if (!selectedIds.has(note.id)) setSelectedIds(new Set([note.id]));
 
     const items: ContextMenuItem[] = [
       {
-        label: 'Byt namn',
+        label: 'Rename',
         icon: <Pencil size={14} />,
         onClick: () => {
-          const newTitle = window.prompt('Nytt namn:', note.title);
+          const newTitle = window.prompt('New name:', note.title);
           if (newTitle !== null) onRenameNote(note.id, newTitle);
         },
       },
       {
-        label: 'Byt omslagsbild',
+        label: 'Change cover image',
         icon: <Image size={14} />,
         onClick: () => { setPendingCoverNoteId(note.id); coverInputRef.current?.click(); },
       },
       {
-        label: 'Flytta till kategori →',
+        label: 'Move to category →',
         icon: <FolderInput size={14} />,
         divider: true,
         onClick: () => setSubMenu({ x: e.clientX, y: e.clientY, noteId: note.id }),
       },
       {
-        label: 'Ta bort anteckning',
+        label: 'Delete note',
         icon: <Trash2 size={14} />,
         danger: true,
         divider: true,
@@ -237,122 +251,128 @@ export default function Sidebar({
 
   return (
     <div className={cn(
-      'flex-col w-full md:w-72 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700 h-full flex-shrink-0 z-20 absolute md:relative transition-transform duration-300 ease-in-out',
+      'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-transform duration-300 ease-in-out border-r border-white/5 shadow-2xl',
       activeNoteId ? '-translate-x-full md:translate-x-0' : 'translate-x-0 flex'
     )}>
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col gap-3">
+      {/* Header with Profile and Actions */}
+      <div className="p-4 pb-2 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">NexNote</h1>
+          <div className="flex items-center gap-2">
+             <h1 onClick={onOpenProfile} className="text-xl font-semibold tracking-wide cursor-pointer hover:text-cyan-500 transition-colors">NexNote</h1>
+             <button onClick={onToggleDark} className="p-1 px-[2px] ml-1 text-slate-500 hover:scale-110 transition-all font-medium border border-slate-500/20 rounded-md">
+               {isDark ? '🌙' : '☀️'}
+             </button>
+             <div className="relative group cursor-pointer ml-1" onClick={onOpenProfile}>
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-white/10">
+                   {user?.photoURL
+                     ? <img src={user.photoURL} alt="" className="w-full h-full bg-slate-800 object-cover" />
+                     : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-cyan-400"><UserCircle size={16} /></div>
+                   }
+                </div>
+             </div>
+          </div>
+          
           <div className="flex items-center gap-1">
-            <button onClick={onToggleDark} className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            <button onClick={onLogout} className="text-[11px] text-slate-400 hover:text-white transition-all mr-2" title="Logout">
+              Logout
             </button>
-            <button onClick={onOpenProfile}
-              className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-              title="Min profil"
-            >
-              {user?.photoURL
-                ? <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full" />
-                : <UserCircle size={16} />
-              }
-            </button>
-            <button onClick={onLogout} className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              Logga ut
-            </button>
-            <button onClick={onCreateNote} className="p-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-md hover:opacity-90 transition-opacity">
-              <Plus size={18} />
+            <button onClick={onCreateNote} className="w-6 h-6 bg-white rounded flex items-center justify-center text-black hover:bg-slate-200 transition-all">
+               <Plus size={16} />
             </button>
           </div>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={15} />
-          <input type="text" placeholder="Sök anteckningar..." value={searchQuery}
+
+        <div className="relative mt-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+          <input type="text" placeholder="Search notes..." value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-100 dark:bg-zinc-800 border-transparent rounded-md text-sm focus:bg-white dark:focus:bg-zinc-700 focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-600 outline-none transition-all text-zinc-900 dark:text-white placeholder:text-zinc-400"
+            className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-slate-500 border-none outline-none focus:ring-1 focus:ring-slate-500/20 transition-all font-medium"
           />
         </div>
       </div>
 
-      <div className="border-b border-zinc-100 dark:border-zinc-800 py-2">
-        <CategoryManager
-          categories={categories} activeCategoryId={activeCategoryId}
-          onSelect={onSelectCategory} onCreate={onCreateCategory}
-          onRename={onRenameCategory} onDelete={onDeleteCategory}
-          onChangeColor={onChangeColor || (() => {})}
-          noteCountByCategory={noteCountByCategory}
-        />
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 scrollbar-thin">
+        <div className="mb-6">
+          <CategoryManager
+            categories={categories} activeCategoryId={activeCategoryId}
+            onSelect={onSelectCategory} onCreate={onCreateCategory}
+            onRename={onRenameCategory} onDelete={onDeleteCategory}
+            onChangeColor={onChangeColor || (() => {})}
+            noteCountByCategory={noteCountByCategory}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={onOpenCommunity}
+            className="w-full flex items-center gap-3 px-4 py-2 mt-4 text-sm text-slate-500 hover:text-white transition-all group"
+          >
+            <Globe size={16} className="text-[#3b82f6]" />
+            <span className="flex-1 text-left font-medium">Community</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#1e3a8a] text-blue-300 rounded text-[10px] font-bold">
+               Live
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 pt-2">
+           <div className="flex items-center justify-between mb-4 px-2">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Notes</span>
+              {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Selected</span>}
+           </div>
+
+           {filtered.length === 0 ? (
+            <div className="text-center text-slate-600 py-12 text-sm italic font-medium">No notes found...</div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>
+                {filtered.map(note => (
+                  <SortableNote
+                    key={note.id} note={note} activeNoteId={activeNoteId}
+                    isSelected={selectedIds.has(note.id)} isSelecting={isSelecting}
+                    onSelect={id => { clearSelection(); onSelectNote(id); }}
+                    onToggleSelect={toggleSelect}
+                    onContextMenu={handleNoteContextMenu}
+                    onImageClick={onImageClick}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
       </div>
 
-      {/* Community button */}
-      <div className="px-2 py-2 border-b border-zinc-100 dark:border-zinc-800">
-        <button
-          onClick={onOpenCommunity}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-        >
-          <Globe size={14} className="text-blue-500" />
-          <span className="flex-1 text-left font-medium">Community</span>
-          <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full font-medium">Live</span>
-        </button>
-      </div>
-
-      {/* Bulk action bar */}
+      {/* Bulk action floating bar */}
       {isSelecting && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
-          <span className="text-xs font-medium text-blue-700 dark:text-blue-300 flex-1">{selectedIds.size} markerade</span>
+        <div className="absolute bottom-16 left-4 right-4 p-3 glass-panel rounded-2xl flex items-center gap-3 shadow-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <button
             onClick={e => setBulkCatMenu({ x: e.clientX, y: e.clientY })}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-white/5 hover:bg-white/10 rounded-xl text-slate-200 transition-all"
           >
-            <FolderInput size={12} /> Flytta
+            <FolderInput size={14} /> Move
           </button>
           <button
             onClick={() => { onDeleteManyNotes(Array.from(selectedIds)); clearSelection(); }}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400 hover:bg-red-100"
+            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 rounded-xl text-red-400 transition-all border border-red-500/10"
           >
-            <Trash2 size={12} /> Radera
+            <Trash2 size={14} /> Delete
           </button>
-          <button onClick={clearSelection} className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
-            <X size={14} />
+          <button onClick={clearSelection} className="p-2 text-slate-400 hover:text-white">
+            <X size={16} />
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {filtered.length === 0 ? (
-          <div className="text-center text-zinc-500 dark:text-zinc-400 py-8 text-sm">Inga anteckningar hittades.</div>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>
-              {filtered.map(note => (
-                <SortableNote
-                  key={note.id} note={note} activeNoteId={activeNoteId}
-                  isSelected={selectedIds.has(note.id)} isSelecting={isSelecting}
-                  onSelect={id => { clearSelection(); onSelectNote(id); }}
-                  onToggleSelect={toggleSelect}
-                  onContextMenu={handleNoteContextMenu}
-                  onImageClick={onImageClick}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        )}
-        {!isSelecting && filtered.length > 0 && (
-          <p className="text-center text-[10px] text-zinc-300 dark:text-zinc-600 pt-2">Ctrl+klick för att markera flera</p>
-        )}
-      </div>
-
       <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
 
-      {/* Privacy policy link */}
-      <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-800">
-        <button onClick={onOpenPrivacy} className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-          Integritetspolicy
+      <div className="p-4 border-t border-white/5 flex items-center justify-between">
+        <button onClick={onOpenPrivacy} className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
+          Privacy Policy
         </button>
       </div>
 
       {ctxMenu && <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenu.items} onClose={() => setCtxMenu(null)} />}
 
-      {/* Single note category submenu */}
       {subMenu && (
         <CategorySubmenu
           categories={categories}
@@ -362,7 +382,6 @@ export default function Sidebar({
         />
       )}
 
-      {/* Bulk move category submenu */}
       {bulkCatMenu && (
         <CategorySubmenu
           categories={categories}

@@ -32,7 +32,6 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
     };
   }, [onClose]);
 
-  // Adjust position so menu doesn't go off screen
   const style: React.CSSProperties = {
     position: 'fixed',
     top: Math.min(y, window.innerHeight - 300),
@@ -44,21 +43,21 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
     <div
       ref={ref}
       style={style}
-      className="w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-2xl py-1 overflow-hidden"
+      className="w-56 glass-panel rounded-2xl shadow-2xl py-2 overflow-hidden border border-white/10 animate-in fade-in zoom-in-95 duration-150"
     >
       {items.map((item, i) => (
         <React.Fragment key={i}>
-          {item.divider && i > 0 && <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />}
+          {item.divider && i > 0 && <div className="my-1.5 border-t border-white/5 mx-2" />}
           <button
-            onClick={() => { item.onClick(); onClose(); }}
+            onClick={(e) => { e.stopPropagation(); item.onClick(); onClose(); }}
             className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors text-left',
+              'w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold tracking-tight transition-all text-left',
               item.danger
-                ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                ? 'text-red-400 hover:bg-red-500/10'
+                : 'text-slate-300 hover:bg-white/5 hover:text-white'
             )}
           >
-            {item.icon && <span className="shrink-0 opacity-70">{item.icon}</span>}
+            {item.icon && <span className="shrink-0 opacity-60 group-hover:opacity-100">{item.icon}</span>}
             {item.label}
           </button>
         </React.Fragment>

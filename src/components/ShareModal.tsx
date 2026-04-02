@@ -25,13 +25,13 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-700">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Dela anteckning</h2>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Share note</h2>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
             <X size={18} />
           </button>
         </div>
 
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5 truncate">"{noteTitle || 'Namnlös anteckning'}"</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5 truncate">"{noteTitle || 'Untitled note'}"</p>
 
         <div className={cn(
           'flex items-center gap-3 p-4 rounded-lg border mb-4',
@@ -45,10 +45,10 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
           }
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-zinc-900 dark:text-white">
-              {isShared ? 'Publik länk aktiv' : 'Privat'}
+              {isShared ? 'Public link active' : 'Private'}
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {isShared ? 'Vem som helst med länken kan läsa.' : 'Bara du kan se denna anteckning.'}
+              {isShared ? 'Anyone with the link can read.' : 'Only you can see this note.'}
             </p>
           </div>
           <button
@@ -60,7 +60,7 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
                 : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90'
             )}
           >
-            {isShared ? 'Inaktivera' : 'Aktivera delning'}
+            {isShared ? 'Disable' : 'Enable sharing'}
           </button>
         </div>
 
@@ -74,7 +74,7 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
               className="flex items-center gap-1.5 px-3 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-medium rounded-md hover:opacity-90 transition-opacity shrink-0"
             >
               {copied ? <Check size={14} /> : <Link size={14} />}
-              {copied ? 'Kopierad!' : 'Kopiera'}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
         )}

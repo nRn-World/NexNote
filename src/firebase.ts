@@ -6,6 +6,7 @@ import { getStorage } from 'firebase/storage';
 const firebaseConfig = {
   apiKey: "AIzaSyCanAf3XY1nJDnyqfQhB6dufDp4W6Oovb0",
   authDomain: "nexnote-1.firebaseapp.com",
+  databaseURL: "https://nexnote-1-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "nexnote-1",
   storageBucket: "nexnote-1.firebasestorage.app",
   messagingSenderId: "950801399914",

@@ -3,7 +3,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Note } from '../types';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface SharedNoteProps {
   shareId: string;
@@ -33,14 +33,14 @@ export default function SharedNote({ shareId }: SharedNoteProps) {
   }, [shareId]);
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-zinc-50 text-zinc-500">Laddar...</div>
+    <div className="flex h-screen items-center justify-center bg-zinc-50 text-zinc-500">Loading...</div>
   );
 
   if (notFound || !note) return (
     <div className="flex h-screen items-center justify-center bg-zinc-50">
       <div className="text-center">
-        <p className="text-2xl font-bold text-zinc-900 mb-2">Anteckning hittades inte</p>
-        <p className="text-zinc-500">Länken kan ha inaktiverats av ägaren.</p>
+        <p className="text-2xl font-bold text-zinc-900 mb-2">Note not found</p>
+        <p className="text-zinc-500">The link may have been disabled by the owner.</p>
       </div>
     </div>
   );
@@ -50,9 +50,9 @@ export default function SharedNote({ shareId }: SharedNoteProps) {
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-zinc-200 p-8 md:p-12">
         <div className="flex items-center justify-between mb-8">
           <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">NexNote</span>
-          <span className="text-xs text-zinc-400">{format(note.updatedAt, 'd MMM yyyy', { locale: sv })}</span>
+          <span className="text-xs text-zinc-400">{format(note.updatedAt, 'MMM d, yyyy', { locale: enUS })}</span>
         </div>
-        <h1 className="text-3xl font-bold text-zinc-900 mb-4">{note.title || 'Namnlös anteckning'}</h1>
+        <h1 className="text-3xl font-bold text-zinc-900 mb-4">{note.title || 'Untitled note'}</h1>
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
             {note.tags.map(t => (

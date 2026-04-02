@@ -5,9 +5,8 @@ import { cn } from '../lib/utils';
 import ContextMenu, { ContextMenuItem } from './ContextMenu';
 
 const PRESET_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#3b82f6', '#64748b',
+  '#00F2FF', '#BC00FF', '#FF00E5', '#FF4D00',
+  '#FFD600', '#00FF66', '#0094FF', '#FFFFFF',
 ];
 
 interface CategoryManagerProps {
@@ -42,23 +41,23 @@ export default function CategoryManager({
     e.stopPropagation();
     const items: ContextMenuItem[] = [
       {
-        label: 'Byt namn',
+        label: 'Rename',
         icon: <span className="text-xs">✏️</span>,
         onClick: () => {
-          const name = window.prompt('Nytt namn:', cat.name);
+          const name = window.prompt('New name:', cat.name);
           if (name?.trim()) onRename(cat.id, name.trim());
         },
       },
       {
-        label: 'Byt färg',
+        label: 'Change color',
         icon: <span className="text-xs">🎨</span>,
         onClick: () => {
-          const color = window.prompt('Hex-färg (t.ex. #6366f1):', cat.color);
+          const color = window.prompt('Hex color (e.g. #00F2FF):', cat.color);
           if (color?.trim()) onChangeColor(cat.id, color.trim());
         },
       },
       {
-        label: 'Ta bort kategori',
+        label: 'Delete category',
         icon: <span className="text-xs">🗑️</span>,
         danger: true,
         divider: true,
@@ -71,68 +70,72 @@ export default function CategoryManager({
   const totalCount = Object.values(noteCountByCategory).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="px-2 pb-2">
+    <div className="px-1 space-y-1">
       {/* All notes */}
       <button
         onClick={() => onSelect(null)}
         className={cn(
-          'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group relative overflow-hidden mb-2',
           activeCategoryId === null
-            ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
-            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            ? 'bg-white/10 text-white'
+            : 'text-slate-400 hover:text-white hover:bg-white/5'
         )}
       >
-        <FolderOpen size={14} />
-        <span className="flex-1 text-left font-medium">Alla anteckningar</span>
-        <span className="text-xs opacity-60">{totalCount}</span>
+        <FolderOpen size={16} className={activeCategoryId === null ? 'text-slate-300' : 'text-slate-500'} />
+        <span className="flex-1 text-left font-medium">All notes</span>
       </button>
 
       {/* Categories */}
-      {categories.map(cat => (
-        <button
-          key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          onContextMenu={e => handleCategoryContextMenu(e, cat)}
-          className={cn(
-            'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
-            activeCategoryId === cat.id
-              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
-              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-          )}
-        >
-          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
-          <span className="flex-1 text-left truncate">{cat.name}</span>
-          <span className="text-xs opacity-60">{noteCountByCategory[cat.id] || 0}</span>
-        </button>
-      ))}
+      <div className="space-y-0.5">
+        {categories.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => onSelect(cat.id)}
+            onContextMenu={e => handleCategoryContextMenu(e, cat)}
+            className={cn(
+              'w-full flex items-center justify-between px-3 py-1.5 rounded-md text-[13px] transition-all group relative',
+              activeCategoryId === cat.id
+                ? 'bg-white/5 text-white'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
+              <span className="font-medium truncate">{cat.name}</span>
+            </div>
+            <span className="text-xs text-slate-500">{noteCountByCategory[cat.id] || 0}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Add new */}
       {isAdding ? (
-        <div className="mt-1 p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <div className="mt-2 p-4 glass-panel rounded-2xl border border-white/10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
           <input
             autoFocus value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsAdding(false); }}
-            placeholder="Kategorinamn..."
-            className="w-full text-sm bg-white dark:bg-zinc-900 rounded px-2 py-1.5 outline-none border border-zinc-200 dark:border-zinc-600 mb-2"
+            placeholder="Category name..."
+            className="w-full text-xs font-bold uppercase tracking-widest bg-white/5 rounded-xl px-4 py-3 outline-none border border-white/5 focus:neon-border-cyan mb-4 text-white placeholder:text-slate-700 transition-all"
           />
-          <div className="flex flex-wrap gap-1.5 mb-2">
+          <div className="flex flex-wrap gap-2 mb-4">
             {PRESET_COLORS.map(c => (
               <button key={c} onClick={() => setNewColor(c)}
-                className={cn('w-5 h-5 rounded-full transition-transform', newColor === c && 'ring-2 ring-offset-1 ring-zinc-400 scale-110')}
+                className={cn('w-6 h-6 rounded-lg transition-all border-2 border-transparent', newColor === c && 'scale-125 border-white shadow-lg')}
                 style={{ background: c }}
               />
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCreate} className="flex-1 py-1 text-xs font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded hover:opacity-90">Skapa</button>
-            <button onClick={() => setIsAdding(false)} className="flex-1 py-1 text-xs font-medium bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded hover:opacity-90">Avbryt</button>
+            <button onClick={handleCreate} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-white text-black rounded-xl hover:scale-105 transition-transform">Create</button>
+            <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-white/5 text-slate-500 rounded-xl hover:bg-white/10 transition-colors">Close</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setIsAdding(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors mt-1">
-          <Plus size={13} /> Ny kategori
+          className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-slate-500 hover:text-slate-300 transition-all mt-2 group">
+          <Plus size={14} className="text-slate-500" />
+          <span>New category</span>
         </button>
       )}
 

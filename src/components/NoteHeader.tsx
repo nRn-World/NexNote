@@ -32,62 +32,68 @@ export default function NoteHeader({
   onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
 }: NoteHeaderProps) {
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-700 flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="h-14 flex items-center px-4 justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="md:hidden p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+    <div className="glass-panel border-b border-white/5 sticky top-0 z-20 transition-all">
+      <div className="h-16 flex items-center px-6 justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="md:hidden p-2 -ml-2 text-slate-400 hover:text-white transition-colors">
             <ChevronLeft size={24} />
           </button>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">
-            {note.isPinned && <Pin size={12} className="inline mr-1 text-zinc-400 fill-zinc-400" />}
-            Ändrad {format(note.updatedAt, 'd MMM HH:mm', { locale: sv })}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">Status</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            </div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+              Reviderad {format(note.updatedAt, 'd MMM HH:mm', { locale: sv })}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 mr-1 pr-1 border-r border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 mr-2 pr-3 border-r border-white/10">
             <button onClick={onTogglePin}
-              className={cn('p-1.5 rounded-md transition-colors',
-                note.isPinned ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              className={cn('p-2 rounded-xl transition-all',
+                note.isPinned ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-slate-500 hover:text-white hover:bg-white/5'
               )} title={note.isPinned ? 'Ta bort nål' : 'Nåla fast'}>
-              <Pin size={17} className={cn(note.isPinned && 'fill-blue-600')} />
+              <Pin size={18} className={cn(note.isPinned && 'fill-cyan-400')} />
             </button>
             <button onClick={onToggleHistory}
-              className={cn('p-1.5 rounded-md transition-colors',
-                showHistory ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              className={cn('p-2 rounded-xl transition-all',
+                showHistory ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-slate-500 hover:text-white hover:bg-white/5'
               )} title="Historik">
-              <HistoryIcon size={17} />
+              <HistoryIcon size={18} />
             </button>
             <button onClick={onShare}
-              className={cn('p-1.5 rounded-md transition-colors',
-                note.isShared ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              className={cn('p-2 rounded-xl transition-all',
+                note.isShared ? 'text-purple-400 bg-purple-400/10 shadow-[0_0_15px_rgba(188,0,255,0.15)]' : 'text-slate-500 hover:text-white hover:bg-white/5'
               )} title="Dela anteckning">
-              <Share2 size={17} />
+              <Share2 size={18} />
             </button>
           </div>
 
-          <button onClick={onImageClick} className="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors" title="Lägg till bild">
-            <ImageIcon size={17} />
-          </button>
-          <button onClick={onFileClick} className="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors" title="Bifoga fil">
-            <Paperclip size={17} />
-          </button>
-          <button onClick={onToggleCode}
-            className={cn('p-1.5 rounded-md transition-colors',
-              note.code ? 'text-blue-700 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            )} title="Kodredigerare">
-            <Code size={17} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={onImageClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Lägg till bild">
+              <ImageIcon size={18} />
+            </button>
+            <button onClick={onFileClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Bifoga fil">
+              <Paperclip size={18} />
+            </button>
+            <button onClick={onToggleCode}
+              className={cn('p-2 rounded-xl transition-all',
+                note.code ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white hover:bg-white/5'
+              )} title="Kodredigerare">
+              <Code size={18} />
+            </button>
+          </div>
 
-          {/* Save button */}
           <button
             onClick={onSave}
             disabled={isSaving || isSaved}
             className={cn(
-              'ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              'ml-3 flex items-center gap-2 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all',
               isSaved
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-50'
+                ? 'bg-transparent text-green-400 border border-green-400/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
+                : 'bg-white text-black hover:scale-105 active:scale-95 disabled:opacity-50'
             )}
             title="Spara (Ctrl+S)"
           >
@@ -98,23 +104,22 @@ export default function NoteHeader({
                 : <Save size={14} />
             }
             <span className="hidden sm:inline">
-              {isSaving ? 'Sparar...' : isSaved ? 'Sparat!' : 'Spara'}
+              {isSaving ? 'Synkar...' : isSaved ? 'Säkrad' : 'Spara'}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Category bar */}
-      <div className="px-4 pb-2 flex items-center gap-2">
-        <FolderOpen size={13} className="text-zinc-400 shrink-0" />
+      <div className="px-6 h-10 flex items-center gap-3 border-t border-white/5 bg-white/5">
+        <FolderOpen size={12} className="text-slate-600 shrink-0" />
         <select
           value={note.categoryId || ''}
           onChange={e => onCategoryChange(e.target.value || undefined)}
-          className="text-xs text-zinc-500 dark:text-zinc-400 bg-transparent border-none outline-none cursor-pointer hover:text-zinc-900 dark:hover:text-white"
+          className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 bg-transparent border-none outline-none cursor-pointer hover:text-cyan-400 transition-colors"
         >
-          <option value="">Ingen kategori</option>
+          <option value="" className="bg-[#0B0D17]">Inget fack</option>
           {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id} className="bg-[#0B0D17]">{c.name}</option>
           ))}
         </select>
       </div>
