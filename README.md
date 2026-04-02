@@ -43,13 +43,17 @@
 
 ### 📸 Screenshots
 
-| Dashboard | Code Editor |
+| 🎨 Landing Page | 🏠 Dashboard |
 | :---: | :---: |
-| ![Dashboard](Screenshots/1.png) | ![Editor](Screenshots/3.png) |
+| ![Start](Screenshots/Start.png) | ![Dashboard](Screenshots/1.png) |
 
-| Community Feed | Note View |
+| ✍️ Note Editor | 💻 Code Editor |
 | :---: | :---: |
-| ![Community](Screenshots/5.png) | ![Note](Screenshots/2.png) |
+| ![Note Editor](Screenshots/2.png) | ![Code Editor](Screenshots/3.png) |
+
+| ⚙️ Settings | 🌍 Community Feed |
+| :---: | :---: |
+| ![Settings](Screenshots/4.png) | ![Community](Screenshots/5.png) |
 
 ---
 
