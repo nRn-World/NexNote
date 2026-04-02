@@ -723,7 +723,7 @@ export default function App() {
                         </span>
                         <button onClick={capturePreview} disabled={isCapturing}
                           className="flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white glass-card rounded-lg hover:neon-border-cyan transition-all disabled:opacity-50">
-                          <Camera size={14} /> {isCapturing ? 'Sparar...' : 'Spara bild'}
+                          <Camera size={14} /> {isCapturing ? 'Saving...' : 'Save image'}
                         </button>
                       </div>
                       <div className="h-[350px] bg-white relative">
@@ -815,9 +815,9 @@ export default function App() {
                 </div>
              </div>
 
-             <h2 className="text-[28px] font-semibold text-[var(--text-primary)] tracking-wide mb-2 mt-4">Välj en anteckning</h2>
+             <h2 className="text-[28px] font-semibold text-[var(--text-primary)] tracking-wide mb-2 mt-4">Select a note</h2>
              <p className="text-[var(--text-secondary)] text-sm font-normal max-w-xs leading-relaxed mb-8">
-                eller skapa en ny för att börja skriva
+                or create a new one to start writing
              </p>
 
              <button 
@@ -829,13 +829,13 @@ export default function App() {
                }}
              >
                 <Plus size={16} className="opacity-80" />
-                <span>Skapa ny anteckning</span>
+                <span>Create new note</span>
                 <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute inset-0 rounded-lg shadow-[0_0_20px_rgba(0,242,255,0.3)] opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
              </button>
              
              <div className="mt-4 flex items-center justify-center text-slate-500 text-xs">
-                <span>Ctrl+N för ny anteckning</span>
+                <span>Ctrl+N for new note</span>
              </div>
           </div>
         )}
@@ -883,7 +883,7 @@ export default function App() {
       <Toast toasts={toasts} onRemove={removeToast} />
       <ConfirmDialog
         open={confirm.open} title={confirm.title} message={confirm.message}
-        danger={confirm.danger} confirmLabel="Ta bort"
+        danger={confirm.danger} confirmLabel="Delete"
         onConfirm={confirm.onConfirm} onCancel={() => setConfirm(c => ({ ...c, open: false }))}
       />
     </div>

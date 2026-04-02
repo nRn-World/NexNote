@@ -448,7 +448,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
           }
           <div className="flex-1">
             <h2 className="text-lg font-bold text-white">{displayName}</h2>
-            <p className="text-sm text-zinc-500">{userPosts.length} delade projekt</p>
+            <p className="text-sm text-zinc-500">{userPosts.length} shared projects</p>
           </div>
           <div className="flex items-center gap-2">
             {!isOwn && (
@@ -458,7 +458,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
                     ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
                     : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700'
                 )}>
-                {isFollowing ? <><UserCheck size={14} /> Följer</> : <><UserPlus size={14} /> Följ</>}
+                {isFollowing ? <><UserCheck size={14} /> Following</> : <><UserPlus size={14} /> Follow</>}
               </button>
             )}
             <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-xl"><X size={18} /></button>
@@ -470,7 +470,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
           {userPosts.length === 0 ? (
             <div className="text-center py-16 text-zinc-600">
               <Code2 size={32} className="mx-auto mb-3 opacity-20" />
-              <p className="text-sm">Inga delade projekt ännu.</p>
+              <p className="text-sm">No shared projects yet.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -502,7 +502,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
               <div className="flex flex-col">
                 <p className="text-sm font-bold text-white tracking-tight">{expandedPost.title}</p>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Fullskärmsläge</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Fullscreen mode</p>
               </div>
               <div className="flex items-center gap-4">
                 <button 
@@ -513,7 +513,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
                   }}
                   className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
                 >
-                  Öppna i ny flik
+                  Open in new tab
                 </button>
                 <button onClick={() => setExpandedPost(null)} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-all">
                   <X size={24} />

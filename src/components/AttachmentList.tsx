@@ -24,7 +24,7 @@ export default function AttachmentList({ attachments, onDownload, onRemove, onIm
     <div className="mt-12 pt-6 border-t border-zinc-100">
       <h4 className="text-sm font-medium text-zinc-500 mb-4 flex items-center gap-2">
         <Paperclip size={16} />
-        Bifogade filer ({attachments.length})
+        Attachments ({attachments.length})
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {attachments.map(a => (
@@ -47,10 +47,10 @@ export default function AttachmentList({ attachments, onDownload, onRemove, onIm
               <p className="text-xs text-zinc-500">{formatFileSize(a.size)}</p>
             </div>
             <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-md" title="Ladda ner">
+              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-md" title="Download">
                 <Download size={16} />
               </button>
-              <button onClick={() => onRemove(a.id)} className="p-1.5 text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-md" title="Ta bort">
+              <button onClick={() => onRemove(a.id)} className="p-1.5 text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-md" title="Delete">
                 <Trash2 size={16} />
               </button>
             </div>

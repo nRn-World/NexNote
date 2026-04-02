@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, HistoryIcon,
   ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2
@@ -44,7 +44,7 @@ export default function NoteHeader({
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
             </div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-              Reviderad {format(note.updatedAt, 'd MMM HH:mm', { locale: sv })}
+              Revised {format(note.updatedAt, 'd MMM HH:mm', { locale: enUS })}
             </div>
           </div>
         </div>
@@ -54,34 +54,34 @@ export default function NoteHeader({
             <button onClick={onTogglePin}
               className={cn('p-2 rounded-xl transition-all',
                 note.isPinned ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-slate-500 hover:text-white hover:bg-white/5'
-              )} title={note.isPinned ? 'Ta bort nål' : 'Nåla fast'}>
+              )} title={note.isPinned ? 'Unpin' : 'Pin'}>
               <Pin size={18} className={cn(note.isPinned && 'fill-cyan-400')} />
             </button>
             <button onClick={onToggleHistory}
               className={cn('p-2 rounded-xl transition-all',
                 showHistory ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-slate-500 hover:text-white hover:bg-white/5'
-              )} title="Historik">
+              )} title="History">
               <HistoryIcon size={18} />
             </button>
             <button onClick={onShare}
               className={cn('p-2 rounded-xl transition-all',
                 note.isShared ? 'text-purple-400 bg-purple-400/10 shadow-[0_0_15px_rgba(188,0,255,0.15)]' : 'text-slate-500 hover:text-white hover:bg-white/5'
-              )} title="Dela anteckning">
+              )} title="Share note">
               <Share2 size={18} />
             </button>
           </div>
 
           <div className="flex items-center gap-1">
-            <button onClick={onImageClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Lägg till bild">
+            <button onClick={onImageClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Add image">
               <ImageIcon size={18} />
             </button>
-            <button onClick={onFileClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Bifoga fil">
+            <button onClick={onFileClick} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Attach file">
               <Paperclip size={18} />
             </button>
             <button onClick={onToggleCode}
               className={cn('p-2 rounded-xl transition-all',
                 note.code ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white hover:bg-white/5'
-              )} title="Kodredigerare">
+              )} title="Code editor">
               <Code size={18} />
             </button>
           </div>
@@ -95,7 +95,7 @@ export default function NoteHeader({
                 ? 'bg-transparent text-green-400 border border-green-400/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
                 : 'bg-white text-black hover:scale-105 active:scale-95 disabled:opacity-50'
             )}
-            title="Spara (Ctrl+S)"
+            title="Save (Ctrl+S)"
           >
             {isSaving
               ? <Loader2 size={14} className="animate-spin" />
@@ -104,7 +104,7 @@ export default function NoteHeader({
                 : <Save size={14} />
             }
             <span className="hidden sm:inline">
-              {isSaving ? 'Synkar...' : isSaved ? 'Säkrad' : 'Spara'}
+              {isSaving ? 'Syncing...' : isSaved ? 'Saved' : 'Save'}
             </span>
           </button>
         </div>
@@ -117,7 +117,7 @@ export default function NoteHeader({
           onChange={e => onCategoryChange(e.target.value || undefined)}
           className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 bg-transparent border-none outline-none cursor-pointer hover:text-cyan-400 transition-colors"
         >
-          <option value="" className="bg-[#0B0D17]">Inget fack</option>
+          <option value="" className="bg-[#0B0D17]">No category</option>
           {categories.map(c => (
             <option key={c.id} value={c.id} className="bg-[#0B0D17]">{c.name}</option>
           ))}
