@@ -95,8 +95,10 @@ We welcome contributions! Please feel free to open issues or submit pull request
 
 ### 📜 License
 
-This project is licensed under the **Proprietary License** of nRn-World. All rights reserved.
+This project is licensed under the **nRn World Non-Commercial License**. See the [LICENSE](LICENSE) file for more details.
+
+---
 
 <div align="center">
-  <p>Built with ❤️ by <a href="https://github.com/nRn-World">nRn-World</a></p>
+  <p>Built with ❤️ by <a href="https://github.com/nRn-World/NexNote">nRn-World</a></p>
 </div>
