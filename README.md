@@ -10,7 +10,7 @@
   
   <br />
   
-  ### [🚀 Open NexNote Live Demo](https://nexnote.vercel.app)
+  ### [🚀 Open NexNote Live Link](https://nexnote.vercel.app)
 </div>
 
 ---
