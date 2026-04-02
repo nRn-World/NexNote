@@ -1,24 +1,98 @@
+# 🚀 NexNote - Modern Code & Note Sharing Platform
+
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="auto" alt="NexNote Banner" src="Screenshots/Start.png" />
+  
+  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+  [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 </div>
 
-# Run and deploy your AI Studio app
+---
 
-This contains everything you need to run your app locally.
+### 📝 Overview
 
-<<<<<<< HEAD
-View your app in AI Studio: https://ai.studio/apps/37300f63-4a52-45cf-acee-505f814b0c98
-=======
-View your app in AI Studio: https://ai.studio/apps/a4574547-7f1d-498a-86b0-4801a9c604a1
->>>>>>> origin/main
+**NexNote** is a sleek, modern platform designed for developers and creatives to store and share their favorite code snippets and notes. Built with speed and user experience in mind, NexNote allows you to manage **SVG, HTML, CSS, and JS** directly in your profile, while participating in a curated community showcase.
 
-## Run Locally
+---
 
-**Prerequisites:**  Node.js
+### ✨ Key Features
 
+- 🔐 **Google Authentication**: Quick and secure sign-in with your Google account.
+- 🎨 **Powerful Editors**:
+  - **Rich Text Editor**: Powered by TipTap for beautiful note-taking.
+  - **Code Editor**: syntax-highlighted editor for web technologies (HTML, CSS, JS, SVG).
+- 🤝 **Community Sharing**: Share up to **2 projects per month** to the global community feed.
+- 🌙 **Modern UI**: A responsive, dark-mode-first aesthetic built with Framer Motion for smooth transitions.
+- ☁️ **Cloud Sync**: All your notes and snippets are safely stored in Firebase and synced across devices.
+- 📸 **Code-to-Image**: Export your snippets as beautiful images for social media sharing.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+
+### 🛠️ Tech Stack
+
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite 6](https://vitejs.dev/)
+- **Backend/DB**: [Firebase](https://firebase.google.com/) (Auth, Firestore, Storage)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
+- **Editors**: [TipTap](https://tiptap.dev/) (Rich Text) & [CodeMirror 6](https://codemirror.net/) (Code)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+
+---
+
+### 📸 Screenshots
+
+| Dashboard | Code Editor |
+| :---: | :---: |
+| ![Dashboard](Screenshots/1.png) | ![Editor](Screenshots/3.png) |
+
+| Community Feed | Note View |
+| :---: | :---: |
+| ![Community](Screenshots/5.png) | ![Note](Screenshots/2.png) |
+
+---
+
+### 🚀 Getting Started
+
+#### Prerequisites
+- Node.js (v18 or higher)
+- A Firebase project
+
+#### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/nRn-World/NexNote.git
+   cd NexNote
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup:**
+   Create a `.env.local` file in the root directory and add your Firebase and Gemini configurations (see `.env.example`).
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+   Open `http://localhost:3000` to see the result.
+
+---
+
+### 🤝 Contributing
+
+We welcome contributions! Please feel free to open issues or submit pull requests to help improve NexNote.
+
+---
+
+### 📜 License
+
+This project is licensed under the **Proprietary License** of nRn-World. All rights reserved.
+
+<div align="center">
+  <p>Built with ❤️ by <a href="https://github.com/nRn-World">nRn-World</a></p>
+</div>
