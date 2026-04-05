@@ -539,7 +539,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FCFDFE]">
+      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
         {/* Left Side: Illustration / Branding */}
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0 opacity-90 overflow-hidden">
