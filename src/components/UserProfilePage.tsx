@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { db } from '../firebase';
-import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Palette, Check } from 'lucide-react';
+import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Palette, Check, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CommunityPost } from './CommunityView';
 import { format } from 'date-fns';
@@ -230,6 +230,8 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
   const [expandedPost, setExpandedPost] = useState<CommunityPost | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showBannerPicker, setShowBannerPicker] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const isOwn = uid === currentUser?.uid;
@@ -294,6 +296,19 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       alert('Could not save the image.');
       setUploading(false);
     } finally { e.target.value = ''; }
+  };
+
+  const handleNameSave = async () => {
+    if (!currentUser || !editingName.trim()) return;
+    try {
+      await setDoc(doc(db, 'community_profiles', currentUser.uid), { displayName: editingName.trim() }, { merge: true });
+      await updateProfile(currentUser, { displayName: editingName.trim() });
+      setProfile((prev: any) => ({ ...(prev || {}), displayName: editingName.trim() }));
+      setIsEditingName(false);
+    } catch (err) {
+      console.error('Name update failed:', err);
+      alert('Could not save the name.');
+    }
   };
 
   const selectBanner = (bannerId: string) => {
@@ -394,7 +409,32 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
             <input ref={avatarInputRef} type="file" accept="image/*,image/gif" className="hidden" onChange={handleAvatarUpload} />
           </div>
           <div className="flex-1 pb-1">
-            <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+            <div className="flex items-center gap-2 group">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    autoFocus
+                    onKeyDown={e => e.key === 'Enter' && handleNameSave()}
+                    className="bg-[var(--bg-panel-hover)] border border-white/10 rounded-lg px-2 py-1 text-xl font-bold outline-none focus:border-cyan-500/50"
+                  />
+                  <button onClick={handleNameSave} className="p-1 px-3 bg-cyan-600 rounded-lg text-xs font-bold hover:bg-cyan-700 transition-colors">Save</button>
+                  <button onClick={() => setIsEditingName(false)} className="p-1 text-[var(--text-secondary)] hover:text-white"><X size={14} /></button>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+                  {isOwn && (
+                    <button onClick={() => { setIsEditingName(true); setEditingName(displayName); }} 
+                      className="p-1.5 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-cyan-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/5">
+                      <Pencil size={14} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
             <p className="text-sm text-[var(--text-secondary)] mt-0.5">{userPosts.length} shared projects · {userPosts.reduce((s, p) => s + p.likes.length, 0)} total likes</p>
           </div>
           {!isOwn && (
