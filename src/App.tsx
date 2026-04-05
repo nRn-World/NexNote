@@ -567,7 +567,7 @@ export default function App() {
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
 
             <div className="w-full max-w-sm text-center z-10">
-               <img src="/logoandtextWhite.png" alt="NexNote" className="mx-auto mb-12 w-64" />
+               <img src="/logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
 
               <button 
                 onClick={signInWithGoogle} 
