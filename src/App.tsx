@@ -555,17 +555,10 @@ export default function App() {
             </video>
           </div>
           {/* Logo overlay on top-left */}
-          <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 22V12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 12L21 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 12L3 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-             </div>
-             <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
-          </div>
+           <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
+              <img src="/favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
+              <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
+           </div>
           {/* Subtle gradient overlay to match image mood */}
           <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
         </div>
