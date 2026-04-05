@@ -569,11 +569,8 @@ export default function App() {
            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-50"></div>
 
-           <div className="w-full max-w-sm text-center z-10">
-              <h1 className="text-6xl font-black mb-4 text-[#2D2D2D] tracking-tight">NexNote</h1>
-              <p className="text-xl font-medium text-[#4A4A4A] mb-12 leading-relaxed">
-                Sign in to save your notes <br className="hidden sm:block" /> securely in the cloud.
-              </p>
+            <div className="w-full max-w-sm text-center z-10">
+               <img src="/logoandtextWhite.png" alt="NexNote" className="mx-auto mb-12 w-64" />
 
               <button 
                 onClick={signInWithGoogle} 
