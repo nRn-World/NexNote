@@ -243,24 +243,35 @@ function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn
   const ref = useRef<HTMLDivElement>(null);
   const [showCategorySubmenu, setShowCategorySubmenu] = useState(false);
   const submenuRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node) && submenuRef.current && !submenuRef.current.contains(e.target as Node)) onClose(); };
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('mousedown', h); document.addEventListener('keydown', k);
     return () => { document.removeEventListener('mousedown', h); document.removeEventListener('keydown', k); };
   }, [onClose]);
   const style: React.CSSProperties = { position: 'fixed', top: Math.min(y, window.innerHeight - 200), left: Math.min(x, window.innerWidth - 200), zIndex: 9999 };
   const submenuStyle: React.CSSProperties = { position: 'fixed', top: Math.min(y - 20, window.innerHeight - 300), left: Math.min(x + 200, window.innerWidth - 200), zIndex: 10000 };
+
+  const handleCloseTimer = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => setShowCategorySubmenu(false), 150);
+  };
+  const handleCancelClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setShowCategorySubmenu(true);
+  };
+
   return (
     <>
       <div ref={ref} style={style} className="w-48 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden"
-        onMouseLeave={() => setShowCategorySubmenu(false)}>
+        onMouseLeave={handleCloseTimer}>
         <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
           <p className="text-xs font-medium text-zinc-300 truncate">{post.displayName}</p>
         </div>
         {isAdmin && <>
           <div className="relative"
-            onMouseEnter={() => setShowCategorySubmenu(true)}>
+            onMouseEnter={handleCancelClose}>
             <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
               <Code2 size={13} className="text-indigo-400" /> Move to Category
             </button>
@@ -281,7 +292,9 @@ function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn
         </>}
       </div>
       {showCategorySubmenu && isAdmin && (
-        <div ref={submenuRef} style={submenuStyle} className="w-44 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden">
+        <div ref={submenuRef} style={submenuStyle} className="w-44 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden"
+          onMouseEnter={handleCancelClose}
+          onMouseLeave={handleCloseTimer}>
           <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
             <p className="text-xs font-medium text-zinc-400 truncate">Select category</p>
           </div>
