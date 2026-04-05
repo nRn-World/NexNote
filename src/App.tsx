@@ -821,10 +821,6 @@ export default function App() {
                 <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute inset-0 rounded-lg shadow-[0_0_20px_rgba(0,242,255,0.3)] opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
              </button>
-             
-             <div className="mt-4 flex items-center justify-center text-slate-500 text-xs">
-                <span>Ctrl+N for new note</span>
-             </div>
           </div>
         )}
       </div>
