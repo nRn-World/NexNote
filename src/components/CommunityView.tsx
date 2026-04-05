@@ -56,7 +56,8 @@ interface CommunityViewProps {
   isDark: boolean;
 }
 
-const MAX_MONTHLY = 2;
+const MAX_WEEKLY = 2;
+const MAX_WEEKLY_ADMIN = 10;
 const COUNTDOWN_SECONDS = 30;
 const ADMIN_EMAIL = 'bynrnworld@gmail.com';
 
@@ -354,8 +355,8 @@ function WarningBanner({ warning, userId, onDismiss }: { warning: any; userId: s
 }
 
 // Upload modal
-function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
-  userNotes: Note[]; monthlyCount: number; onConfirm: (noteId: string, category: string) => void; onCancel: () => void;
+function UploadModal({ userNotes, weeklyCount, currentLimit, onConfirm, onCancel }: {
+  userNotes: Note[]; weeklyCount: number; currentLimit: number; onConfirm: (noteId: string, category: string) => void; onCancel: () => void;
 }) {
   const [selectedNoteId, setSelectedNoteId] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('design');
@@ -377,7 +378,7 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
           <>
             <div className="p-6 border-b border-zinc-800">
               <h2 className="text-base font-semibold text-white">Select content to share</h2>
-              <p className="text-sm text-zinc-500 mt-1">{MAX_MONTHLY - monthlyCount} of {MAX_MONTHLY} remaining this month · Code notes only</p>
+              <p className="text-sm text-zinc-500 mt-1">{currentLimit - weeklyCount} of {currentLimit} remaining this week · Code notes only</p>
             </div>
             <div className="p-4 max-h-72 overflow-y-auto space-y-2">
               {userNotes.filter(n => n.title && n.code).length === 0
@@ -441,7 +442,7 @@ function UploadModal({ userNotes, monthlyCount, onConfirm, onCancel }: {
               </div>
             )}
             <div className="space-y-2 mb-5">
-              {['Code will be visible to ALL logged in users.','Sharing cannot be undone or removed once confirmed.','Counts toward your limit of 2 uploads per month.','Never share personal or sensitive information.'].map((w,i) => (
+              {['Code will be visible to ALL logged in users.','Sharing cannot be undone or removed once confirmed.',`Counts toward your limit of ${currentLimit} uploads per week.`,'Never share personal or sensitive information.'].map((w,i) => (
                 <div key={i} className="flex items-start gap-2 text-sm text-zinc-400"><span className="text-amber-400 shrink-0">⚠</span>{w}</div>
               ))}
             </div>
@@ -633,11 +634,16 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
     return () => unsub();
   }, [user]);
 
-  const monthlyCount = user ? posts.filter(p => {
+  const weeklyCount = user ? posts.filter(p => {
     if (p.uid !== user.uid) return false;
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-    return p.createdAt >= startOfMonth;
+    // Calculate start of current week (Sunday at 00:00)
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    return p.createdAt >= startOfWeek.getTime();
   }).length : 0;
+
+  const currentLimit = isAdmin ? MAX_WEEKLY_ADMIN : MAX_WEEKLY;
 
   const handleLike = async (post: CommunityPost) => {
     if (!user) return;
@@ -667,7 +673,10 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
 
   const handleUpload = async (noteId: string, category: string) => {
     if (!noteId || !user || isBanned) return;
-    if (monthlyCount >= MAX_MONTHLY) { alert(`Max ${MAX_MONTHLY} uploads per month.`); return; }
+    if (weeklyCount >= currentLimit) { 
+      alert(`Max ${currentLimit} uploads per week. ${isAdmin ? 'Admin' : 'Regular'} limit reached.`); 
+      return; 
+    }
     const note = userNotes.find(n => n.id === noteId);
     if (!note?.code) return;
     const fullCode = `<!DOCTYPE html><html><head><style>${note.code.css||''}</style></head><body>${note.code.html||''}<script>${note.code.js||''}<\/script></body></html>`;
@@ -705,7 +714,7 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
     setMsgTarget(null); setMsgText(''); alert('Message sent!');
   };
 
-  const canUpload = monthlyCount < MAX_MONTHLY && !isBanned;
+  const canUpload = weeklyCount < currentLimit && !isBanned;
 
   const filteredPosts = (() => {
     const base = posts.filter(p => {
@@ -787,7 +796,7 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
               canUpload ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-[var(--bg-panel-hover)] text-[var(--text-secondary)] cursor-not-allowed'
             )}>
             <Upload size={13} /> Share code
-            <span className="opacity-60">({monthlyCount}/{MAX_MONTHLY})</span>
+            <span className="opacity-60">({weeklyCount}/{currentLimit})</span>
           </button>
           <button onClick={onClose} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-hover)] rounded-lg transition-colors"><X size={18} /></button>
         </div>
@@ -903,7 +912,7 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
         onMessage={() => setMsgTarget(ctxMenu.post)}
         onMoveCategory={(cat) => handleMoveCategory(ctxMenu.post.id, cat)} />}
 
-      {showUpload && <UploadModal userNotes={userNotes} monthlyCount={monthlyCount} onConfirm={async (id, cat) => { await handleUpload(id, cat); setShowUpload(false); }} onCancel={() => setShowUpload(false)} />}
+      {showUpload && <UploadModal userNotes={userNotes} weeklyCount={weeklyCount} currentLimit={currentLimit} onConfirm={async (id, cat) => { await handleUpload(id, cat); setShowUpload(false); }} onCancel={() => setShowUpload(false)} />}
 
       {banTarget && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4">
