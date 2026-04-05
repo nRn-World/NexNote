@@ -285,9 +285,9 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     const file = e.target.files?.[0];
     if (!file || !auth.currentUser) return;
     
-    // Check file size (Firestore limit is 1MB per doc, so let's stay under ~800KB for the base64)
+    // Firestore has a 1MB limit. Base64 is ~33% larger, so 800KB is the safe limit.
     if (file.size > 800 * 1024) {
-      alert('The image is too large. Please select a smaller file (max 800KB) to ensure it can be saved.');
+      alert('The file is too large for the database (max 800KB). Animated GIFs are heavy, try a shorter or smaller one!');
       return;
     }
 
@@ -295,7 +295,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     try {
       let finalData: string;
       
-      // If it's a GIF, we don't want to compress it through canvas because it will lose animation
+      // GIF Support: Skip canvas compression for GIFs to stay animated
       if (file.type === 'image/gif') {
         finalData = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -304,20 +304,20 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
           reader.readAsDataURL(file);
         });
       } else {
-        // For other images, use compression to save space
+        // JPEG/PNG: Use canvas to resize and compress
         finalData = await compressImage(file, 400, 400);
       }
 
+      // Save to Firestore (Base64 string)
       await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
         photoURL: finalData,
         uid: auth.currentUser.uid 
       }, { merge: true });
       
+      // Update Firebase Auth Profile
       await updateProfile(auth.currentUser, { photoURL: finalData });
       
       setProfile((prev: any) => ({ ...(prev || {}), photoURL: finalData }));
-      // Optional: reload or just update state. State update is smoother.
-      // window.location.reload(); 
     } catch (err: any) {
       console.error('Avatar upload failed:', err);
       alert(`Could not save the image: ${err.message || 'Unknown error'}`);
