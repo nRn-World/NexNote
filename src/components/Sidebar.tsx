@@ -253,48 +253,52 @@ export default function Sidebar({
     <div className={cn(
       'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-transform duration-300 ease-in-out border-r border-white/5 shadow-2xl',
       activeNoteId ? '-translate-x-full md:translate-x-0' : 'translate-x-0 flex'
-    )}>
-      {/* Header with Profile and Actions */}
-      <div className="p-4 pb-2 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <img 
-               src="/logoandtext2.png" 
-               alt="NexNote" 
-               onClick={onOpenProfile} 
-               className="h-7 w-auto cursor-pointer hover:opacity-80 transition-opacity" 
-             />
-             <button onClick={onToggleDark} className="p-1 px-[2px] ml-1 text-slate-500 hover:scale-110 transition-all font-medium border border-slate-500/20 rounded-md">
+    )}>      {/* Header with Logo and Actions */}
+      <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
+        <div className="flex justify-center w-full">
+           <img 
+             src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
+             alt="NexNote" 
+             onClick={onOpenProfile} 
+             className="h-12 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 
+           />
+        </div>
+        
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-3">
+             <button onClick={onToggleDark} className="w-10 h-10 flex items-center justify-center text-lg hover:bg-white/5 transition-all rounded-xl border border-white/5 active:scale-95" title="Toggle Theme">
                {isDark ? '🌙' : '☀️'}
              </button>
-             <div className="relative group cursor-pointer ml-1" onClick={onOpenProfile}>
-                <div className="w-6 h-6 rounded-full overflow-hidden border border-white/10">
+             
+             <div className="relative group cursor-pointer" onClick={onOpenProfile} title="Profile">
+                <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-cyan-500/50 transition-all group-hover:scale-105">
                    {user?.photoURL
                      ? <img src={user.photoURL} alt="" className="w-full h-full bg-slate-800 object-cover" />
-                     : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-cyan-400"><UserCircle size={16} /></div>
+                     : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-cyan-400"><UserCircle size={20} /></div>
                    }
                 </div>
              </div>
           </div>
           
-          <div className="flex items-center gap-1">
-            <button onClick={onLogout} className="text-[11px] text-slate-400 hover:text-white transition-all mr-2" title="Logout">
+          <div className="flex items-center gap-4">
+            <button onClick={onLogout} className="text-[13px] font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
               Logout
             </button>
-            <button onClick={onCreateNote} className="w-6 h-6 bg-white rounded flex items-center justify-center text-black hover:bg-slate-200 transition-all">
-               <Plus size={16} />
+            <button onClick={onCreateNote} className="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all shadow-lg active:scale-95" title="New Note">
+               <Plus size={20} />
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="relative mt-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+        <div className="relative mt-2 px-4">
+          <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
           <input type="text" placeholder="Search notes..." value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-slate-500 border-none outline-none focus:ring-1 focus:ring-slate-500/20 transition-all font-medium"
           />
         </div>
-      </div>
+
 
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 scrollbar-thin">
         <div className="mb-6">
