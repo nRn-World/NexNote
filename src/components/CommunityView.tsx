@@ -53,6 +53,7 @@ interface CommunityViewProps {
   user: any;
   userNotes: Note[];
   onClose: () => void;
+  isDark: boolean;
 }
 
 const MAX_MONTHLY = 2;
@@ -573,7 +574,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
   );
 }
 
-export default function CommunityView({ user, userNotes, onClose }: CommunityViewProps) {
+export default function CommunityView({ user, userNotes, onClose, isDark }: CommunityViewProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [bans, setBans] = useState<BanRecord[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
@@ -739,12 +740,13 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
     <div className="fixed inset-0 z-[300] flex flex-col bg-[var(--bg-deep)] text-[var(--text-primary)]">
       {/* Top nav */}
       <div className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] backdrop-blur-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
-            <Trophy size={14} className="text-white" />
-          </div>
-          <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight">NexNote Community</span>
-          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/25 rounded-full uppercase tracking-wider">Live</span>
+        <div className="flex items-center gap-4">
+           <img 
+             src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
+             alt="NexNote Community" 
+             className="h-10 w-auto" 
+           />
+           <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/25 rounded-full uppercase tracking-wider -ml-1 mt-1">Live</span>
         </div>
 
         {/* Tabs */}

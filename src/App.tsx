@@ -853,6 +853,7 @@ export default function App() {
           user={user}
           userNotes={notes}
           onClose={() => setShowCommunity(false)}
+          isDark={isDark}
         />
       )}
 
