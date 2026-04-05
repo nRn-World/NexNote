@@ -235,11 +235,14 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
 }
 
 // Context menu
-function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn, onMessage }: {
+function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn, onMessage, onMoveCategory }: {
   x: number; y: number; post: CommunityPost; isAdmin: boolean;
   onClose: () => void; onDelete: () => void; onBan: () => void; onWarn: () => void; onMessage: () => void;
+  onMoveCategory: (categoryId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [showCategorySubmenu, setShowCategorySubmenu] = useState(false);
+  const submenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -247,27 +250,54 @@ function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn
     return () => { document.removeEventListener('mousedown', h); document.removeEventListener('keydown', k); };
   }, [onClose]);
   const style: React.CSSProperties = { position: 'fixed', top: Math.min(y, window.innerHeight - 200), left: Math.min(x, window.innerWidth - 200), zIndex: 9999 };
+  const submenuStyle: React.CSSProperties = { position: 'fixed', top: Math.min(y - 20, window.innerHeight - 300), left: Math.min(x + 200, window.innerWidth - 200), zIndex: 10000 };
   return (
-    <div ref={ref} style={style} className="w-48 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden">
-      <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
-        <p className="text-xs font-medium text-zinc-300 truncate">{post.displayName}</p>
+    <>
+      <div ref={ref} style={style} className="w-48 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden"
+        onMouseLeave={() => setShowCategorySubmenu(false)}>
+        <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
+          <p className="text-xs font-medium text-zinc-300 truncate">{post.displayName}</p>
+        </div>
+        {isAdmin && <>
+          <div className="relative"
+            onMouseEnter={() => setShowCategorySubmenu(true)}>
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+              <Code2 size={13} className="text-indigo-400" /> Move to Category
+            </button>
+          </div>
+          <button onClick={() => { onMessage(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+            <MessageSquare size={13} className="text-blue-400" /> Send Message
+          </button>
+          <button onClick={() => { onWarn(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+            <AlertOctagon size={13} className="text-amber-400" /> Warn User
+          </button>
+          <button onClick={() => { onBan(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+            <Ban size={13} className="text-orange-400" /> Ban User
+          </button>
+          <div className="my-1 border-t border-zinc-800" />
+          <button onClick={() => { onDelete(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-900/20">
+            <Trash2 size={13} /> Delete Post
+          </button>
+        </>}
       </div>
-      {isAdmin && <>
-        <button onClick={() => { onMessage(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
-          <MessageSquare size={13} className="text-blue-400" /> Send Message
-        </button>
-        <button onClick={() => { onWarn(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
-          <AlertOctagon size={13} className="text-amber-400" /> Warn User
-        </button>
-        <button onClick={() => { onBan(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
-          <Ban size={13} className="text-orange-400" /> Ban User
-        </button>
-        <div className="my-1 border-t border-zinc-800" />
-        <button onClick={() => { onDelete(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-900/20">
-          <Trash2 size={13} /> Delete Post
-        </button>
-      </>}
-    </div>
+      {showCategorySubmenu && isAdmin && (
+        <div ref={submenuRef} style={submenuStyle} className="w-44 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1.5 overflow-hidden">
+          <div className="px-3 py-1.5 border-b border-zinc-800 mb-1">
+            <p className="text-xs font-medium text-zinc-400 truncate">Select category</p>
+          </div>
+          {COMMUNITY_CATEGORIES.filter(c => c.id !== 'all').map(cat => (
+            <button key={cat.id} onClick={() => { onMoveCategory(cat.id); onClose(); }}
+              className={cn('w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-zinc-800 transition-colors',
+                post.category === cat.id ? 'text-indigo-400' : 'text-zinc-300'
+              )}>
+              {cat.icon}
+              <span className="flex-1 text-left">{cat.label}</span>
+              {post.category === cat.id && <Check size={12} className="text-indigo-400 shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -639,6 +669,10 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
   };
 
   const handleDelete = async (id: string) => { if (isAdmin) await deleteDoc(doc(db, 'community', id)); };
+  const handleMoveCategory = async (postId: string, category: string) => {
+    if (!isAdmin) return;
+    await updateDoc(doc(db, 'community', postId), { category });
+  };
   const handleBan = async () => {
     if (!isAdmin || !banTarget) return;
     const now = Date.now();
@@ -850,7 +884,8 @@ export default function CommunityView({ user, userNotes, onClose }: CommunityVie
       {ctxMenu && <PostContextMenu x={ctxMenu.x} y={ctxMenu.y} post={ctxMenu.post} isAdmin={isAdmin}
         onClose={() => setCtxMenu(null)} onDelete={() => handleDelete(ctxMenu.post.id)}
         onBan={() => setBanTarget(ctxMenu.post)} onWarn={() => setWarnTarget(ctxMenu.post)}
-        onMessage={() => setMsgTarget(ctxMenu.post)} />}
+        onMessage={() => setMsgTarget(ctxMenu.post)}
+        onMoveCategory={(cat) => handleMoveCategory(ctxMenu.post.id, cat)} />}
 
       {showUpload && <UploadModal userNotes={userNotes} monthlyCount={monthlyCount} onConfirm={async (id, cat) => { await handleUpload(id, cat); setShowUpload(false); }} onCancel={() => setShowUpload(false)} />}
 
