@@ -258,7 +258,12 @@ export default function Sidebar({
       <div className="p-4 pb-2 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <h1 onClick={onOpenProfile} className="text-xl font-semibold tracking-wide cursor-pointer hover:text-cyan-500 transition-colors">NexNote</h1>
+             <img 
+               src="/logoandtext2.png" 
+               alt="NexNote" 
+               onClick={onOpenProfile} 
+               className="h-7 w-auto cursor-pointer hover:opacity-80 transition-opacity" 
+             />
              <button onClick={onToggleDark} className="p-1 px-[2px] ml-1 text-slate-500 hover:scale-110 transition-all font-medium border border-slate-500/20 rounded-md">
                {isDark ? '🌙' : '☀️'}
              </button>
