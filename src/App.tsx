@@ -624,6 +624,7 @@ export default function App() {
         onOpenCommunity={() => setShowCommunity(true)}
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
+        onGoHome={() => setActiveNoteId(null)}
         user={user}
       />
 

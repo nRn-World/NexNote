@@ -38,6 +38,7 @@ interface SidebarProps {
   onOpenCommunity: () => void;
   onOpenProfile: () => void;
   onOpenPrivacy: () => void;
+  onGoHome: () => void;
   user: any;
 }
 
@@ -160,7 +161,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, user,
+  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, user,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -256,12 +257,12 @@ export default function Sidebar({
     )}>      {/* Header with Logo and Actions */}
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
         <div className="flex justify-center w-full">
-             <img 
-               src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
-               alt="NexNote" 
-               onClick={onOpenProfile} 
-               className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 
-             />
+           <img 
+             src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
+             alt="NexNote" 
+             onClick={onGoHome} 
+             className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 
+           />
         </div>
         
         <div className="flex items-center justify-between px-1">
