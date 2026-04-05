@@ -285,9 +285,10 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     const file = e.target.files?.[0];
     if (!file || !auth.currentUser) return;
     
-    // Firestore has a 1MB limit. Base64 is ~33% larger, so 800KB is the safe limit.
-    if (file.size > 800 * 1024) {
-      alert('The file is too large for the database (max 800KB). Animated GIFs are heavy, try a shorter or smaller one!');
+    // Firestore document limit is 1MB total. Base64 adds ~33% overhead.
+    // 780KB is the absolute physical peak before the database denies the write.
+    if (file.size > 780 * 1024) {
+      alert('The file is too large for the database. Because of the code overhead, pictures over ~780KB exceed the 1MB database limit. For larger GIFs, please use the "Paste Link" (🔗) button instead!');
       return;
     }
 
