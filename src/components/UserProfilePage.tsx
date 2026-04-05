@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Palette, Check, Pencil } from 'lucide-react';
+import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Palette, Check, Pencil, Link2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CommunityPost } from './CommunityView';
 import { format } from 'date-fns';
@@ -331,22 +331,41 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     if (!auth.currentUser || !editingName.trim()) return;
     try {
       console.log('Attempting to save name:', editingName.trim());
-      // 1. Update Firestore Profile
       await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
         displayName: editingName.trim(),
-        uid: auth.currentUser.uid // Ensure UID is present if rules or other logic expect it
+        uid: auth.currentUser.uid 
       }, { merge: true });
-      
-      // 2. Update Firebase Auth Profile
       await updateProfile(auth.currentUser, { displayName: editingName.trim() });
-      
-      console.log('Name successfully updated in both Firestore and Auth');
       setProfile((prev: any) => ({ ...(prev || {}), displayName: editingName.trim() }));
       setIsEditingName(false);
     } catch (err: any) {
-      console.error('Name update failed significantly:', err);
-      // Inform the user of the specific error code if possible
+      console.error('Name update failed:', err);
       alert(`Could not save the name: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleLinkAvatar = async () => {
+    const url = prompt('Paste a direct link to your image or animated GIF (e.g. from Imgur or Discord):');
+    if (!url || !auth.currentUser) return;
+    
+    if (!url.startsWith('http')) {
+      alert('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
+        photoURL: url,
+        uid: auth.currentUser.uid 
+      }, { merge: true });
+      await updateProfile(auth.currentUser, { photoURL: url });
+      setProfile((prev: any) => ({ ...(prev || {}), photoURL: url }));
+    } catch (err: any) {
+      console.error('Link avatar failed:', err);
+      alert(`Could not save the link: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -439,11 +458,20 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
               }
             </div>
             {isOwn && (
-              <button onClick={() => avatarInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-1 -right-1 w-7 h-7 bg-cyan-600 hover:bg-cyan-700 rounded-lg flex items-center justify-center border-2 border-[var(--bg-deep)] transition-colors shadow-sm cursor-pointer group">
-                <Camera size={13} className={cn('transition-all', uploading ? 'text-cyan-300 animate-pulse' : 'text-white group-hover:scale-110')} />
-              </button>
+              <div className="absolute -bottom-1 -right-1 flex gap-1">
+                <button onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploading}
+                  title="Upload image"
+                  className="w-7 h-7 bg-cyan-600 hover:bg-cyan-700 rounded-lg flex items-center justify-center border-2 border-[var(--bg-deep)] transition-colors shadow-sm cursor-pointer group">
+                  <Camera size={13} className={cn('transition-all', uploading ? 'text-cyan-300 animate-pulse' : 'text-white group-hover:scale-110')} />
+                </button>
+                <button onClick={handleLinkAvatar}
+                  disabled={uploading}
+                  title="Paste link"
+                  className="w-7 h-7 bg-indigo-600 hover:bg-indigo-700 rounded-lg flex items-center justify-center border-2 border-[var(--bg-deep)] transition-colors shadow-sm cursor-pointer group">
+                  <Link2 size={13} className="text-white group-hover:scale-110" />
+                </button>
+              </div>
             )}
             <input ref={avatarInputRef} type="file" accept="image/*,image/gif" className="hidden" onChange={handleAvatarUpload} />
           </div>
