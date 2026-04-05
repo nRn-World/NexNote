@@ -3,7 +3,7 @@ import {
   collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc
 } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Palette, Check, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CommunityPost } from './CommunityView';
@@ -299,15 +299,25 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
   };
 
   const handleNameSave = async () => {
-    if (!currentUser || !editingName.trim()) return;
+    if (!auth.currentUser || !editingName.trim()) return;
     try {
-      await setDoc(doc(db, 'community_profiles', currentUser.uid), { displayName: editingName.trim() }, { merge: true });
-      await updateProfile(currentUser, { displayName: editingName.trim() });
+      console.log('Attempting to save name:', editingName.trim());
+      // 1. Update Firestore Profile
+      await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
+        displayName: editingName.trim(),
+        uid: auth.currentUser.uid // Ensure UID is present if rules or other logic expect it
+      }, { merge: true });
+      
+      // 2. Update Firebase Auth Profile
+      await updateProfile(auth.currentUser, { displayName: editingName.trim() });
+      
+      console.log('Name successfully updated in both Firestore and Auth');
       setProfile((prev: any) => ({ ...(prev || {}), displayName: editingName.trim() }));
       setIsEditingName(false);
-    } catch (err) {
-      console.error('Name update failed:', err);
-      alert('Could not save the name.');
+    } catch (err: any) {
+      console.error('Name update failed significantly:', err);
+      // Inform the user of the specific error code if possible
+      alert(`Could not save the name: ${err.message || 'Unknown error'}`);
     }
   };
 
