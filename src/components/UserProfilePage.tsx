@@ -283,19 +283,48 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !currentUser) return;
+    if (!file || !auth.currentUser) return;
+    
+    // Check file size (Firestore limit is 1MB per doc, so let's stay under ~800KB for the base64)
+    if (file.size > 800 * 1024) {
+      alert('The image is too large. Please select a smaller file (max 800KB) to ensure it can be saved.');
+      return;
+    }
+
     setUploading(true);
     try {
-      const compressedBase64 = await compressImage(file, 400, 400);
-      await setDoc(doc(db, 'community_profiles', currentUser.uid), { photoURL: compressedBase64 }, { merge: true });
-      await updateProfile(currentUser, { photoURL: compressedBase64 });
-      setProfile((prev: any) => ({ ...(prev || {}), photoURL: compressedBase64 }));
-      window.location.reload();
-    } catch (err) {
+      let finalData: string;
+      
+      // If it's a GIF, we don't want to compress it through canvas because it will lose animation
+      if (file.type === 'image/gif') {
+        finalData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // For other images, use compression to save space
+        finalData = await compressImage(file, 400, 400);
+      }
+
+      await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
+        photoURL: finalData,
+        uid: auth.currentUser.uid 
+      }, { merge: true });
+      
+      await updateProfile(auth.currentUser, { photoURL: finalData });
+      
+      setProfile((prev: any) => ({ ...(prev || {}), photoURL: finalData }));
+      // Optional: reload or just update state. State update is smoother.
+      // window.location.reload(); 
+    } catch (err: any) {
       console.error('Avatar upload failed:', err);
-      alert('Could not save the image.');
+      alert(`Could not save the image: ${err.message || 'Unknown error'}`);
+    } finally { 
       setUploading(false);
-    } finally { e.target.value = ''; }
+      e.target.value = ''; 
+    }
   };
 
   const handleNameSave = async () => {
