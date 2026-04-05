@@ -539,7 +539,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
+      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FAFAFA]">
         {/* Left Side: Illustration / Branding */}
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0 opacity-90 overflow-hidden">
@@ -566,8 +566,8 @@ export default function App() {
         {/* Right Side: Login Form */}
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden">
            {/* Decorative background shapes for the right side to make it feel premium */}
-           <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
-           <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-50"></div>
+           <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-blue-50/30 rounded-full blur-3xl opacity-40"></div>
+           <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-slate-100/30 rounded-full blur-3xl opacity-40"></div>
 
             <div className="w-full max-w-sm text-center z-10">
                <img src="/logoandtextWhite.png" alt="NexNote" className="mx-auto mb-12 w-64" />
