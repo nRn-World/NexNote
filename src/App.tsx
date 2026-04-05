@@ -58,6 +58,7 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [communityPosts, setCommunityPosts] = useState<any[]>([]);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: '', message: '', onConfirm: () => {} });
@@ -127,6 +128,17 @@ export default function App() {
     }, err => handleFirestoreError(err, OperationType.LIST, 'categories'));
     return () => unsub();
   }, [user, isAuthReady]);
+
+  // Community posts listener (global)
+  useEffect(() => {
+    if (!isAuthReady) return;
+    const q = query(collection(db, 'community'));
+    const unsub = onSnapshot(q, snap => {
+      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
+      setCommunityPosts(loaded);
+    });
+    return () => unsub();
+  }, [isAuthReady]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -625,6 +637,7 @@ export default function App() {
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
         onGoHome={() => setActiveNoteId(null)}
+        allPosts={communityPosts}
         user={user}
       />
 
@@ -858,7 +871,7 @@ export default function App() {
         <UserProfilePage
           uid={user.uid}
           currentUser={user}
-          allPosts={[]}
+          allPosts={communityPosts}
           onClose={() => setShowProfile(false)}
         />
       )}

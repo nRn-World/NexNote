@@ -39,6 +39,7 @@ interface SidebarProps {
   onOpenProfile: () => void;
   onOpenPrivacy: () => void;
   onGoHome: () => void;
+  allPosts: any[];
   user: any;
 }
 
@@ -161,7 +162,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, user,
+  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
