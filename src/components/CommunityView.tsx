@@ -744,7 +744,8 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
            <img 
              src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
              alt="NexNote Community" 
-             className="h-10 w-auto" 
+             onClick={onClose}
+             className="h-10 w-auto cursor-pointer hover:scale-105 transition-all" 
            />
            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/25 rounded-full uppercase tracking-wider -ml-1 mt-1">Live</span>
         </div>
