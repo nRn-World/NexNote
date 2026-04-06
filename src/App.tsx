@@ -129,12 +129,19 @@ export default function App() {
     return () => unsub();
   }, [user, isAuthReady]);
 
-  // Community posts listener (global)
   useEffect(() => {
     if (!isAuthReady) return;
     const q = query(collection(db, 'community'));
     const unsub = onSnapshot(q, snap => {
-      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
+      const loaded = snap.docs.map(d => {
+        const data = d.data();
+        let createdAt = Date.now();
+        if (data.createdAt) {
+          if (typeof data.createdAt === 'number') createdAt = data.createdAt;
+          else if (data.createdAt.toDate) createdAt = data.createdAt.toDate().getTime();
+        }
+        return { id: d.id, ...data, createdAt };
+      });
       setCommunityPosts(loaded);
     });
     return () => unsub();
