@@ -189,6 +189,9 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(decoded);
+    if (!isOwn && !hasLiked) {
+      onLike();
+    }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
