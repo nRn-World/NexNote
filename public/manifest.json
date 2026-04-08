@@ -1,0 +1,16 @@
+{
+  "name": "NexNote",
+  "short_name": "NexNote",
+  "description": "A modern platform for developers and creatives to store and share code snippets and notes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0F16",
+  "theme_color": "#0D0F16",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
