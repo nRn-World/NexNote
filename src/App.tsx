@@ -222,6 +222,7 @@ export default function App() {
       if (s <= 0) {
         clearInterval(guestTimerRef.current);
         setIsGuest(false);
+        setUser(null);
         setNotes([]);
       }
     }, 1000);
@@ -697,7 +698,7 @@ const createNote = () => {
               </span>
             </div>
             <button onClick={exitGuestMode} className="px-4 py-1.5 bg-white text-amber-600 hover:bg-white/90 rounded-full text-sm font-bold transition-colors">
-              Sign in now
+              Sign out now
             </button>
           </div>
         </div>
