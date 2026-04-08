@@ -265,8 +265,8 @@ const AnimatedCanvasBackground: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }}
+      className="fixed inset-0 w-full h-full"
+      style={{ zIndex: -1, background: '#080808' }}
     />
   );
 };
