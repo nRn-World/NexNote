@@ -678,7 +678,7 @@ useEffect(() => {
   const currentLimit = isAdmin ? MAX_WEEKLY_ADMIN : MAX_WEEKLY;
 
   const handleLike = async (post: CommunityPost) => {
-    if (!user || isGuest) return;
+    if (!user) return;
     if (post.uid === user.uid) {
       alert('You cannot like your own projects.');
       return;
