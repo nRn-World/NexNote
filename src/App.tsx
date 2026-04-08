@@ -587,14 +587,21 @@ export default function App() {
     return (
       <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
-          <div className="absolute inset-0 z-0 opacity-90 overflow-hidden">
-            <StarryBackground />
+          <div className="absolute inset-0 z-0">
+             <video 
+               src="/NexNote.mp4" 
+               autoPlay 
+               loop 
+               muted 
+               playsInline 
+               className="w-full h-full object-cover opacity-80"
+             />
           </div>
            <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
               <img src="/favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
            </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/20 to-transparent pointer-events-none"></div>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
             <div className="w-full max-w-sm text-center z-10">
