@@ -230,7 +230,7 @@ export default function App() {
 
   const enterGuestMode = () => {
     setIsGuest(true);
-    setUser({ uid: 'guest', displayName: 'Gäst', email: 'guest@nexnote.app', isGuest: true });
+    setUser({ uid: 'guest', displayName: 'Guest', email: 'guest@nexnote.app', isGuest: true });
   };
 
   const exitGuestMode = () => {
@@ -659,7 +659,7 @@ const createNote = () => {
                 className="w-full mt-3 py-4 px-6 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center justify-center gap-3 text-zinc-600 font-medium transition-all duration-300 hover:bg-zinc-200 hover:border-zinc-300"
               >
                 <span>👁</span>
-                <span>Fortsätt som gäst</span>
+                <span>Guest Mode</span>
                 <span className="text-xs text-zinc-400 ml-1">(1 min demo)</span>
               </button>
               <div className="mt-24">
@@ -687,17 +687,17 @@ const createNote = () => {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <span className="text-lg">👁️</span>
-              <span className="font-bold">Gästläge</span>
-              <span className="text-white/70 text-sm">(Demo-läge)</span>
+              <span className="font-bold">Guest Mode</span>
+              <span className="text-white/70 text-sm">(Demo)</span>
             </div>
             <div className="flex items-center gap-3 bg-black/20 rounded-full px-4 py-1.5">
               <Clock size={16} className="text-white" />
               <span className="font-mono text-lg font-bold">
-                {guestSecondsLeft > 0 ? `Automatisk utloggning om ${guestSecondsLeft}s` : 'Tid slut!'}
+                {guestSecondsLeft > 0 ? `Auto logout in ${guestSecondsLeft}s` : 'Time is up!'}
               </span>
             </div>
             <button onClick={exitGuestMode} className="px-4 py-1.5 bg-white text-amber-600 hover:bg-white/90 rounded-full text-sm font-bold transition-colors">
-              Logga in nu
+              Sign in now
             </button>
           </div>
         </div>
