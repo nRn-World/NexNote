@@ -648,15 +648,6 @@ export default function CommunityView({
     return () => unsub();
   }, []);
 
-useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(query(collection(db, 'community'), orderBy('createdAt', 'desc')), snap => {
-      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityPost));
-      loaded.sort((a, b) => b.likes.length - a.likes.length);
-      setPosts(loaded); setLoading(false);
-    });
-    return () => unsub();
-  }, [user]);
 
   useEffect(() => {
     if (!user) return;

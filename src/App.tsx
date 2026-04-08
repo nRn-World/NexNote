@@ -683,20 +683,21 @@ const createNote = () => {
 
       {/* Guest Mode Timer Banner */}
       {isGuest && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 py-2 bg-amber-500 text-white text-sm font-medium shadow-lg">
-          <div className="flex items-center gap-2">
-            <span>👁</span>
-            <span>Gästläge — begränsad åtkomst</span>
-          </div>
-          <div className="flex items-center gap-4">
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center px-4 py-3 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 text-white shadow-lg">
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-24 h-1.5 bg-white/30 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(guestSecondsLeft / 60) * 100}%` }} />
-              </div>
-              <span className="font-mono text-xs w-8">{guestSecondsLeft}s</span>
+              <span className="text-lg">👁️</span>
+              <span className="font-bold">Gästläge</span>
+              <span className="text-white/70 text-sm">(Demo-läge)</span>
             </div>
-            <button onClick={exitGuestMode} className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors">
-              Logga in
+            <div className="flex items-center gap-3 bg-black/20 rounded-full px-4 py-1.5">
+              <Clock size={16} className="text-white" />
+              <span className="font-mono text-lg font-bold">
+                {guestSecondsLeft > 0 ? `Automatisk utloggning om ${guestSecondsLeft}s` : 'Tid slut!'}
+              </span>
+            </div>
+            <button onClick={exitGuestMode} className="px-4 py-1.5 bg-white text-amber-600 hover:bg-white/90 rounded-full text-sm font-bold transition-colors">
+              Logga in nu
             </button>
           </div>
         </div>
@@ -708,7 +709,7 @@ const createNote = () => {
         notes={notes} activeNoteId={activeNoteId} searchQuery={searchQuery}
         onSearchChange={setSearchQuery} onSelectNote={setActiveNoteId}
         onCreateNote={createNote} onDeleteNote={deleteNote}
-        onLogout={logout} onImageClick={setSelectedImage}
+        onLogout={isGuest ? exitGuestMode : logout} onImageClick={setSelectedImage}
         onReorderNotes={handleReorderNotes}
         isDark={isDark} onToggleDark={toggleDark}
         categories={categories} activeCategoryId={activeCategoryId}
@@ -725,6 +726,7 @@ const createNote = () => {
         allPosts={communityPosts}
         user={user}
         isLoading={isLoading}
+        isGuest={isGuest}
       />
 
       <div className={cn(

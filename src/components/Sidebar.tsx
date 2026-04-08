@@ -44,6 +44,7 @@ interface SidebarProps {
   allPosts: any[];
   user: any;
   isLoading?: boolean;
+  isGuest?: boolean;
 }
 
 function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
@@ -291,7 +292,7 @@ export default function Sidebar({
           
           <div className="flex items-center gap-4">
             <button onClick={onLogout} className="text-[13px] font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
-              Logout
+              {isGuest ? 'Exit Guest' : 'Logout'}
             </button>
             <button onClick={onCreateNote} className="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all shadow-lg active:scale-95" title="New Note">
                <Plus size={20} />
