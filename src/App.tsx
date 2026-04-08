@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy } from 'lucide-react';
+import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, handleFirestoreError, OperationType } from './lib/utils';
@@ -25,6 +25,24 @@ import SharedNote from './components/SharedNote';
 import CommunityView from './components/CommunityView';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import UserProfilePage from './components/UserProfilePage';
+import MobileBottomNav from './components/MobileBottomNav';
+import AIModal from './components/AIModal';
+import ExportModal from './components/ExportModal';
+import AnimationEditor from './components/AnimationEditor';
+import JamSession from './components/JamSession';
+import DesignAIModal from './components/DesignAIModal';
+import StarryBackground from './components/StarryBackground';
+import ProjectPickerModal from './components/ProjectPickerModal';
+
+function decodeContent(raw: string): string {
+  if (!raw) return '';
+  if (raw.startsWith('<!DOCTYPE') || raw.startsWith('<html')) return raw;
+  let d = raw.replace(/<p>([\s\S]*?)<\/p>/g, '$1\n');
+  d = d.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+       .replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&nbsp;/g,' ');
+  d = d.replace(/<a[^>]*>(.*?)<\/a>/g,'$1');
+  return d.trim();
+}
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 
@@ -54,6 +72,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
+  const [communityTab, setCommunityTab] = useState<'trending' | 'challenges'>('trending');
   const [showProfile, setShowProfile] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -62,19 +81,29 @@ export default function App() {
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [isCodeExpanded, setIsCodeExpanded] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, title: '', message: '', onConfirm: () => {} });
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showAnimationEditor, setShowAnimationEditor] = useState(false);
+  const [showJamSession, setShowJamSession] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showDesignAi, setShowDesignAi] = useState(false);
+  const [designAiPrompt, setDesignAiPrompt] = useState('');
+  const [topDesigns, setTopDesigns] = useState<any[]>(Array(5).fill(null));
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [communityPostId, setCommunityPostId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const saveTimeoutRef = useRef<Record<string, any>>({});
   const { toasts, addToast, removeToast } = useToast();
 
-  // Check for shared note in URL
   const shareId = new URLSearchParams(window.location.search).get('share');
   if (shareId) return <SharedNote shareId={shareId} />;
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
-  // Auto-generate preview when active note changes or code changes
   useEffect(() => {
     if (activeNote?.code) {
       const { html, css, js } = activeNote.code;
@@ -89,9 +118,9 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Notes listener
   useEffect(() => {
-    if (!isAuthReady || !user) { setNotes([]); return; }
+    if (!isAuthReady || !user) { setNotes([]); setIsLoading(false); return; }
+    setIsLoading(true);
     const q = query(collection(db, 'notes'), where('uid', '==', user.uid));
     const unsub = onSnapshot(q, snapshot => {
       const loaded: Note[] = snapshot.docs.map(d => {
@@ -111,14 +140,13 @@ export default function App() {
       setNotes(loaded.sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-        // Updated sorting: always newest updated first
         return b.updatedAt - a.updatedAt;
       }));
-    }, err => handleFirestoreError(err, OperationType.LIST, 'notes'));
+      setIsLoading(false);
+    }, err => { handleFirestoreError(err, OperationType.LIST, 'notes'); setIsLoading(false); });
     return () => unsub();
   }, [user, isAuthReady]);
 
-  // Categories listener
   useEffect(() => {
     if (!isAuthReady || !user) { setCategories([]); return; }
     const q = query(collection(db, 'categories'), where('uid', '==', user.uid));
@@ -147,7 +175,39 @@ export default function App() {
     return () => unsub();
   }, [isAuthReady]);
 
-  // Keyboard shortcuts
+  useEffect(() => {
+    const saved = localStorage.getItem(`topDesigns_${user?.uid}`);
+    if (saved) setTopDesigns(JSON.parse(saved));
+    else setTopDesigns(Array(5).fill(null));
+  }, [user?.uid]);
+
+  const handleSelectProject = (project: any) => {
+    if (activeSlot === null) return;
+    const newTop = [...topDesigns];
+    newTop[activeSlot] = project;
+    setTopDesigns(newTop);
+    localStorage.setItem(`topDesigns_${user?.uid}`, JSON.stringify(newTop));
+    setShowProjectPicker(false);
+  };
+
+  const handleRemoveProject = () => {
+    if (activeSlot === null) return;
+    const newTop = [...topDesigns];
+    newTop[activeSlot] = null;
+    setTopDesigns(newTop);
+    localStorage.setItem(`topDesigns_${user?.uid}`, JSON.stringify(newTop));
+  };
+
+  const handleNavigateToProject = (p: any) => {
+    if (p.type === 'note') {
+       setActiveNoteId(p.id);
+    } else {
+       setCommunityPostId(p.id);
+       setCommunityTab('trending');
+       setShowCommunity(true);
+    }
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
@@ -184,37 +244,23 @@ export default function App() {
   const handleManualSave = async () => {
     let note = notes.find(n => n.id === activeNoteId);
     if (!note) return;
-
-    // --- AUTO-DETECT CODE ON SAVE ---
-    // If the note has no code section yet, check if the content looks like SVG/HTML
     if (!note.code && note.content) {
       const rawContent = note.content.replace(/<[^>]*>?/gm, (match) => {
-        // Keep actual SVG/HTML tags, but remove the wrapping <p> or <div> from the editor
         const tag = match.toLowerCase();
         if (tag.startsWith('<p') || tag === '</p>' || tag.startsWith('<div') || tag === '</div>') return '';
         return match;
       }).trim();
-
       const hasSvg = /<svg/i.test(rawContent);
       const hasHtml = /<html|<!DOCTYPE/i.test(rawContent);
-
       if (hasSvg || hasHtml) {
-        const updatedDate = Date.now();
-        const updatedNote = { 
-          ...note, 
-          code: { html: rawContent, css: '', js: '' },
-          content: '', // Move everything to code preview
-          updatedAt: updatedDate
-        };
+        const updatedNote = { ...note, code: { html: rawContent, css: '', js: '' }, content: '', updatedAt: Date.now() };
         note = updatedNote;
         setNotes(prev => prev.map(n => n.id === note.id ? note : n));
-        setIsCodeExpanded(false); // Ensure snippet view is visible
-        setActiveCodeTab('html'); // Reset tab to html if it was something else
+        setIsCodeExpanded(false);
+        setActiveCodeTab('html');
         addToast('Code detected! Moved to preview mode.', 'info');
       }
     }
-
-    // Cancel any pending debounced save
     if (saveTimeoutRef.current[note.id]) {
       clearTimeout(saveTimeoutRef.current[note.id]);
       delete saveTimeoutRef.current[note.id];
@@ -273,7 +319,6 @@ export default function App() {
     }
   };
 
-  // Category CRUD
   const createCategory = async (name: string, color: string) => {
     if (!user) return;
     const id = uuidv4();
@@ -304,7 +349,6 @@ export default function App() {
     });
   };
 
-  // Share
   const enableShare = async () => {
     if (!activeNote) return;
     const shareId = uuidv4();
@@ -322,7 +366,17 @@ export default function App() {
     ? `${window.location.origin}${window.location.pathname}?share=${activeNote.shareId}`
     : null;
 
-  // Reorder notes (drag & drop)
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const { innerWidth, innerHeight } = window;
+    setMousePos({ x: (clientX / innerWidth - 0.5) * 20, y: (clientY / innerHeight - 0.5) * 20 });
+  };
+
+  const createInspiredNote = async (prompt: string) => {
+    setDesignAiPrompt(prompt);
+    setShowDesignAi(true);
+  };
+
   const handleReorderNotes = (reordered: Note[]) => {
     setNotes(prev => {
       const ids = new Set(reordered.map(n => n.id));
@@ -425,9 +479,7 @@ export default function App() {
     debouncedSave(updated);
   };
 
-  const onChangeCoverImage = (noteId: string) => {
-    // Handled via custom event from Sidebar
-  };
+  const onChangeCoverImage = (noteId: string) => {};
 
   const onMoveManyNotes = (noteIds: string[], categoryId: string | undefined) => {
     noteIds.forEach(id => onMoveNote(id, categoryId));
@@ -445,7 +497,6 @@ export default function App() {
     addToast(`${noteIds.length} notes deleted.`, 'success');
   };
 
-  // Listen for cover image change from Sidebar
   useEffect(() => {
     const handler = (e: Event) => {
       const { noteId, dataUrl } = (e as CustomEvent).detail;
@@ -459,6 +510,7 @@ export default function App() {
     window.addEventListener('nexnote:coverimage', handler);
     return () => window.removeEventListener('nexnote:coverimage', handler);
   }, [notes]);
+
   const togglePin = () => { if (!activeNote) return; updateActiveNote({ isPinned: !activeNote.isPinned }); };
 
   const addTag = (tag: string) => {
@@ -486,13 +538,6 @@ export default function App() {
     const note = notes.find(n => n.id === activeNoteId);
     if (!note?.code) return;
     updateActiveNote({ code: { ...note.code, [type]: value } });
-  };
-  const generatePreview = (switchTab = true) => {
-    const note = notes.find(n => n.id === activeNoteId);
-    if (!note?.code) return;
-    const { html, css, js } = note.code;
-    setPreviewDoc(`<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script></body></html>`);
-    if (switchTab) setActiveCodeTab('preview');
   };
   const handleCopyTitle = async () => {
     if (!activeNote) return;
@@ -535,63 +580,26 @@ export default function App() {
     } catch { addToast('Could not take screenshot.', 'error'); }
     finally { setIsCapturing(false); }
   };
-  const handleAiAction = async (action: 'summarize' | 'fix') => {
-    if (!activeNote?.content) return;
-    const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') { addToast('Add VITE_GEMINI_API_KEY to .env to use AI features.', 'error'); return; }
-    try {
-      setIsAiProcessing(true);
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const prompt = action === 'summarize'
-        ? `Summarize this note in a few sentences: ${activeNote.content}`
-        : `Fix grammatical errors and improve the structure of this text. Return only the improved text: ${activeNote.content}`;
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (action === 'summarize') { alert('Summary:\n\n' + text); }
-      else { updateActiveNote({ content: text }); addToast('Text improved with AI.', 'success'); }
-    } catch { addToast('AI service call failed.', 'error'); }
-    finally { setIsAiProcessing(false); }
-  };
 
   if (!isAuthReady) return <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-500">Loading...</div>;
 
   if (!user) {
     return (
       <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
-        {/* Left Side: Illustration / Branding */}
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0 opacity-90 overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="w-full h-full object-cover"
-            >
-              <source src="/NexNote.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+            <StarryBackground />
           </div>
-          {/* Logo overlay on top-left */}
            <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
               <img src="/favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
            </div>
-          {/* Subtle gradient overlay to match image mood */}
           <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
         </div>
-
-        {/* Right Side: Login Form */}
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
-
             <div className="w-full max-w-sm text-center z-10">
                <img src="/logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
-
-              <button 
-                onClick={signInWithGoogle} 
-                className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5"
-              >
+              <button onClick={signInWithGoogle} className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5">
                 <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg">
                   <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                     <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -603,7 +611,6 @@ export default function App() {
                 <span>Sign in with Google</span>
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
-
               <div className="mt-24">
                 <p className="text-sm text-zinc-400 font-medium tracking-wide">
                   By logging in you agree to our{' '}
@@ -614,7 +621,6 @@ export default function App() {
               </div>
            </div>
         </div>
-
         {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
       </div>
     );
@@ -622,7 +628,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[var(--bg-deep)] font-sans overflow-hidden relative" style={{ color: 'var(--text-primary)' }}>
-      {/* Background decoration */}
+      <StarryBackground />
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -640,16 +646,17 @@ export default function App() {
         onDeleteManyNotes={onDeleteManyNotes}
         onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
         onChangeColor={onChangeColor}
-        onOpenCommunity={() => setShowCommunity(true)}
+        onOpenCommunity={() => { setCommunityTab('trending'); setShowCommunity(true); }}
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
         onGoHome={() => setActiveNoteId(null)}
         allPosts={communityPosts}
         user={user}
+        isLoading={isLoading}
       />
 
       <div className={cn(
-        'flex-1 flex flex-col h-full bg-transparent relative transition-transform duration-300 ease-in-out w-full',
+        'flex-1 flex flex-col h-full bg-transparent relative transition-all duration-500 ease-in-out w-full',
         !activeNoteId ? 'translate-x-full md:translate-x-0 hidden md:flex' : 'translate-x-0 flex'
       )}>
         {activeNote ? (
@@ -723,7 +730,6 @@ export default function App() {
 
                 {activeNote.code && (
                   <div className="mb-8 flex flex-col gap-4">
-                    {/* Main Preview (Always visible at top) */}
                     <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden shadow-xl bg-white flex flex-col">
                       <div className="flex items-center justify-between bg-zinc-900 px-4 py-2 border-b border-white/5">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -739,7 +745,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Code Section */}
                     <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden shadow-xl flex flex-col">
                       <div className="flex items-center justify-between bg-white/5 px-2 border-b border-white/5">
                         <div className="flex items-center">
@@ -763,12 +768,25 @@ export default function App() {
                               {isCodeCopied ? 'Copied!' : 'Copy'}
                             </button>
                           )}
-                          <button onClick={() => {
-                            setIsCodeExpanded(!isCodeExpanded);
-                            if (!isCodeExpanded && activeCodeTab === 'preview') setActiveCodeTab('html');
-                          }} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-cyan-400 hover:bg-cyan-400/10 rounded-full border border-cyan-400/20 transition-all">
-                            {isCodeExpanded ? 'Hide Code' : 'Show More Code'}
-                          </button>
+                          <button onClick={() => { setIsCodeExpanded(!isCodeExpanded); if (!isCodeExpanded && activeCodeTab === 'preview') setActiveCodeTab('html'); }} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-cyan-400 hover:bg-cyan-400/10 rounded-full border border-cyan-400/20 transition-all">
+                              {isCodeExpanded ? 'Hide Code' : 'Show More Code'}
+                            </button>
+                            {isCodeExpanded && (
+                              <>
+                                <button onClick={() => setShowAiModal(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all">
+                                  <Sparkles size={12} /> AI Assist
+                                </button>
+                                <button onClick={() => setShowExportModal(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all">
+                                  <Package size={12} /> Pro Export
+                                </button>
+                                <button onClick={() => setShowAnimationEditor(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-400/5 border border-purple-500/20 rounded-lg hover:bg-purple-500/10 transition-all">
+                                  <Zap size={12} /> Motion
+                                </button>
+                                <button onClick={() => setShowJamSession(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/5 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-all">
+                                  <Globe size={12} /> Jam
+                                </button>
+                              </>
+                            )}
                           <button onClick={toggleCodeEditor} className="p-2 text-slate-500 hover:text-red-400 transition-colors"><X size={18} /></button>
                         </div>
                       </div>
@@ -802,45 +820,195 @@ export default function App() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 hidden md:flex text-center bg-[var(--bg-deep)]">
-             <div className="relative mb-8">
-                <div className="absolute inset-0 bg-cyan-400/30 blur-[80px] rounded-full scale-150 animate-pulse delay-75" />
-                <div className="absolute inset-0 bg-blue-500/20 blur-[80px] rounded-full scale-150 animate-pulse delay-300" />
-                <div className="relative flex justify-center">
-                   {/* 3D Glass Document Icon emulation */}
-                   <div className="relative">
-                      <div className="absolute inset-0 translate-x-3 translate-y-3 bg-blue-500/30 rounded-2xl blur-md"></div>
-                      <div className="relative z-10 w-28 h-36 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-2xl border-2 border-white/20 backdrop-blur-md shadow-[0_0_40px_rgba(0,242,255,0.2)] flex flex-col items-center justify-center -rotate-6">
-                         <div className="w-16 h-1 bg-white/40 rounded-full mb-3" />
-                         <div className="w-12 h-1 bg-white/40 rounded-full mb-3 mr-4" />
-                         <div className="w-16 h-1 bg-white/40 rounded-full mb-3" />
-                         <div className="w-10 h-1 bg-white/40 rounded-full mr-6" />
+          <div 
+            onMouseMove={handleMouseMove}
+            className="flex-1 flex flex-col items-center justify-start py-12 px-8 hidden md:flex text-center bg-[#090A0F] relative overflow-hidden no-scrollbar"
+          >
+             <StarryBackground />
+
+             <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
+                
+                {/* 1. Global Challenge Widget (Top Spotlight) */}
+                <button 
+                  onClick={() => { setCommunityTab('challenges'); setShowCommunity(true); }}
+                  className="group relative mb-12 p-1 rounded-3xl overflow-hidden hover:scale-105 transition-all shadow-2xl active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 via-amber-500/10 to-yellow-500/20 animate-pulse" />
+                  <div className="relative bg-[#0B0D17] border border-yellow-500/20 rounded-3xl px-8 py-5 flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:rotate-6 transition-transform">
+                      <Trophy className="text-white" size={24} />
+                    </div>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-yellow-500">Live Challenge</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
                       </div>
-                      <div className="absolute top-1/2 -right-4 z-20 w-8 h-24 bg-gradient-to-t from-cyan-300/40 to-blue-500/40 rounded-full border border-white/30 backdrop-blur border-r-white text-white/50 rotate-12 flex justify-center items-end pb-2 shadow-lg">
-                        <div className="w-1 h-3 bg-white/60 rounded-full" />
-                      </div>
-                   </div>
+                      <h3 className="text-xl font-black text-white italic tracking-tight">Neon Pulse <span className="text-yellow-400">#01</span></h3>
+                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Submit your design for a chance to win</p>
+                    </div>
+                    <div className="ml-auto flex -space-x-3">
+                       {communityPosts.slice(0, 3).map((p, i) => (
+                         <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0B0D17] bg-zinc-800 overflow-hidden shadow-xl">
+                            {p.photoURL ? <img src={p.photoURL} alt="" /> : <div className="w-full h-full bg-indigo-500" />}
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                </button>
+
+                <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start w-full">
+                  
+                  {/* LEFT COLUMN: Main Illustration & Title */}
+                  <div className="flex-1 flex flex-col items-center text-center lg:text-left lg:items-start">
+                    <div 
+                      className="relative mb-12 transition-transform duration-200 ease-out preserve-3d"
+                      style={{ transform: `perspective(1000px) rotateY(${mousePos.x}deg) rotateX(${-mousePos.y}deg)` }}
+                    >
+                       <div className="absolute inset-0 bg-cyan-400/20 blur-[80px] rounded-full scale-150 animate-pulse" />
+                       <div className="relative flex justify-center lg:justify-start">
+                          <div className="relative">
+                             <div className="absolute inset-0 translate-x-4 translate-y-4 bg-blue-500/20 rounded-2xl blur-lg"></div>
+                             <div className="relative z-10 w-32 h-44 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-2xl border-2 border-white/20 backdrop-blur-xl shadow-[0_0_60px_rgba(0,242,255,0.15)] flex flex-col items-center justify-center -rotate-6 animate-float">
+                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
+                                <div className="w-16 h-1 bg-white/40 rounded-full mb-4 mr-6" />
+                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
+                                <div className="w-12 h-1 bg-white/40 rounded-full mr-10" />
+                             </div>
+                             <div className="absolute top-1/2 -right-6 z-20 w-10 h-28 bg-gradient-to-t from-cyan-300/40 to-blue-500/40 rounded-full border border-white/30 backdrop-blur text-white/50 rotate-12 flex justify-center items-end pb-3 shadow-2xl">
+                               <div className="w-1.5 h-4 bg-white/60 rounded-full" />
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    <h2 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter mb-4 leading-none italic">
+                      Imagine. <br/>
+                      <span className="text-cyan-400">Code.</span> Create.
+                    </h2>
+                    <p className="text-[var(--text-secondary)] text-sm font-medium max-w-sm leading-relaxed mb-8">
+                       Every great project starts with a single line. Choose a starter or dive into your vault.
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                      <button 
+                        onClick={createNote} 
+                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25"
+                      >
+                         <Plus size={18} /> Create new vault
+                      </button>
+                      <button 
+                        onClick={() => setShowCommunity(true)}
+                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
+                      >
+                         <Globe size={18} className="group-hover:rotate-12 transition-transform" /> 
+                         <span>Community View</span>
+                         <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: Activities & Dashboard Widgets */}
+                  <div className="w-full lg:w-96 space-y-6">
+                    
+                    {/* Activity Heatmap Widget */}
+                    <div className="glass-panel p-6 rounded-[32px] border-white/5 space-y-4">
+                       <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><History size={12}/> Dev Activity</h4>
+                          <span className="text-[10px] font-bold text-cyan-400">{notes.length} Active Notes</span>
+                       </div>
+                       <div className="grid grid-cols-7 gap-1.5">
+                          {Array.from({ length: 35 }).map((_, i) => (
+                            <div key={i} className={cn(
+                               "w-3.5 h-3.5 rounded-[3px] transition-colors",
+                               Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
+                            )} />
+                          ))}
+                       </div>
+                    </div>
+
+                    {/* AI Inspiration Starters */}
+                    <div className="space-y-3">
+                       <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Need Inspiration?</h4>
+                       <div className="grid grid-cols-1 gap-2">
+                          {[
+                            { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
+                            { label: 'Glassmorphism Card', icon: '🫧', prompt: 'a frosted glass card layout' },
+                            { label: 'SVG Wave Animation', icon: '🌊', prompt: 'flowing animated ocean waves' }
+                          ].map((item, i) => (
+                            <button 
+                              key={i}
+                              onClick={() => createInspiredNote(item.label)}
+                              className="w-full flex items-center gap-3 p-3 bg-white/2 border border-white/5 hover:bg-white/5 hover:border-white/10 rounded-2xl text-left transition-all group"
+                            >
+                               <span className="text-xl">{item.icon}</span>
+                               <span className="text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
+                               <Sparkles size={12} className="ml-auto text-zinc-600 opacity-0 group-hover:opacity-100 transition-all" />
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+
+                    {/* My Top 5 Design Section */}
+                    <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
+                       <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><Trophy size={12} className="text-yellow-500"/> My Top 5 Design</h4>
+                          <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
+                       </div>
+                       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                          {topDesigns.map((p, i) => (
+                             <div key={i} className="relative group shrink-0">
+                                {p ? (
+                                   <div className="relative">
+                                      <div 
+                                        onClick={() => handleNavigateToProject(p)}
+                                        className="w-12 h-12 rounded-2xl ring-2 ring-indigo-500/30 bg-[#0B0D17] overflow-hidden cursor-pointer hover:ring-indigo-500 transition-all shadow-lg relative z-0"
+                                      >
+                                         {p.code ? (
+                                            <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
+                                               <iframe 
+                                                 title="preview"
+                                                 srcDoc={(() => {
+                                                   if (typeof p.code === 'string') {
+                                                      const decoded = decodeContent(p.code);
+                                                      return (decoded.includes('<html') || decoded.includes('<!DOCTYPE'))
+                                                         ? decoded
+                                                         : `<!DOCTYPE html><html><body style="margin:0;overflow:hidden;background:transparent;">${decoded}</body></html>`;
+                                                   }
+                                                   return `<!DOCTYPE html><html><head><style>${p.code.css || ''}</style></head><body style="margin:0;overflow:hidden;background:transparent;">${p.code.html || ''}<script>${p.code.js || ''}<\/script></body></html>`;
+                                                 })()}
+                                                 className="w-full h-full border-none bg-transparent"
+                                               />
+                                            </div>
+                                         ) : p.image ? (
+                                            <img src={p.image} alt="" className="w-full h-full object-cover" />
+                                         ) : (
+                                            <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white italic">{p.title.charAt(0)}</div>
+                                         )}
+                                      </div>
+                                      {/* Hover Edit Action */}
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); setActiveSlot(i); setShowProjectPicker(true); }}
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 hover:scale-110 shadow-lg"
+                                        title="Edit Slot"
+                                      >
+                                         <Settings size={10} />
+                                      </button>
+                                   </div>
+                                ) : (
+                                   <button 
+                                     onClick={() => { setActiveSlot(i); setShowProjectPicker(true); }}
+                                     className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all"
+                                   >
+                                      <Plus size={18} />
+                                   </button>
+                                )}
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
                 </div>
              </div>
-
-             <h2 className="text-[28px] font-semibold text-[var(--text-primary)] tracking-wide mb-2 mt-4">Select a note</h2>
-             <p className="text-[var(--text-secondary)] text-sm font-normal max-w-xs leading-relaxed mb-8">
-                or create a new one to start writing
-             </p>
-
-             <button 
-               onClick={createNote} 
-               className="group relative flex items-center gap-2 px-6 py-2.5 bg-transparent rounded-lg text-[var(--text-primary)] font-medium hover:scale-105 active:scale-95 transition-all outline-none"
-               style={{
-                 background: 'linear-gradient(var(--bg-deep), var(--bg-deep)) padding-box, linear-gradient(to right, #00F2FF, #00B4FF) border-box',
-                 border: '1px solid transparent'
-               }}
-             >
-                <Plus size={16} className="opacity-80" />
-                <span>Create new note</span>
-                <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute inset-0 rounded-lg shadow-[0_0_20px_rgba(0,242,255,0.3)] opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
-             </button>
           </div>
         )}
       </div>
@@ -869,10 +1037,22 @@ export default function App() {
         <CommunityView
           user={user}
           userNotes={notes}
-          onClose={() => setShowCommunity(false)}
+          onClose={() => { setShowCommunity(false); setCommunityPostId(null); }}
           isDark={isDark}
+          initialTab={communityTab}
+          initialPostId={communityPostId}
         />
       )}
+
+      <ProjectPickerModal
+        isOpen={showProjectPicker}
+        onClose={() => setShowProjectPicker(false)}
+        notes={notes}
+        communityPosts={communityPosts}
+        onSelect={handleSelectProject}
+        onRemove={handleRemoveProject}
+        currentProject={activeSlot !== null ? topDesigns[activeSlot] : null}
+      />
 
       {showProfile && user && (
         <UserProfilePage
@@ -885,11 +1065,78 @@ export default function App() {
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
 
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav
+        activeNoteId={activeNoteId}
+        searchQuery={searchQuery}
+        onGoHome={() => setActiveNoteId(null)}
+        onCreateNote={createNote}
+        onSearch={() => {
+          const input = document.querySelector('input[placeholder="Search notes..."]') as HTMLInputElement;
+          if (input) input.focus();
+        }}
+        onCommunity={() => setShowCommunity(true)}
+        onProfile={() => setShowProfile(true)}
+      />
+
       <Toast toasts={toasts} onRemove={removeToast} />
       <ConfirmDialog
         open={confirm.open} title={confirm.title} message={confirm.message}
         danger={confirm.danger} confirmLabel="Delete"
         onConfirm={confirm.onConfirm} onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
+
+      {showAiModal && (
+        <AIModal 
+          isDark={isDark} 
+          onClose={() => setShowAiModal(false)} 
+          onInsert={(newCode) => {
+            const note = notes.find(n => n.id === activeNoteId);
+            if (note) {
+              updateActiveNote({ 
+                code: { 
+                  html: (note.code?.html || '') + '\n' + newCode.html,
+                  css: (note.code?.css || '') + '\n' + newCode.css,
+                  js: (note.code?.js || '') + '\n' + newCode.js
+                } 
+              });
+              setActiveCodeTab('html');
+            }
+          }} 
+        />
+      )}
+
+      {showExportModal && activeNote?.code && (
+        <ExportModal 
+          title={activeNote.title} 
+          code={activeNote.code} 
+          onClose={() => setShowExportModal(false)} 
+        />
+      )}
+
+      {showAnimationEditor && activeNote?.code && (
+        <AnimationEditor
+          onClose={() => setShowAnimationEditor(false)}
+          currentCode={activeNote.code}
+          onUpdate={(newCss) => updateActiveNote({ code: { ...activeNote.code!, css: newCss } })}
+        />
+      )}
+
+      {showJamSession && activeNote?.code && (
+        <JamSession
+          noteId={activeNote.id}
+          user={user}
+          currentCode={activeNote.code}
+          onUpdate={(newCode) => updateActiveNote({ code: newCode })}
+          onClose={() => setShowJamSession(false)}
+        />
+      )}
+
+      <DesignAIModal
+        isOpen={showDesignAi}
+        onClose={() => setShowDesignAi(false)}
+        initialPrompt={designAiPrompt}
+        isDark={isDark}
       />
     </div>
   );

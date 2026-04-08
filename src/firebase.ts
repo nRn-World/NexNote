@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCanAf3XY1nJDnyqfQhB6dufDp4W6Oovb0",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCanAf3XY1nJDnyqfQhB6dufDp4W6Oovb0",
   authDomain: "nexnote-1.firebaseapp.com",
   databaseURL: "https://nexnote-1-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "nexnote-1",

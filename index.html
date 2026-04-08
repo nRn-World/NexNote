@@ -6,11 +6,21 @@
     <title>NexNote</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
-    <meta name="theme-color" content="#0a0a0f" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0D0F16" />
+    <meta name="description" content="A modern platform for developers and creatives to store and share code snippets and notes." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

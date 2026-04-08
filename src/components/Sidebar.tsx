@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut } from 'lucide-react';
@@ -9,6 +9,8 @@ import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
 import CategoryManager from './CategoryManager';
 import ContextMenu, { ContextMenuItem } from './ContextMenu';
+import Skeleton from './Skeleton';
+import EmptyState from './EmptyState';
 
 interface SidebarProps {
   notes: Note[];
@@ -41,6 +43,7 @@ interface SidebarProps {
   onGoHome: () => void;
   allPosts: any[];
   user: any;
+  isLoading?: boolean;
 }
 
 function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
@@ -140,7 +143,6 @@ function SortableNote({
         </div>
       </div>
 
-      {/* Multi-select checkmark */}
       {(isSelecting || isSelected) && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
            <div className={cn(
@@ -163,6 +165,7 @@ export default function Sidebar({
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
   onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
+  isLoading = false,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -171,6 +174,9 @@ export default function Sidebar({
   const [bulkCatMenu, setBulkCatMenu] = useState<{ x: number; y: number } | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [pendingCoverNoteId, setPendingCoverNoteId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const isSelecting = selectedIds.size > 0;
 
@@ -253,9 +259,10 @@ export default function Sidebar({
 
   return (
     <div className={cn(
-      'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-transform duration-300 ease-in-out border-r border-white/5 shadow-2xl',
+      'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-all duration-500 ease-in-out border-r border-white/5 shadow-2xl',
+      mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4',
       activeNoteId ? '-translate-x-full md:translate-x-0' : 'translate-x-0 flex'
-    )}>      {/* Header with Logo and Actions */}
+    )}>
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
         <div className="flex justify-center w-full">
            <img 
@@ -293,14 +300,13 @@ export default function Sidebar({
         </div>
       </div>
 
-        <div className="relative mt-2 px-4">
-          <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-          <input type="text" placeholder="Search notes..." value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-slate-500 border-none outline-none focus:ring-1 focus:ring-slate-500/20 transition-all font-medium"
-          />
-        </div>
-
+      <div className="relative mt-2 px-4">
+        <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+        <input type="text" placeholder="Search notes..." value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-slate-500 border-none outline-none focus:ring-1 focus:ring-slate-500/20 transition-all font-medium"
+        />
+      </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 scrollbar-thin">
         <div className="mb-6">
@@ -313,7 +319,7 @@ export default function Sidebar({
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           <button
             onClick={onOpenCommunity}
             className="w-full flex items-center gap-3 px-4 py-2 mt-4 text-sm text-slate-500 hover:text-white transition-all group"
@@ -332,8 +338,16 @@ export default function Sidebar({
               {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Selected</span>}
            </div>
 
-           {filtered.length === 0 ? (
-            <div className="text-center text-slate-600 py-12 text-sm italic font-medium">No notes found...</div>
+          {isLoading ? (
+            <div className="space-y-0">
+              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} variant="note-card" />)}
+            </div>
+          ) : filtered.length === 0 && searchQuery ? (
+            <EmptyState variant="search" />
+          ) : filtered.length === 0 && activeCategoryId ? (
+            <EmptyState variant="category" actionLabel="Create note" onAction={onCreateNote} />
+          ) : filtered.length === 0 ? (
+            <EmptyState variant="notes" actionLabel="Create your first note" onAction={onCreateNote} />
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>
@@ -353,7 +367,6 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Bulk action floating bar */}
       {isSelecting && (
         <div className="absolute bottom-16 left-4 right-4 p-3 glass-panel rounded-2xl flex items-center gap-3 shadow-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <button

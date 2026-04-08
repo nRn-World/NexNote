@@ -8,13 +8,14 @@ import {
   Heart, Upload, Trophy, X, User, AlertTriangle, Clock,
   Trash2, AlertOctagon, Ban, Copy, Check, Code2, Eye, EyeOff,
   UserPlus, UserCheck, MessageSquare, Search, TrendingUp, Users, Crown,
-  Globe, Play, Image as ImageIcon
+  Globe, Image as ImageIcon, Settings
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Note } from '../types';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import UserProfilePage from './UserProfilePage';
+import StarryBackground from './StarryBackground';
 
 export interface CommunityPost {
   id: string;
@@ -28,16 +29,17 @@ export interface CommunityPost {
   likes: string[];
   createdAt: number;
   category?: string;
+  isWinner?: boolean;
 }
 
 export const COMMUNITY_CATEGORIES = [
   { id: 'all', label: 'All', icon: <Globe size={14} /> },
   { id: 'games', label: 'Games', icon: <Trophy size={14} /> },
-  { id: 'design', label: 'Design', icon: <ImageIcon size={14} /> },
   { id: 'background', label: 'Background', icon: <Globe size={14} /> },
-  { id: 'animations', label: 'Animations', icon: <Play size={14} /> },
   { id: 'ui', label: 'UI Elements', icon: <Copy size={14} /> },
   { id: 'components', label: 'Components', icon: <Code2 size={14} /> },
+  { id: 'design', label: 'Design', icon: <ImageIcon size={14} /> },
+  { id: 'challenges', label: 'Challenges', icon: <Trophy size={14} className="text-yellow-400" /> },
 ];
 
 interface BanRecord {
@@ -50,10 +52,12 @@ interface BanRecord {
 }
 
 interface CommunityViewProps {
-  user: any;
+  user: { uid: string; email: string; displayName: string; photoURL?: string };
   userNotes: Note[];
   onClose: () => void;
   isDark: boolean;
+  initialTab?: 'trending' | 'following' | 'challenges';
+  initialPostId?: string | null;
 }
 
 const MAX_WEEKLY = 2;
@@ -124,8 +128,11 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
         </div>
         {/* Category badge */}
         {post.category && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded-md border border-white/10 text-[9px] font-bold text-white/70 uppercase tracking-widest">
-            {COMMUNITY_CATEGORIES.find(c => c.id === post.category)?.label || post.category}
+          <div className={cn('absolute top-2 left-2 px-2 py-0.5 backdrop-blur-md rounded-md border text-[9px] font-bold uppercase tracking-widest z-20',
+            post.isWinner ? 'bg-yellow-500 border-yellow-600 text-black font-black flex items-center gap-1' : 'bg-black/50 border-white/10 text-white/70'
+          )}>
+            {post.isWinner && <Trophy size={10} />}
+            {post.isWinner ? 'CHALLENGE WINNER' : (COMMUNITY_CATEGORIES.find(c => c.id === post.category)?.label || post.category)}
           </div>
         )}
         {/* Rank badge */}
@@ -190,7 +197,7 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
   const handleCopy = async () => {
     await navigator.clipboard.writeText(decoded);
     if (!isOwn && !hasLiked) {
-      onLike();
+      onLike(); // Auto-like when copying someone else's code
     }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
@@ -240,10 +247,11 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
 }
 
 // Context menu
-function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn, onMessage, onMoveCategory }: {
+function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn, onMessage, onMoveCategory, onPickWinner }: {
   x: number; y: number; post: CommunityPost; isAdmin: boolean;
   onClose: () => void; onDelete: () => void; onBan: () => void; onWarn: () => void; onMessage: () => void;
   onMoveCategory: (categoryId: string) => void;
+  onPickWinner: (postId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [showCategorySubmenu, setShowCategorySubmenu] = useState(false);
@@ -290,6 +298,11 @@ function PostContextMenu({ x, y, post, isAdmin, onClose, onDelete, onBan, onWarn
           <button onClick={() => { onBan(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
             <Ban size={13} className="text-orange-400" /> Ban User
           </button>
+          {post.category === 'challenges' && (
+            <button onClick={() => { onPickWinner(post.id); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-yellow-500 hover:bg-yellow-500/10 font-bold">
+              <Trophy size={13} /> {post.isWinner ? 'Unmark Winner' : 'Mark as Winner'}
+            </button>
+          )}
           <div className="my-1 border-t border-zinc-800" />
           <button onClick={() => { onDelete(); onClose(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-900/20">
             <Trash2 size={13} /> Delete Post
@@ -362,7 +375,7 @@ function UploadModal({ userNotes, weeklyCount, currentLimit, onConfirm, onCancel
   userNotes: Note[]; weeklyCount: number; currentLimit: number; onConfirm: (noteId: string, category: string) => void; onCancel: () => void;
 }) {
   const [selectedNoteId, setSelectedNoteId] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('design');
+  const [selectedCategory, setSelectedCategory] = useState('games');
   const [step, setStep] = useState<'pick' | 'category' | 'warn'>('pick');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [uploading, setUploading] = useState(false);
@@ -513,7 +526,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
           </div>
         </div>
 
-        {/* Posts grid */}
+        {/* Posts list */}
         <div className="flex-1 overflow-y-auto p-4">
           {userPosts.length === 0 ? (
             <div className="text-center py-16 text-zinc-600">
@@ -521,7 +534,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
               <p className="text-sm">No shared projects yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-4">
               {userPosts.map(post => (
                 <div key={post.id} onClick={() => setExpandedPost(post)}
                   className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden cursor-pointer hover:border-zinc-500 transition-colors">
@@ -578,13 +591,23 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
   );
 }
 
-export default function CommunityView({ user, userNotes, onClose, isDark }: CommunityViewProps) {
+export default function CommunityView({ 
+  user, userNotes, onClose, isDark, initialTab = 'trending', initialPostId 
+}: CommunityViewProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [bans, setBans] = useState<BanRecord[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [expandedPost, setExpandedPost] = useState<CommunityPost | null>(null);
+
+  useEffect(() => {
+    if (initialPostId && posts.length > 0) {
+      const p = posts.find(post => post.id === initialPostId);
+      if (p) setExpandedPost(p);
+    }
+  }, [initialPostId, posts]);
+
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; post: CommunityPost } | null>(null);
   const [banTarget, setBanTarget] = useState<CommunityPost | null>(null);
   const [banReason, setBanReason] = useState('');
@@ -595,7 +618,7 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
   const [msgText, setMsgText] = useState('');
   const [myWarning, setMyWarning] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'trending' | 'following'>('trending');
+  const [activeTab, setActiveTab] = useState<'trending' | 'following' | 'challenges'>(initialTab);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [profileTarget, setProfileTarget] = useState<{ uid: string; name: string; photo?: string } | null>(null);
 
@@ -680,6 +703,15 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
       alert(`Max ${currentLimit} uploads per week. ${isAdmin ? 'Admin' : 'Regular'} limit reached.`); 
       return; 
     }
+    
+    if (category === 'challenges') {
+      const hasEntry = posts.find(p => p.uid === user.uid && p.category === 'challenges');
+      if (hasEntry) {
+        alert('You can only submit ONE entry per challenge.');
+        return;
+      }
+    }
+
     const note = userNotes.find(n => n.id === noteId);
     if (!note?.code) return;
     const fullCode = `<!DOCTYPE html><html><head><style>${note.code.css||''}</style></head><body>${note.code.html||''}<script>${note.code.js||''}<\/script></body></html>`;
@@ -698,6 +730,12 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
   const handleMoveCategory = async (postId: string, category: string) => {
     if (!isAdmin) return;
     await updateDoc(doc(db, 'community', postId), { category });
+  };
+  const handlePickWinner = async (postId: string) => {
+    if (!isAdmin) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    await updateDoc(doc(db, 'community', postId), { isWinner: !post.isWinner });
   };
   const handleBan = async () => {
     if (!isAdmin || !banTarget) return;
@@ -749,9 +787,12 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
   const uniqueUsers = Array.from(new Map(posts.filter(p => p.uid !== user?.uid && !following.includes(p.uid)).map(p => [p.uid, p])).values()).slice(0, 6);
 
   return (
-    <div className="fixed inset-0 z-[300] flex flex-col bg-[var(--bg-deep)] text-[var(--text-primary)]">
-      {/* Top nav */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] backdrop-blur-sm">
+    <div className="fixed inset-0 z-[300] flex flex-col bg-[#090A0F] text-[var(--text-primary)]">
+      <StarryBackground />
+      
+      <div className="relative z-10 flex flex-col h-full overflow-hidden">
+        {/* Top nav */}
+        <div className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] backdrop-blur-sm">
         <div className="flex items-center gap-4">
            <img 
              src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
@@ -762,19 +803,19 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/25 rounded-full uppercase tracking-wider -ml-1 mt-1">Live</span>
         </div>
 
-        {/* Tabs */}
         <div className="flex items-center gap-1 bg-[var(--bg-panel-hover)] rounded-lg p-0.5 border border-[var(--border-glass)]">
-          {([['trending', 'Trending', TrendingUp], ['following', 'Following', Users]] as const).map(([tab, label, Icon]) => (
+          {([['trending', 'Trending', TrendingUp], ['following', 'Following', Users], ['challenges', 'Challenges', Trophy]] as const).map(([tab, label, Icon]) => (
             <button key={tab} onClick={() => setActiveTab(tab as any)}
               className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                activeTab === tab ? 'bg-[var(--text-primary)] text-[var(--bg-deep)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                activeTab === tab 
+                  ? (tab === 'challenges' ? 'bg-yellow-500 text-black' : 'bg-[var(--text-primary)] text-[var(--bg-deep)]')
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}>
-              <Icon size={12} /> {label}
+              <Icon size={12} className={cn(activeTab === tab && tab === 'challenges' ? 'text-black' : '')} /> {label}
             </button>
           ))}
         </div>
 
-        {/* Search */}
         <div className="flex-1 max-w-xs relative">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search..."
@@ -782,9 +823,8 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* My profile button */}
           <button
-            onClick={() => setProfileTarget({ uid: user?.uid, name: user?.displayName || 'My profile', photo: user?.photoURL })}
+            onClick={() => setProfileTarget({ uid: user?.uid || '', name: user?.displayName || 'My profile', photo: user?.photoURL || undefined })}
             className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-hover)] border border-[var(--border-glass)] rounded-lg text-xs hover:text-[var(--text-primary)] transition-colors"
             title="My profile"
           >
@@ -805,7 +845,6 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
         </div>
       </div>
 
-      {/* Category Filter Bar */}
       <div className="flex items-center gap-2 px-6 py-2 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] overflow-x-auto no-scrollbar">
         {COMMUNITY_CATEGORIES.map(cat => (
           <button key={cat.id} onClick={() => setSelectedFilter(cat.id)}
@@ -828,19 +867,79 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
         {loading ? (
           <div className="flex items-center justify-center h-64 text-zinc-600 text-sm">Loading...</div>
+        ) : activeTab === 'challenges' ? (
+          <div className="max-w-6xl mx-auto space-y-12">
+            <div className="relative p-10 rounded-[40px] overflow-hidden border border-yellow-500/20 bg-[#0B0D17] shadow-2xl">
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-yellow-500/5 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-amber-600/5 rounded-full blur-[80px] pointer-events-none" />
+              
+              <div className="relative z-10 flex flex-col md:flex-row gap-10 items-center">
+                <div className="flex-1 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="px-3 py-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <Trophy size={11} /> Weekly Challenge
+                    </div>
+                    <div className="flex items-center gap-1.5 text-zinc-500">
+                      <Clock size={12} />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">3 Days Left</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h2 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-tight">Neon Pulse <span className="text-yellow-400">#01</span></h2>
+                    <p className="text-zinc-400 text-sm font-medium leading-relaxed max-w-lg">
+                      Create the most stunning neon-themed UI elements or animations. Focus on glow effects, dark backgrounds, and vibrant colors.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-6 pt-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Reward</p>
+                      <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
+                    </div>
+                    <div className="w-px h-8 bg-white/5" />
+                    <button onClick={() => setShowUpload(true)} className="px-6 py-3 bg-yellow-500 text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95">
+                      Submit Entry
+                    </button>
+                  </div>
+                </div>
+
+                <div className="w-full md:w-64 shrink-0 aspect-square rounded-[32px] overflow-hidden border border-white/10 bg-white/2 backdrop-blur-sm p-2 shadow-2xl rotate-2">
+                  <div className="w-full h-full rounded-[24px] overflow-hidden">
+                    <LivePreview content={`<div style="font-family:sans-serif;font-weight:900;font-size:40px;color:#fff;text-shadow:0 0 10px #00f2ff,0 0 20px #a0f;animation:p 2s infinite;">NEON</div><style>@keyframes p{0%,100%{opacity:1;}50%{opacity:0.3;}}</style>`} title="demo" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">Challenge Entries</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {posts.filter(p => (p.fullCode || p.content).toLowerCase().includes('neon')).map((p, i) => (
+                   <PostCard 
+                     key={p.id} post={p} index={i} userId={user?.uid || ''} isAdmin={isAdmin} 
+                     following={following} onLike={() => handleLike(p)} onFollow={() => handleFollow(p.uid)}
+                     onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: p }); }}
+                     onExpand={() => setExpandedPost(p)}
+                     onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
+                   />
+                 ))}
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            {/* People to follow */}
+          <div className="max-w-6xl mx-auto">
             {activeTab === 'trending' && uniqueUsers.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
                   <Users size={12} /> People to follow
                 </h2>
-                <div className="flex gap-3 overflow-x-auto pb-2">
+                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                   {uniqueUsers.map(p => (
                     <div key={p.uid} className="flex items-center gap-2.5 px-3 py-2 bg-[var(--bg-panel)] border border-[var(--border-glass)] rounded-xl shrink-0 hover:bg-[var(--bg-panel-hover)] transition-colors">
                       {p.photoURL
@@ -861,104 +960,131 @@ export default function CommunityView({ user, userNotes, onClose, isDark }: Comm
               </div>
             )}
 
-            {/* Grid */}
             {filteredPosts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
+              <div className="flex flex-col items-center justify-center py-24 text-zinc-600 italic">
                 <Trophy size={40} className="mb-3 opacity-20" />
                 <p className="text-sm">{activeTab === 'following' ? 'Follow users to see their posts here.' : 'No posts yet.'}</p>
               </div>
             ) : (
-              <>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2">
-                  <TrendingUp size={12} /> {activeTab === 'trending' ? 'Trending' : 'From Following'}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredPosts.map((post, i) => (
-                    <PostCard
-                      key={post.id} post={post} index={i}
-                      userId={user?.uid || ''} isAdmin={isAdmin}
-                      following={following}
-                      onLike={() => handleLike(post)}
-                      onFollow={() => handleFollow(post.uid)}
-                      onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post }); }}
-                      onExpand={() => setExpandedPost(post)}
-                      onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
-                    />
-                  ))}
-                </div>
-              </>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredPosts.map((post, i) => (
+                  <PostCard
+                    key={post.id} post={post} index={i}
+                    userId={user?.uid || ''} isAdmin={isAdmin}
+                    following={following}
+                    onLike={() => handleLike(post)}
+                    onFollow={() => handleFollow(post.uid)}
+                    onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post }); }}
+                    onExpand={() => setExpandedPost(post)}
+                    onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}
       </div>
 
+      {showUpload && (
+        <UploadModal
+          userNotes={userNotes}
+          weeklyCount={weeklyCount}
+          currentLimit={currentLimit}
+          onConfirm={handleUpload}
+          onCancel={() => setShowUpload(false)}
+        />
+      )}
+
       {expandedPost && (
-        <PostModal post={expandedPost} userId={user?.uid || ''} isAdmin={isAdmin} following={following}
-          onLike={() => handleLike(expandedPost)} onFollow={() => handleFollow(expandedPost.uid)}
+        <PostModal
+          post={expandedPost}
+          userId={user?.uid || ''}
+          isAdmin={isAdmin}
+          following={following}
+          onLike={() => handleLike(expandedPost)}
+          onFollow={() => handleFollow(expandedPost.uid)}
           onClose={() => setExpandedPost(null)}
           onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: expandedPost }); }}
         />
       )}
 
       {profileTarget && (
-        <UserProfilePage
+        <UserProfile
           uid={profileTarget.uid}
-          currentUser={user}
-          allPosts={posts}
+          displayName={profileTarget.name}
+          photoURL={profileTarget.photo}
+          posts={posts}
+          userId={user?.uid || ''}
+          following={following}
+          onFollow={() => handleFollow(profileTarget.uid)}
           onClose={() => setProfileTarget(null)}
         />
       )}
 
-      {ctxMenu && <PostContextMenu x={ctxMenu.x} y={ctxMenu.y} post={ctxMenu.post} isAdmin={isAdmin}
-        onClose={() => setCtxMenu(null)} onDelete={() => handleDelete(ctxMenu.post.id)}
-        onBan={() => setBanTarget(ctxMenu.post)} onWarn={() => setWarnTarget(ctxMenu.post)}
-        onMessage={() => setMsgTarget(ctxMenu.post)}
-        onMoveCategory={(cat) => handleMoveCategory(ctxMenu.post.id, cat)} />}
-
-      {showUpload && <UploadModal userNotes={userNotes} weeklyCount={weeklyCount} currentLimit={currentLimit} onConfirm={async (id, cat) => { await handleUpload(id, cat); setShowUpload(false); }} onCancel={() => setShowUpload(false)} />}
+      {ctxMenu && (
+        <PostContextMenu
+          x={ctxMenu.x} y={ctxMenu.y}
+          post={ctxMenu.post}
+          isAdmin={isAdmin}
+          onClose={() => setCtxMenu(null)}
+          onDelete={() => handleDelete(ctxMenu.post.id)}
+          onBan={() => setBanTarget(ctxMenu.post)}
+          onWarn={() => setWarnTarget(ctxMenu.post)}
+          onMessage={() => setMsgTarget(ctxMenu.post)}
+          onMoveCategory={cat => handleMoveCategory(ctxMenu.post.id, cat)}
+          onPickWinner={id => handlePickWinner(id)}
+        />
+      )}
 
       {banTarget && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="font-semibold text-white mb-3">Ban {banTarget.displayName}</h3>
-            <textarea value={banReason} onChange={e => setBanReason(e.target.value)} placeholder="Reason..." rows={3} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white outline-none mb-3 resize-none" />
-            <select value={banDuration} onChange={e => setBanDuration(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white outline-none mb-4">
-              <option value="1week">1 week</option><option value="1month">1 month</option><option value="1year">1 year</option><option value="forever">Forever</option>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-2xl max-w-sm w-full">
+            <h2 className="text-lg font-bold text-white mb-4">Ban {banTarget.displayName}</h2>
+            <input value={banReason} onChange={e => setBanReason(e.target.value)} placeholder="Reason for ban"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white mb-4 outline-none" />
+            <select value={banDuration} onChange={e => setBanDuration(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white mb-6 outline-none">
+              <option value="1week">1 Week</option>
+              <option value="1month">1 Month</option>
+              <option value="1year">1 Year</option>
+              <option value="forever">Forever</option>
             </select>
             <div className="flex gap-3">
-              <button onClick={handleBan} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Ban</button>
-              <button onClick={() => setBanTarget(null)} className="flex-1 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={handleBan} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl transition-colors">Confirm Ban</button>
+              <button onClick={() => setBanTarget(null)} className="flex-1 bg-zinc-800 text-zinc-400 py-2 rounded-xl">Cancel</button>
             </div>
           </div>
         </div>
       )}
 
       {warnTarget && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="font-semibold text-white mb-3">Warn {warnTarget.displayName}</h3>
-            <textarea value={warnMsg} onChange={e => setWarnMsg(e.target.value)} placeholder="Warning message..." rows={4} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white outline-none mb-4 resize-none" />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-2xl max-w-sm w-full">
+            <h2 className="text-lg font-bold text-white mb-4">Warn {warnTarget.displayName}</h2>
+            <textarea value={warnMsg} onChange={e => setWarnMsg(e.target.value)} placeholder="Warning message..."
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white mb-6 outline-none h-32 resize-none" />
             <div className="flex gap-3">
-              <button onClick={handleWarn} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium">Send Warning</button>
-              <button onClick={() => setWarnTarget(null)} className="flex-1 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={handleWarn} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-xl transition-colors">Send Warning</button>
+              <button onClick={() => setWarnTarget(null)} className="flex-1 bg-zinc-800 text-zinc-400 py-2 rounded-xl">Cancel</button>
             </div>
           </div>
         </div>
       )}
 
       {msgTarget && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="font-semibold text-white mb-1">Message to {msgTarget.displayName}</h3>
-            <p className="text-xs text-zinc-500 mb-3">The recipient can reply to this message.</p>
-            <textarea value={msgText} onChange={e => setMsgText(e.target.value)} placeholder="Write your message..." rows={4} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white outline-none mb-4 resize-none" />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 p-6 rounded-2xl max-w-sm w-full">
+            <h2 className="text-lg font-bold text-white mb-4">Message {msgTarget.displayName}</h2>
+            <textarea value={msgText} onChange={e => setMsgText(e.target.value)} placeholder="Your message..."
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white mb-6 outline-none h-32 resize-none" />
             <div className="flex gap-3">
-              <button onClick={handleMessage} disabled={!msgText.trim()} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-40">Send</button>
-              <button onClick={() => setMsgTarget(null)} className="flex-1 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={handleMessage} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition-colors">Send</button>
+              <button onClick={() => setMsgTarget(null)} className="flex-1 bg-zinc-800 text-zinc-400 py-2 rounded-xl">Cancel</button>
             </div>
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
