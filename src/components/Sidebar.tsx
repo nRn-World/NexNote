@@ -167,6 +167,7 @@ export default function Sidebar({
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
   onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
   isLoading = false,
+  isGuest = false,
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
