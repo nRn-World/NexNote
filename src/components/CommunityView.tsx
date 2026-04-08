@@ -15,8 +15,7 @@ import { Note } from '../types';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import UserProfilePage from './UserProfilePage';
-import StarryBackground from './StarryBackground';
-import AnimatedCanvasBackground from './AnimatedCanvasBackground';
+import CommunityBackground from './CommunityBackground';
 
 export interface CommunityPost {
   id: string;
@@ -786,9 +785,8 @@ export default function CommunityView({
   const uniqueUsers = Array.from(new Map(posts.filter(p => p.uid !== user?.uid && !following.includes(p.uid)).map(p => [p.uid, p])).values()).slice(0, 6);
 
   return (
-    <div className="fixed inset-0 z-[300] flex flex-col bg-[#090A0F] text-[var(--text-primary)]">
-      <AnimatedCanvasBackground />
-      <StarryBackground />
+    <div className="fixed inset-0 z-[300] flex flex-col bg-black text-[var(--text-primary)]">
+      <CommunityBackground />
       
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
         {/* Top nav */}
