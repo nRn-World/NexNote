@@ -684,23 +684,21 @@ const createNote = () => {
 
       {/* Guest Mode Timer Banner */}
       {isGuest && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center px-4 py-3 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 text-white shadow-lg">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">👁️</span>
-              <span className="font-bold">Guest Mode</span>
-              <span className="text-white/70 text-sm">(Demo)</span>
-            </div>
-            <div className="flex items-center gap-3 bg-black/20 rounded-full px-4 py-1.5">
-              <Clock size={16} className="text-white" />
-              <span className="font-mono text-lg font-bold">
-                {guestSecondsLeft > 0 ? `Auto logout in ${guestSecondsLeft}s` : 'Time is up!'}
-              </span>
-            </div>
-            <button onClick={exitGuestMode} className="px-4 py-1.5 bg-white text-amber-600 hover:bg-white/90 rounded-full text-sm font-bold transition-colors">
-              Sign out now
-            </button>
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-4 px-4 py-2 bg-amber-500/90 backdrop-blur-sm text-white text-sm font-medium shadow-lg border-b border-amber-400/50">
+          <div className="flex items-center gap-2">
+            <span>👁️</span>
+            <span className="font-bold">Guest Mode</span>
+            <span className="text-white/70">(Demo)</span>
           </div>
+          <div className="flex items-center gap-2">
+            <Clock size={14} className="text-white" />
+            <span className="font-mono">
+              {guestSecondsLeft > 0 ? `Auto logout in ${guestSecondsLeft}s` : 'Time is up!'}
+            </span>
+          </div>
+          <button onClick={exitGuestMode} className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-bold transition-colors">
+            Sign out
+          </button>
         </div>
       )}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[120px] pointer-events-none" />
