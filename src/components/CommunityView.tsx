@@ -100,11 +100,12 @@ function LivePreview({ content, title }: { content: string; title: string }) {
 }
 
 // Post card — CodePen style
-function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, onContextMenu, onExpand, onProfileClick }: {
+function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, onContextMenu, onExpand, onProfileClick, isGuest }: {
   post: CommunityPost; index: number; userId: string; isAdmin: boolean;
   following: string[]; onLike: () => void; onFollow: () => void;
   onContextMenu: (e: React.MouseEvent) => void; onExpand: () => void;
   onProfileClick: (uid: string, name: string, photo?: string) => void;
+  isGuest?: boolean;
 }) {
   const hasLiked = post.likes.includes(userId);
   const isFollowing = following.includes(post.uid);
@@ -917,15 +918,16 @@ export default function CommunityView({
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">Challenge Entries</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {posts.filter(p => (p.fullCode || p.content).toLowerCase().includes('neon')).map((p, i) => (
-                   <PostCard 
-                     key={p.id} post={p} index={i} userId={user?.uid || ''} isAdmin={isAdmin} 
-                     following={following} onLike={() => handleLike(p)} onFollow={() => handleFollow(p.uid)}
-                     onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: p }); }}
-                     onExpand={() => setExpandedPost(p)}
-                     onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
-                   />
-                 ))}
+                  {posts.filter(p => (p.fullCode || p.content).toLowerCase().includes('neon')).map((p, i) => (
+                    <PostCard 
+                      key={p.id} post={p} index={i} userId={user?.uid || ''} isAdmin={isAdmin} 
+                      following={following} onLike={() => handleLike(p)} onFollow={() => handleFollow(p.uid)}
+                      onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: p }); }}
+                      onExpand={() => setExpandedPost(p)}
+                      onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
+                      isGuest={isGuest}
+                    />
+                  ))}
               </div>
             </div>
           </div>
@@ -974,6 +976,7 @@ export default function CommunityView({
                     onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post }); }}
                     onExpand={() => setExpandedPost(post)}
                     onProfileClick={(uid, name, photo) => setProfileTarget({ uid, name, photo })}
+                    isGuest={isGuest}
                   />
                 ))}
               </div>
@@ -1002,6 +1005,7 @@ export default function CommunityView({
           onFollow={() => handleFollow(expandedPost.uid)}
           onClose={() => setExpandedPost(null)}
           onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, post: expandedPost }); }}
+          isGuest={isGuest}
         />
       )}
 
