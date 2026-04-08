@@ -648,13 +648,13 @@ export default function CommunityView({
     return () => unsub();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!user) return;
-    const ref = doc(db, 'community_following', user.uid);
-    const unsub = onSnapshot(ref,
-      snap => { setFollowing(snap.exists() ? (snap.data()?.uids || []) : []); },
-      err => { console.warn('Following read failed:', err.code); setFollowing([]); }
-    );
+    const unsub = onSnapshot(query(collection(db, 'community'), orderBy('createdAt', 'desc')), snap => {
+      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityPost));
+      loaded.sort((a, b) => b.likes.length - a.likes.length);
+      setPosts(loaded); setLoading(false);
+    });
     return () => unsub();
   }, [user]);
 
