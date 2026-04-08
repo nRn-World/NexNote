@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import UserProfilePage from './UserProfilePage';
 import StarryBackground from './StarryBackground';
+import AnimatedCanvasBackground from './AnimatedCanvasBackground';
 
 export interface CommunityPost {
   id: string;
@@ -786,6 +787,7 @@ export default function CommunityView({
 
   return (
     <div className="fixed inset-0 z-[300] flex flex-col bg-[#090A0F] text-[var(--text-primary)]">
+      <AnimatedCanvasBackground />
       <StarryBackground />
       
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
