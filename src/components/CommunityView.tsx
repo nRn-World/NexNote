@@ -58,6 +58,7 @@ interface CommunityViewProps {
   isDark: boolean;
   initialTab?: 'trending' | 'following' | 'challenges';
   initialPostId?: string | null;
+  isGuest?: boolean;
 }
 
 const MAX_WEEKLY = 2;
@@ -157,21 +158,21 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
           }
           <span onClick={e => { e.stopPropagation(); onProfileClick(post.uid, post.displayName, post.photoURL); }} className="text-xs text-zinc-400 truncate flex-1 cursor-pointer hover:text-white transition-colors">{post.displayName}</span>
           {!isOwn && (
-            <button onClick={e => { e.stopPropagation(); onFollow(); }}
-              className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0',
+<button onClick={e => { e.stopPropagation(); if (isGuest) { alert('Sign in to follow users!'); return; } onFollow(); }}
+              className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0', isGuest ? 'opacity-40 cursor-not-allowed' :
                 isFollowing
                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-400'
               )}>
               {isFollowing ? <UserCheck size={9} /> : <UserPlus size={9} />}
-              {isFollowing ? 'Following' : 'Follow'}
+              {isFollowing ? 'Following' : isGuest ? 'Guest' : 'Follow'}
             </button>
           )}
-          <button onClick={e => { e.stopPropagation(); onLike(); }}
+<button onClick={e => { e.stopPropagation(); if (isGuest) { alert('Sign in to like!'); return; } onLike(); }}
             className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0',
               hasLiked
                 ? 'bg-red-500/10 border-red-500/30 text-red-400'
-                : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/30'
+                : isGuest ? 'opacity-40 cursor-not-allowed' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/30'
             )}>
             <Heart size={9} className={cn(hasLiked && 'fill-red-400')} />
             {post.likes.length}
@@ -183,10 +184,11 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
 }
 
 // Expanded post modal
-function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose, onContextMenu }: {
+function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose, onContextMenu, isGuest = false }: {
   post: CommunityPost; userId: string; isAdmin: boolean; following: string[];
   onLike: () => void; onFollow: () => void; onClose: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
+  isGuest?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const decoded = decodeContent(post.fullCode || post.content);
@@ -194,7 +196,11 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
   const isFollowing = following.includes(post.uid);
   const isOwn = post.uid === userId;
 
-  const handleCopy = async () => {
+const handleCopy = async () => {
+    if (isGuest) {
+      alert('Copy is disabled in Guest Mode. Sign in to copy code!');
+      return;
+    }
     await navigator.clipboard.writeText(decoded);
     if (!isOwn && !hasLiked) {
       onLike(); // Auto-like when copying someone else's code
@@ -217,8 +223,8 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleCopy} className="flex items-center gap-2 px-4 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl border border-zinc-700 transition-all font-bold">
-              {copied ? <><Check size={14} className="text-green-400" /> Copied</> : <><Copy size={14} /> Copy Code</>}
+<button onClick={handleCopy} disabled={isGuest} className="flex items-center gap-2 px-4 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl border border-zinc-700 transition-all font-bold disabled:opacity-40 disabled:cursor-not-allowed">
+              {copied ? <><Check size={14} className="text-green-400" /> Copied</> : isGuest ? <><Copy size={14} /> Locked</> : <><Copy size={14} /> Copy Code</>}
             </button>
             <button 
               onClick={() => {
@@ -592,7 +598,7 @@ function UserProfile({ uid, displayName, photoURL, posts, userId, following, onF
 }
 
 export default function CommunityView({ 
-  user, userNotes, onClose, isDark, initialTab = 'trending', initialPostId 
+  user, userNotes, onClose, isDark, initialTab = 'trending', initialPostId, isGuest = false 
 }: CommunityViewProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [bans, setBans] = useState<BanRecord[]>([]);
@@ -672,7 +678,7 @@ export default function CommunityView({
   const currentLimit = isAdmin ? MAX_WEEKLY_ADMIN : MAX_WEEKLY;
 
   const handleLike = async (post: CommunityPost) => {
-    if (!user) return;
+    if (!user || isGuest) return;
     if (post.uid === user.uid) {
       alert('You cannot like your own projects.');
       return;
@@ -682,7 +688,7 @@ export default function CommunityView({
   };
 
   const handleFollow = async (targetUid: string) => {
-    if (!user || !targetUid || targetUid === user.uid) return;
+    if (!user || !targetUid || targetUid === user.uid || isGuest) return;
     const ref = doc(db, 'community_following', user.uid);
     const isNowFollowing = following.includes(targetUid);
     const newList = isNowFollowing
@@ -834,12 +840,12 @@ export default function CommunityView({
             }
             My profile
           </button>
-          <button onClick={() => setShowUpload(true)} disabled={!canUpload}
+<button onClick={() => { if (isGuest) { alert('Sign in to share code with community!'); return; } setShowUpload(true); }} disabled={isGuest || !canUpload}
             className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-              canUpload ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-[var(--bg-panel-hover)] text-[var(--text-secondary)] cursor-not-allowed'
+              (canUpload && !isGuest) ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-[var(--bg-panel-hover)] text-[var(--text-secondary)] cursor-not-allowed'
             )}>
-            <Upload size={13} /> Share code
-            <span className="opacity-60">({weeklyCount}/{currentLimit})</span>
+            <Upload size={13} /> {isGuest ? 'Locked' : 'Share code'}
+            {!isGuest && <span className="opacity-60">({weeklyCount}/{currentLimit})</span>}
           </button>
           <button onClick={onClose} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-hover)] rounded-lg transition-colors"><X size={18} /></button>
         </div>
@@ -901,8 +907,8 @@ export default function CommunityView({
                       <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
                     </div>
                     <div className="w-px h-8 bg-white/5" />
-                    <button onClick={() => setShowUpload(true)} className="px-6 py-3 bg-yellow-500 text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95">
-                      Submit Entry
+<button onClick={() => { if (isGuest) { alert('Sign in to submit to challenges!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {isGuest ? 'Login to Submit' : 'Submit Entry'}
                     </button>
                   </div>
                 </div>

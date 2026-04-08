@@ -75,6 +75,9 @@ export default function App() {
   const [communityTab, setCommunityTab] = useState<'trending' | 'challenges'>('trending');
   const [showProfile, setShowProfile] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestSecondsLeft, setGuestSecondsLeft] = useState(60);
+  const guestTimerRef = useRef<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [communityPosts, setCommunityPosts] = useState<any[]>([]);
@@ -208,6 +211,35 @@ export default function App() {
     }
   };
 
+  // Guest timer
+  useEffect(() => {
+    if (!isGuest) return;
+    setGuestSecondsLeft(60);
+    let s = 60;
+    guestTimerRef.current = setInterval(() => {
+      s--;
+      setGuestSecondsLeft(s);
+      if (s <= 0) {
+        clearInterval(guestTimerRef.current);
+        setIsGuest(false);
+        setNotes([]);
+      }
+    }, 1000);
+    return () => clearInterval(guestTimerRef.current);
+  }, [isGuest]);
+
+  const enterGuestMode = () => {
+    setIsGuest(true);
+    setUser({ uid: 'guest', displayName: 'Gäst', email: 'guest@nexnote.app', isGuest: true });
+  };
+
+  const exitGuestMode = () => {
+    clearInterval(guestTimerRef.current);
+    setIsGuest(false);
+    setUser(null);
+    setNotes([]);
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
@@ -280,7 +312,7 @@ export default function App() {
     }, 1000);
   }, []);
 
-  const createNote = () => {
+const createNote = () => {
     if (!user) return;
     const n: Note = {
       id: uuidv4(), uid: user.uid, title: '', content: '', attachments: [],
@@ -288,7 +320,10 @@ export default function App() {
       order: notes.length,
       createdAt: Date.now(), updatedAt: Date.now(),
     };
-    handleSave(n);
+    if (!isGuest) {
+      handleSave(n);
+    }
+    setNotes(prev => [...prev, n]);
     setActiveNoteId(n.id);
   };
 
@@ -310,6 +345,7 @@ export default function App() {
       }
     }
     setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
+    if (isGuest) return;
     const isMinor = 'title' in updates || 'content' in updates;
     if (isMinor) {
       debouncedSave(updated);
@@ -618,6 +654,14 @@ export default function App() {
                 <span>Sign in with Google</span>
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
+              <button
+                onClick={enterGuestMode}
+                className="w-full mt-3 py-4 px-6 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center justify-center gap-3 text-zinc-600 font-medium transition-all duration-300 hover:bg-zinc-200 hover:border-zinc-300"
+              >
+                <span>👁</span>
+                <span>Fortsätt som gäst</span>
+                <span className="text-xs text-zinc-400 ml-1">(1 min demo)</span>
+              </button>
               <div className="mt-24">
                 <p className="text-sm text-zinc-400 font-medium tracking-wide">
                   By logging in you agree to our{' '}
@@ -636,6 +680,27 @@ export default function App() {
   return (
     <div className="flex h-screen w-full bg-[var(--bg-deep)] font-sans overflow-hidden relative" style={{ color: 'var(--text-primary)' }}>
       <StarryBackground />
+
+      {/* Guest Mode Timer Banner */}
+      {isGuest && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 py-2 bg-amber-500 text-white text-sm font-medium shadow-lg">
+          <div className="flex items-center gap-2">
+            <span>👁</span>
+            <span>Gästläge — begränsad åtkomst</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-24 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(guestSecondsLeft / 60) * 100}%` }} />
+              </div>
+              <span className="font-mono text-xs w-8">{guestSecondsLeft}s</span>
+            </div>
+            <button onClick={exitGuestMode} className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors">
+              Logga in
+            </button>
+          </div>
+        </div>
+      )}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -1048,6 +1113,7 @@ export default function App() {
           isDark={isDark}
           initialTab={communityTab}
           initialPostId={communityPostId}
+          isGuest={isGuest}
         />
       )}
 

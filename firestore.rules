@@ -20,10 +20,12 @@ service cloud.firestore {
     }
 
     match /notes/{noteId} {
-      allow read: if isDocOwner() || resource.data.isShared == true;
-      allow create: if isAuthenticated() && isOwner();
-      allow update: if isDocOwner();
-      allow delete: if isDocOwner();
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.isShared == true);
+      allow write: if isAuthenticated() && (
+        !exists(/databases/$(database)/documents/notes/$(noteId)) || 
+        resource.data.uid == request.auth.uid || 
+        request.resource.data.uid == request.auth.uid
+      );
     }
 
     match /categories/{categoryId} {
@@ -34,43 +36,35 @@ service cloud.firestore {
     }
 
     match /community/{postId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
       allow update: if isAuthenticated();
-      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
-    }
-
-    match /community_bans/{uid} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    match /community_warnings/{uid} {
-      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == uid);
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /community_following/{uid} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAuthenticated() && request.auth.uid == uid;
     }
-
-    match /community_profiles/{uid} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == uid;
-    }
-
+    
     match /community_messages/{msgId} {
-      allow read: if isAuthenticated() && (
-        resource.data.fromUid == request.auth.uid ||
-        resource.data.toUid == request.auth.uid ||
-        isAdmin()
-      );
-      allow create: if isAdmin() ||
-        (isAuthenticated() &&
-         request.resource.data.fromUid == request.auth.uid &&
-         request.resource.data.isReply == true);
-      allow delete: if isAdmin();
+      allow read: if isAuthenticated() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
+    }
+    
+    match /community_warnings/{uid} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    match /community_bans/{uid} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /community_profiles/{uid} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
     }
   }
 }
