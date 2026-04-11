@@ -15,6 +15,13 @@
   [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 </div>
 
+<div align="center">
+  <br />
+  <h3>🎥 Video Showcase</h3>
+  <video src="Screenshots/NexNoteR.mp4" width="100%" controls title="NexNote Preview"></video>
+  <p align="center"><i>A quick overview of NexNote in action.</i></p>
+</div>
+
 ---
 
 ### 📝 Overview
