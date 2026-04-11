@@ -68,6 +68,12 @@
 | :---: | :---: |
 | ![Settings](Screenshots/4.png) | ![Community](Screenshots/5.png) |
 
+<details>
+<summary>🎬 View Full Walkthrough Video</summary>
+<br />
+<video src="Screenshots/NexNote.mp4" width="100%" controls></video>
+</details>
+
 ---
 
 ### 🚀 Getting Started
