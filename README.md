@@ -11,6 +11,8 @@
   <br />
   
   ### [🚀 Open NexNote Live Link](https://nexnote.vercel.app)
+  
+  [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 </div>
 
 ---
@@ -93,7 +95,12 @@
 
 ### 🤝 Contributing
 
-We welcome contributions! Please feel free to open issues or submit pull requests to help improve NexNote.
+We love contributors! Whether you are fixing a bug, adding a new feature, or improving documentation, your help is welcome.
+
+- **Check open issues:** Browse the [Issues](https://github.com/nRn-World/NexNote/issues) to find something to work on.
+- **Look for "good first issue":** These are perfect for new contributors.
+- **Read the guide:** Check out our [Contributing Guidelines](CONTRIBUTING.md) for setup instructions.
+- **Join the discussion:** Use [GitHub Discussions](https://github.com/nRn-World/NexNote/discussions) to talk about new ideas.
 
 ---
 
