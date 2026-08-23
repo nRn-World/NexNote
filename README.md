@@ -126,3 +126,9 @@ This project is licensed under the **nRn World Non-Commercial License**. See the
 <div align="center">
   <p>Built with ❤️ by <a href="https://github.com/nRn-World/NexNote">nRn-World</a></p>
 </div>
+
+---
+
+☕ **Support development**: [Buy me a coffee 💜](https://ko-fi.com/nrnworld)
+
+Created by ❤️ © nRn World
