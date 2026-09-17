@@ -5,7 +5,7 @@ import {
 import { updateProfile } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Check, Pencil, Link2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import { CommunityPost } from './CommunityView';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -23,7 +23,7 @@ function LivePreview({ content, title }: { content: string; title: string }) {
   const doc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f;}</style></head><body>${content}</body></html>`;
   return (
     <iframe srcDoc={doc} title={title} className="w-full h-full border-none block"
-      sandbox="allow-scripts allow-same-origin" style={{ display: 'block' }} />
+      sandbox={PREVIEW_SANDBOX} style={{ display: 'block' }} />
   );
 }
 

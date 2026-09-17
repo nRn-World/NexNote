@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Brain, Code2, X, Play, Wand2, Copy, Check } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import { useToast } from '../hooks/useToast';
 
 interface AIModalProps {
@@ -131,6 +131,7 @@ export default function AIModal({ onInsert, onClose, isDark }: AIModalProps) {
                 <div className="h-64 bg-white relative">
                   <iframe 
                     title="AI Preview" 
+                    sandbox={PREVIEW_SANDBOX}
                     srcDoc={`<!DOCTYPE html><html><head><style>html,body{margin:0;padding:20px;display:flex;justify-content:center;align-items:center;height:100vh;background:#0a0a0f;}${generatedPreview.css}</style></head><body>${generatedPreview.html}<script>${generatedPreview.js}<\/script></body></html>`}
                     className="w-full h-full border-none"
                   />

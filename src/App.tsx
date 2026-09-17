@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
-import { cn, handleFirestoreError, OperationType } from './lib/utils';
+import { cn, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
 import { auth, db, storage, signInWithGoogle, logout, completeGoogleRedirect, getAuthErrorMessage } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -102,7 +102,13 @@ export default function App() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const saveTimeoutRef = useRef<Record<string, any>>({});
+  const saveChainRef = useRef<Record<string, Promise<void>>>({});
+  const noteDraftsRef = useRef<Record<string, Note>>({});
+  const notesRef = useRef<Note[]>([]);
+  const userRef = useRef<any>(null);
   const { toasts, addToast, removeToast } = useToast();
+  notesRef.current = notes;
+  userRef.current = user;
 
   const shareId = new URLSearchParams(window.location.search).get('share');
   if (shareId) return <SharedNote shareId={shareId} />;
@@ -112,7 +118,7 @@ export default function App() {
   useEffect(() => {
     if (activeNote?.code) {
       const { html, css, js } = activeNote.code;
-      setPreviewDoc(`<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script></body></html>`);
+      setPreviewDoc(`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script></body></html>`);
     } else {
       setPreviewDoc('');
     }
@@ -135,21 +141,37 @@ export default function App() {
         const data = d.data();
         return {
           id: d.id, uid: data.uid, title: data.title, content: data.content,
-          attachments: data.attachments ? JSON.parse(data.attachments) : [],
-          code: data.code ? JSON.parse(data.code) : undefined,
+          attachments: parseStoredJson<Attachment[]>(data.attachments, []),
+          code: data.code ? parseStoredJson<Note['code']>(data.code, undefined) : undefined,
           coverImage: data.coverImage, isPinned: data.isPinned || false,
           tags: data.tags || [], categoryId: data.categoryId,
           isShared: data.isShared || false, shareId: data.shareId,
-          history: data.history ? JSON.parse(data.history) : [],
+          history: parseStoredJson<Note['history']>(data.history, []),
           order: data.order ?? 0,
           createdAt: data.createdAt, updatedAt: data.updatedAt,
         };
       });
-      setNotes(loaded.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return b.updatedAt - a.updatedAt;
-      }));
+      setNotes(prev => {
+        const serverIds = new Set(loaded.map(n => n.id));
+        const merged = loaded.map(serverNote => {
+          const local = noteDraftsRef.current[serverNote.id] || prev.find(n => n.id === serverNote.id);
+          if (local && local.updatedAt > serverNote.updatedAt) return local;
+          if (noteDraftsRef.current[serverNote.id] && noteDraftsRef.current[serverNote.id].updatedAt <= serverNote.updatedAt) {
+            delete noteDraftsRef.current[serverNote.id];
+          }
+          return serverNote;
+        });
+        for (const local of prev) {
+          if (!serverIds.has(local.id) && noteDraftsRef.current[local.id]) {
+            merged.push(local);
+          }
+        }
+        return merged.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return b.updatedAt - a.updatedAt;
+        });
+      });
       setIsLoading(false);
     }, err => { handleFirestoreError(err, OperationType.LIST, 'notes'); setIsLoading(false); });
     return () => unsub();
@@ -259,6 +281,28 @@ export default function App() {
     setNotes([]);
   };
 
+  const handleLogout = async () => {
+    if (isGuest) {
+      exitGuestMode();
+      return;
+    }
+    await flushPendingSaves();
+    await logout();
+  };
+
+  useEffect(() => {
+    const onPageHide = () => { void flushPendingSaves(); };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') void flushPendingSaves();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
@@ -269,31 +313,69 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, [user, activeNoteId, notes]);
 
+  const writeNoteToFirestore = async (note: Note) => {
+    const currentUser = userRef.current;
+    if (!currentUser || currentUser.isGuest) return;
+    const noteData: any = {
+      uid: note.uid, title: note.title || '', content: note.content || '',
+      isPinned: note.isPinned || false, tags: note.tags || [],
+      isShared: note.isShared || false,
+      order: note.order ?? 0,
+      createdAt: note.createdAt, updatedAt: note.updatedAt,
+    };
+    if (note.categoryId) noteData.categoryId = note.categoryId;
+    if (note.shareId) noteData.shareId = note.shareId;
+    if (note.attachments.length > 0) noteData.attachments = JSON.stringify(note.attachments);
+    if (note.code) noteData.code = JSON.stringify(note.code);
+    if (note.coverImage) noteData.coverImage = note.coverImage;
+    if (note.history && note.history.length > 0) noteData.history = JSON.stringify(note.history);
+    await setDoc(doc(db, 'notes', note.id), noteData);
+  };
+
+  const enqueueSave = (note: Note) => {
+    noteDraftsRef.current[note.id] = note;
+    const run = async () => {
+      const latest = noteDraftsRef.current[note.id]
+        || notesRef.current.find(n => n.id === note.id);
+      if (!latest) return;
+      try {
+        await writeNoteToFirestore(latest);
+      } catch (error) {
+        addToast('Could not save the note.', 'error');
+        handleFirestoreError(error, OperationType.WRITE, `notes/${latest.id}`);
+      }
+    };
+    saveChainRef.current[note.id] = (saveChainRef.current[note.id] || Promise.resolve())
+      .catch(() => undefined)
+      .then(run);
+    return saveChainRef.current[note.id];
+  };
+
   const handleSave = async (note: Note) => {
-    if (!user) return;
-    try {
-      const noteData: any = {
-        uid: note.uid, title: note.title, content: note.content,
-        isPinned: note.isPinned || false, tags: note.tags || [],
-        isShared: note.isShared || false,
-        order: note.order ?? 0,
-        createdAt: note.createdAt, updatedAt: note.updatedAt,
-      };
-      if (note.categoryId) noteData.categoryId = note.categoryId;
-      if (note.shareId) noteData.shareId = note.shareId;
-      if (note.attachments.length > 0) noteData.attachments = JSON.stringify(note.attachments);
-      if (note.code) noteData.code = JSON.stringify(note.code);
-      if (note.coverImage) noteData.coverImage = note.coverImage;
-      if (note.history && note.history.length > 0) noteData.history = JSON.stringify(note.history);
-      await setDoc(doc(db, 'notes', note.id), noteData);
-    } catch (error) {
-      addToast('Could not save the note.', 'error');
-      handleFirestoreError(error, OperationType.WRITE, `notes/${note.id}`);
+    if (saveTimeoutRef.current[note.id]) {
+      clearTimeout(saveTimeoutRef.current[note.id]);
+      delete saveTimeoutRef.current[note.id];
     }
+    await enqueueSave(note);
+  };
+
+  const flushPendingSaves = async () => {
+    const ids = Object.keys(saveTimeoutRef.current);
+    ids.forEach(id => {
+      clearTimeout(saveTimeoutRef.current[id]);
+      delete saveTimeoutRef.current[id];
+    });
+    const toFlush = new Set([...ids, ...Object.keys(noteDraftsRef.current)]);
+    await Promise.all(
+      [...toFlush].map(id => {
+        const note = noteDraftsRef.current[id] || notesRef.current.find(n => n.id === id);
+        return note ? enqueueSave(note) : Promise.resolve();
+      })
+    );
   };
 
   const handleManualSave = async () => {
-    let note = notes.find(n => n.id === activeNoteId);
+    let note = notesRef.current.find(n => n.id === activeNoteId);
     if (!note) return;
     if (!note.code && note.content) {
       const rawContent = note.content.replace(/<[^>]*>?/gm, (match) => {
@@ -306,15 +388,12 @@ export default function App() {
       if (hasSvg || hasHtml) {
         const updatedNote = { ...note, code: { html: rawContent, css: '', js: '' }, content: '', updatedAt: Date.now() };
         note = updatedNote;
+        noteDraftsRef.current[note.id] = note;
         setNotes(prev => prev.map(n => n.id === note.id ? note : n));
         setIsCodeExpanded(false);
         setActiveCodeTab('html');
         addToast('Code detected! Moved to preview mode.', 'info');
       }
-    }
-    if (saveTimeoutRef.current[note.id]) {
-      clearTimeout(saveTimeoutRef.current[note.id]);
-      delete saveTimeoutRef.current[note.id];
     }
     setIsSaving(true);
     await handleSave(note);
@@ -323,15 +402,16 @@ export default function App() {
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  const debouncedSave = useCallback((note: Note) => {
+  const debouncedSave = (note: Note) => {
+    noteDraftsRef.current[note.id] = note;
     if (saveTimeoutRef.current[note.id]) clearTimeout(saveTimeoutRef.current[note.id]);
     saveTimeoutRef.current[note.id] = setTimeout(() => {
-      handleSave(note);
       delete saveTimeoutRef.current[note.id];
-    }, 1000);
-  }, []);
+      enqueueSave(note);
+    }, 500);
+  };
 
-const createNote = () => {
+  const createNote = () => {
     if (!user) return;
     const n: Note = {
       id: uuidv4(), uid: user.uid, title: '', content: '', attachments: [],
@@ -339,6 +419,7 @@ const createNote = () => {
       order: notes.length,
       createdAt: Date.now(), updatedAt: Date.now(),
     };
+    noteDraftsRef.current[n.id] = n;
     if (!isGuest) {
       handleSave(n);
     }
@@ -348,7 +429,7 @@ const createNote = () => {
 
   const updateActiveNote = (updates: Partial<Note>) => {
     if (!activeNoteId || !user) return;
-    const note = notes.find(n => n.id === activeNoteId);
+    const note = noteDraftsRef.current[activeNoteId] || notesRef.current.find(n => n.id === activeNoteId);
     if (!note) return;
     const updated = { ...note, ...updates, updatedAt: Date.now() };
     if ('content' in updates && updates.content) {
@@ -363,15 +444,10 @@ const createNote = () => {
         ];
       }
     }
+    noteDraftsRef.current[updated.id] = updated;
     setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
     if (isGuest) return;
-    const isMinor = 'title' in updates || 'content' in updates;
-    if (isMinor) {
-      debouncedSave(updated);
-    } else {
-      if (saveTimeoutRef.current[updated.id]) { clearTimeout(saveTimeoutRef.current[updated.id]); delete saveTimeoutRef.current[updated.id]; }
-      handleSave(updated);
-    }
+    debouncedSave(updated);
   };
 
   const createCategory = async (name: string, color: string) => {
@@ -458,6 +534,7 @@ const createNote = () => {
             }));
           }
           await deleteDoc(doc(db, 'notes', id));
+          delete noteDraftsRef.current[id];
           if (activeNoteId === id) setActiveNoteId(null);
           addToast('Note deleted.', 'success');
         } catch (err) {
@@ -545,6 +622,7 @@ const createNote = () => {
     noteIds.forEach(id => {
       const note = notes.find(n => n.id === id);
       if (!note) return;
+      delete noteDraftsRef.current[id];
       deleteDoc(doc(db, 'notes', id));
     });
     setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
@@ -590,7 +668,8 @@ const createNote = () => {
     } else { updateActiveNote({ code: { html: '', css: '', js: '' } }); setActiveCodeTab('html'); }
   };
   const updateCode = (type: 'html' | 'css' | 'js', value: string) => {
-    const note = notes.find(n => n.id === activeNoteId);
+    const note = (activeNoteId && noteDraftsRef.current[activeNoteId])
+      || notesRef.current.find(n => n.id === activeNoteId);
     if (!note?.code) return;
     updateActiveNote({ code: { ...note.code, [type]: value } });
   };
@@ -738,7 +817,7 @@ const createNote = () => {
         notes={notes} activeNoteId={activeNoteId} searchQuery={searchQuery}
         onSearchChange={setSearchQuery} onSelectNote={setActiveNoteId}
         onCreateNote={createNote} onDeleteNote={deleteNote}
-        onLogout={isGuest ? exitGuestMode : logout} onImageClick={setSelectedImage}
+        onLogout={handleLogout} onImageClick={setSelectedImage}
         onReorderNotes={handleReorderNotes}
         isDark={isDark} onToggleDark={toggleDark}
         categories={categories} activeCategoryId={activeCategoryId}
@@ -844,7 +923,7 @@ const createNote = () => {
                         </button>
                       </div>
                       <div className="h-[350px] bg-white relative">
-                        <iframe ref={iframeRef} title="Preview" srcDoc={previewDoc} className="w-full h-full border-none" sandbox="allow-scripts allow-same-origin" />
+                        <iframe ref={iframeRef} title="Preview" srcDoc={previewDoc} className="w-full h-full border-none" sandbox={PREVIEW_SANDBOX} />
                       </div>
                     </div>
 
@@ -1070,6 +1149,7 @@ const createNote = () => {
                                             <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
                                                <iframe 
                                                  title="preview"
+                                                 sandbox={PREVIEW_SANDBOX}
                                                  srcDoc={(() => {
                                                    if (typeof p.code === 'string') {
                                                       const decoded = decodeContent(p.code);

@@ -23,6 +23,7 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const skipExternalSync = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -35,7 +36,7 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
           oneDark,
           langExtension(language),
           EditorView.updateListener.of(update => {
-            if (update.docChanged) {
+            if (update.docChanged && !skipExternalSync.current) {
               onChangeRef.current(update.state.doc.toString());
             }
           }),
@@ -59,9 +60,11 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
     if (!view) return;
     const current = view.state.doc.toString();
     if (current !== value) {
+      skipExternalSync.current = true;
       view.dispatch({
         changes: { from: 0, to: current.length, insert: value },
       });
+      skipExternalSync.current = false;
     }
   }, [value]);
 

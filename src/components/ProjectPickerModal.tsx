@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Search, FileCode, Globe, Check, Trash2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import { Note } from '../types';
 
 interface ProjectPickerModalProps {
@@ -43,6 +43,7 @@ function MiniCodePreview({ code, title }: { code: any, title: string }) {
     <iframe
       title={title}
       srcDoc={srcContent}
+      sandbox={PREVIEW_SANDBOX}
       className="w-full h-full border-none block"
       style={{ pointerEvents: 'none' }}
     />

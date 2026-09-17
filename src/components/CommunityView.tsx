@@ -10,7 +10,7 @@ import {
   UserPlus, UserCheck, MessageSquare, Search, TrendingUp, Users, Crown,
   Globe, Image as ImageIcon, Settings
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import { Note } from '../types';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -91,7 +91,7 @@ function LivePreview({ content, title }: { content: string; title: string }) {
   return (
     <div className="relative w-full h-full bg-zinc-950 flex items-center justify-center overflow-hidden">
       <iframe srcDoc={doc} title={title} className="w-full h-full border-none block"
-        sandbox="allow-scripts allow-same-origin" />
+        sandbox={PREVIEW_SANDBOX} />
       <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-black/70 text-green-400 text-[9px] rounded-full font-mono border border-green-500/20 pointer-events-none">
         <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" /> LIVE
       </div>

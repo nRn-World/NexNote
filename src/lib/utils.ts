@@ -6,6 +6,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Scripts may run in the preview, but they cannot navigate the parent app. */
+export const PREVIEW_SANDBOX = 'allow-scripts';
+
+export function parseStoredJson<T>(raw: unknown, fallback: T): T {
+  if (raw == null || raw === '') return fallback;
+  if (typeof raw === 'object') return raw as T;
+  if (typeof raw !== 'string') return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
