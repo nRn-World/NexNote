@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2 } from 'lucide-react';
+import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, handleFirestoreError, OperationType } from './lib/utils';
-import { auth, db, storage, signInWithGoogle, logout } from './firebase';
+import { auth, db, storage, signInWithGoogle, logout, completeGoogleRedirect, getAuthErrorMessage } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot,
@@ -56,6 +56,8 @@ export default function App() {
   const { isDark, toggle: toggleDark } = useDarkMode();
   const [user, setUser] = useState<any>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
@@ -118,6 +120,9 @@ export default function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setIsAuthReady(true); });
+    completeGoogleRedirect().catch(error => {
+      setAuthError(getAuthErrorMessage(error));
+    });
     return () => unsub();
   }, []);
 
@@ -232,6 +237,19 @@ export default function App() {
   const enterGuestMode = () => {
     setIsGuest(true);
     setUser({ uid: 'guest', displayName: 'Guest', email: 'guest@nexnote.app', isGuest: true });
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (isSigningIn) return;
+    setAuthError(null);
+    setIsSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      setAuthError(getAuthErrorMessage(error));
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
   const exitGuestMode = () => {
@@ -643,18 +661,30 @@ const createNote = () => {
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
             <div className="w-full max-w-sm text-center z-10">
                <img src="/logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
-              <button onClick={signInWithGoogle} className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isSigningIn}
+                className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5 disabled:opacity-70 disabled:cursor-wait"
+              >
                 <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg">
+                  {isSigningIn ? (
+                    <Loader2 size={20} className="animate-spin text-blue-500" />
+                  ) : (
                   <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                     <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
                     <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
                     <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
                     <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                   </svg>
+                  )}
                 </div>
-                <span>Sign in with Google</span>
+                <span>{isSigningIn ? 'Öppnar Google...' : 'Sign in with Google'}</span>
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
+              {authError && (
+                <p className="mt-3 text-sm text-red-500 font-medium">{authError}</p>
+              )}
               <button
                 onClick={enterGuestMode}
                 className="w-full mt-3 py-4 px-6 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center justify-center gap-3 text-zinc-600 font-medium transition-all duration-300 hover:bg-zinc-200 hover:border-zinc-300"
