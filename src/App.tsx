@@ -5,7 +5,8 @@ import { enUS } from 'date-fns/locale';
 import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
-import { cn, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
+import { cn, compressCoverImage, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_CAPTURE_HELPER, PREVIEW_SANDBOX } from './lib/utils';
+import html2canvasScriptUrl from 'html2canvas/dist/html2canvas.min.js?url';
 import { auth, db, storage, signInWithGoogle, logout, completeGoogleRedirect, getAuthErrorMessage } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -117,7 +118,7 @@ export default function App() {
   useEffect(() => {
     if (activeNote?.code) {
       const { html, css, js } = activeNote.code;
-      setPreviewDoc(`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script></body></html>`);
+      setPreviewDoc(`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script>${PREVIEW_CAPTURE_HELPER}</body></html>`);
     } else {
       setPreviewDoc('');
     }
@@ -744,36 +745,74 @@ export default function App() {
     await navigator.clipboard.writeText(activeNote.content);
     setIsContentCopied(true); setTimeout(() => setIsContentCopied(false), 2000);
   };
+  const setNoteCover = (noteId: string, coverImage: string) => {
+    const note = noteDraftsRef.current[noteId] || notesRef.current.find(n => n.id === noteId);
+    if (!note) return;
+    const updated = { ...note, coverImage, updatedAt: Date.now() };
+    noteDraftsRef.current[noteId] = updated;
+    setNotes(prev => prev.map(n => n.id === noteId ? updated : n));
+    if (isGuest || !auth.currentUser) return;
+    enqueueSave(updated).catch(error => {
+      addToast('Could not save the cover image.', 'error');
+      handleFirestoreError(error, OperationType.WRITE, `notes/${noteId}`);
+    });
+  };
+
+  const persistCoverImage = async (noteId: string, dataUrl: string) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return dataUrl;
+    const blob = await (await fetch(dataUrl)).blob();
+    const storageRef = ref(storage, `users/${uid}/notes/${noteId}/cover.jpg`);
+    await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+    return getDownloadURL(storageRef);
+  };
+
   const capturePreview = async () => {
     const iframe = iframeRef.current;
-    if (!iframe) { addToast('Could not find the preview.', 'error'); return; }
+    const noteId = activeNoteId;
+    if (!iframe?.contentWindow || !noteId) {
+      addToast('Could not find the preview.', 'error');
+      return;
+    }
+    setIsCapturing(true);
     try {
-      setIsCapturing(true);
-      let dataUrl = '';
-      await new Promise(r => setTimeout(r, 800));
-      let body: HTMLElement; let isTemp = false;
-      if (iframe.contentDocument?.body) { body = iframe.contentDocument.body; }
-      else {
-        body = document.createElement('div');
-        body.style.cssText = `position:absolute;left:-9999px;width:${iframe.clientWidth}px;height:${iframe.clientHeight}px;background:#fff`;
-        body.innerHTML = activeNote?.code?.html || '';
-        const s = document.createElement('style'); s.textContent = activeNote?.code?.css || '';
-        body.appendChild(s); document.body.appendChild(body); isTemp = true;
-      }
-      try {
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(body, { backgroundColor: '#fff', useCORS: true, scale: 1, width: iframe.clientWidth || 800, height: iframe.clientHeight || 600 });
-        dataUrl = canvas.toDataURL('image/png');
-      } catch {
-        const { toPng } = await import('html-to-image');
-        dataUrl = await toPng(body, { backgroundColor: '#fff', width: iframe.clientWidth || 800, height: iframe.clientHeight || 600, pixelRatio: 1 });
-      }
-      if (isTemp && body.parentNode) body.parentNode.removeChild(body);
+      const scriptUrl = new URL(html2canvasScriptUrl, window.location.origin).href;
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          window.removeEventListener('message', onMsg);
+          reject(new Error('timeout'));
+        }, 10000);
+        function onMsg(event: MessageEvent) {
+          if (event.source !== iframe.contentWindow) return;
+          if (!event.data || event.data.type !== 'nexnote-capture-result') return;
+          window.clearTimeout(timer);
+          window.removeEventListener('message', onMsg);
+          if (event.data.dataUrl) resolve(event.data.dataUrl);
+          else reject(new Error(event.data.error || 'Empty image'));
+        }
+        window.addEventListener('message', onMsg);
+        iframe.contentWindow.postMessage({
+          type: 'nexnote-capture',
+          scriptUrl,
+          width: iframe.clientWidth || 800,
+          height: iframe.clientHeight || 350,
+        }, '*');
+      });
       if (!dataUrl || dataUrl === 'data:,') throw new Error('Empty image');
-      updateActiveNote({ coverImage: dataUrl });
+      const compressed = await compressCoverImage(dataUrl);
+      setNoteCover(noteId, compressed);
+      try {
+        const stored = await persistCoverImage(noteId, compressed);
+        if (stored !== compressed) setNoteCover(noteId, stored);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, `notes/${noteId}/cover`);
+      }
       addToast('Cover image saved.', 'success');
-    } catch { addToast('Could not take screenshot.', 'error'); }
-    finally { setIsCapturing(false); }
+    } catch {
+      addToast('Could not take screenshot.', 'error');
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   if (!isAuthReady) return <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-500">Loading...</div>;

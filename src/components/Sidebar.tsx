@@ -6,7 +6,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Note, Category } from '../types';
-import { cn } from '../lib/utils';
+import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import CategoryManager from './CategoryManager';
 import ContextMenu, { ContextMenuItem } from './ContextMenu';
 import Skeleton from './Skeleton';
@@ -107,16 +107,27 @@ function SortableNote({
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyan-400 rounded-r-full shadow-[0_0_12px_rgba(34,211,238,0.8)]" />
       )}
       
-      {(note.coverImage || note.attachments.some(a => a.type.startsWith('image/'))) && !isSelecting && (
+      {(note.coverImage || note.code || note.attachments?.some(a => a.type.startsWith('image/'))) && !isSelecting && (
         <div
           className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-slate-800 border border-white/10 shadow-lg cursor-zoom-in group-hover:scale-105 transition-transform"
           onClick={e => {
             e.stopPropagation();
-            const url = note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data;
+            const url = note.coverImage || note.attachments?.find(a => a.type.startsWith('image/'))?.data;
             if (url) onImageClick(url);
           }}
         >
-          <img src={note.coverImage || note.attachments.find(a => a.type.startsWith('image/'))?.data} alt="" className="w-full h-full object-cover" />
+          {note.coverImage || note.attachments?.some(a => a.type.startsWith('image/')) ? (
+            <img src={note.coverImage || note.attachments?.find(a => a.type.startsWith('image/'))?.data} alt="" className="w-full h-full object-cover" />
+          ) : note.code ? (
+            <iframe
+              title=""
+              srcDoc={`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}${note.code.css || ''}</style></head><body>${note.code.html || ''}<script>${note.code.js || ''}<\/script></body></html>`}
+              sandbox={PREVIEW_SANDBOX}
+              className="w-full h-full border-none pointer-events-none scale-[0.25] origin-top-left"
+              style={{ width: '400%', height: '400%' }}
+              tabIndex={-1}
+            />
+          ) : null}
         </div>
       )}
 
