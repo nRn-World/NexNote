@@ -279,7 +279,7 @@ export default function Sidebar({
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
         <div className="flex justify-center w-full">
            <img 
-             src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
+             src={isDark ? "./logoandtext2.png" : "./logoandtextWhite2.png"} 
              alt="NexNote" 
              onClick={onGoHome} 
              className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 

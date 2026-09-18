@@ -793,7 +793,7 @@ export default function CommunityView({
         <div className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] backdrop-blur-sm">
         <div className="flex items-center gap-4">
            <img 
-             src={isDark ? "/logoandtext2.png" : "/logoandtextWhite2.png"} 
+             src={isDark ? "./logoandtext2.png" : "./logoandtextWhite2.png"} 
              alt="NexNote Community" 
              onClick={onClose}
              className="h-20 w-auto cursor-pointer hover:scale-105 transition-all" 
