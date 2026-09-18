@@ -104,11 +104,10 @@ export default function App() {
   const saveTimeoutRef = useRef<Record<string, any>>({});
   const saveChainRef = useRef<Record<string, Promise<void>>>({});
   const noteDraftsRef = useRef<Record<string, Note>>({});
+  const pendingCategoriesRef = useRef<Record<string, Category>>({});
   const notesRef = useRef<Note[]>([]);
-  const userRef = useRef<any>(null);
   const { toasts, addToast, removeToast } = useToast();
   notesRef.current = notes;
-  userRef.current = user;
 
   const shareId = new URLSearchParams(window.location.search).get('share');
   if (shareId) return <SharedNote shareId={shareId} />;
@@ -125,7 +124,11 @@ export default function App() {
   }, [activeNoteId, activeNote?.code?.html, activeNote?.code?.css, activeNote?.code?.js]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => { setUser(u); setIsAuthReady(true); });
+    const unsub = onAuthStateChanged(auth, u => {
+      setUser(u);
+      if (u) setIsGuest(false);
+      setIsAuthReady(true);
+    });
     completeGoogleRedirect().catch(error => {
       setAuthError(getAuthErrorMessage(error));
     });
@@ -134,6 +137,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isAuthReady || !user) { setNotes([]); setIsLoading(false); return; }
+    if (user.isGuest) { setIsLoading(false); return; }
     setIsLoading(true);
     const q = query(collection(db, 'notes'), where('uid', '==', user.uid));
     const unsub = onSnapshot(q, snapshot => {
@@ -162,8 +166,13 @@ export default function App() {
           return serverNote;
         });
         for (const local of prev) {
-          if (!serverIds.has(local.id) && noteDraftsRef.current[local.id]) {
+          if (!serverIds.has(local.id) && noteDraftsRef.current[local.id] && !merged.some(n => n.id === local.id)) {
             merged.push(local);
+          }
+        }
+        for (const [id, draft] of Object.entries(noteDraftsRef.current)) {
+          if (!serverIds.has(id) && !merged.some(n => n.id === id)) {
+            merged.push(draft);
           }
         }
         return merged.sort((a, b) => {
@@ -178,11 +187,16 @@ export default function App() {
   }, [user, isAuthReady]);
 
   useEffect(() => {
-    if (!isAuthReady || !user) { setCategories([]); return; }
+    if (!isAuthReady || !user || user.isGuest) { setCategories([]); return; }
     const q = query(collection(db, 'categories'), where('uid', '==', user.uid));
     const unsub = onSnapshot(q, snapshot => {
       const loaded: Category[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Category));
-      setCategories(loaded.sort((a, b) => a.order - b.order));
+      const serverIds = new Set(loaded.map(c => c.id));
+      Object.keys(pendingCategoriesRef.current).forEach(id => {
+        if (serverIds.has(id)) delete pendingCategoriesRef.current[id];
+      });
+      const pending = Object.values(pendingCategoriesRef.current);
+      setCategories([...loaded, ...pending].sort((a, b) => a.order - b.order));
     }, err => handleFirestoreError(err, OperationType.LIST, 'categories'));
     return () => unsub();
   }, [user, isAuthReady]);
@@ -292,15 +306,8 @@ export default function App() {
 
   useEffect(() => {
     const onPageHide = () => { void flushPendingSaves(); };
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') void flushPendingSaves();
-    };
     window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('pagehide', onPageHide);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
+    return () => window.removeEventListener('pagehide', onPageHide);
   }, []);
 
   useEffect(() => {
@@ -314,41 +321,42 @@ export default function App() {
   }, [user, activeNoteId, notes]);
 
   const writeNoteToFirestore = async (note: Note) => {
-    const currentUser = userRef.current;
-    if (!currentUser || currentUser.isGuest) return;
-    const noteData: any = {
-      uid: note.uid, title: note.title || '', content: note.content || '',
-      isPinned: note.isPinned || false, tags: note.tags || [],
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('Not signed in');
+    const now = Date.now();
+    const noteData: Record<string, unknown> = {
+      uid,
+      title: note.title || '',
+      content: note.content || '',
+      isPinned: note.isPinned || false,
+      tags: note.tags || [],
       isShared: note.isShared || false,
       order: note.order ?? 0,
-      createdAt: note.createdAt, updatedAt: note.updatedAt,
+      createdAt: note.createdAt || now,
+      updatedAt: note.updatedAt || now,
+      attachments: JSON.stringify(note.attachments || []),
     };
     if (note.categoryId) noteData.categoryId = note.categoryId;
     if (note.shareId) noteData.shareId = note.shareId;
-    if (note.attachments.length > 0) noteData.attachments = JSON.stringify(note.attachments);
     if (note.code) noteData.code = JSON.stringify(note.code);
     if (note.coverImage) noteData.coverImage = note.coverImage;
     if (note.history && note.history.length > 0) noteData.history = JSON.stringify(note.history);
     await setDoc(doc(db, 'notes', note.id), noteData);
   };
 
-  const enqueueSave = (note: Note) => {
+  const enqueueSave = async (note: Note) => {
     noteDraftsRef.current[note.id] = note;
     const run = async () => {
       const latest = noteDraftsRef.current[note.id]
         || notesRef.current.find(n => n.id === note.id);
       if (!latest) return;
-      try {
-        await writeNoteToFirestore(latest);
-      } catch (error) {
-        addToast('Could not save the note.', 'error');
-        handleFirestoreError(error, OperationType.WRITE, `notes/${latest.id}`);
-      }
+      await writeNoteToFirestore(latest);
     };
-    saveChainRef.current[note.id] = (saveChainRef.current[note.id] || Promise.resolve())
+    const chained = (saveChainRef.current[note.id] || Promise.resolve())
       .catch(() => undefined)
       .then(run);
-    return saveChainRef.current[note.id];
+    saveChainRef.current[note.id] = chained.catch(() => undefined);
+    await chained;
   };
 
   const handleSave = async (note: Note) => {
@@ -369,16 +377,33 @@ export default function App() {
     await Promise.all(
       [...toFlush].map(id => {
         const note = noteDraftsRef.current[id] || notesRef.current.find(n => n.id === id);
-        return note ? enqueueSave(note) : Promise.resolve();
+        return note
+          ? enqueueSave(note).catch(error => {
+              handleFirestoreError(error, OperationType.WRITE, `notes/${id}`);
+            })
+          : Promise.resolve();
       })
     );
   };
 
   const handleManualSave = async () => {
-    let note = notesRef.current.find(n => n.id === activeNoteId);
-    if (!note) return;
+    if (!activeNoteId) return;
+    if (isGuest || !auth.currentUser) {
+      if (isGuest) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2000);
+      } else {
+        addToast('You need to be signed in to save.', 'error');
+      }
+      return;
+    }
+    let note = noteDraftsRef.current[activeNoteId] || notesRef.current.find(n => n.id === activeNoteId);
+    if (!note) {
+      addToast('Could not find the note to save.', 'error');
+      return;
+    }
     if (!note.code && note.content) {
-      const rawContent = note.content.replace(/<[^>]*>?/gm, (match) => {
+      const rawContent = String(note.content).replace(/<[^>]*>?/gm, (match) => {
         const tag = match.toLowerCase();
         if (tag.startsWith('<p') || tag === '</p>' || tag.startsWith('<div') || tag === '</div>') return '';
         return match;
@@ -396,10 +421,16 @@ export default function App() {
       }
     }
     setIsSaving(true);
-    await handleSave(note);
-    setIsSaving(false);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    try {
+      await handleSave(note);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    } catch (error) {
+      addToast('Could not save the note.', 'error');
+      handleFirestoreError(error, OperationType.WRITE, `notes/${note.id}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const debouncedSave = (note: Note) => {
@@ -407,24 +438,31 @@ export default function App() {
     if (saveTimeoutRef.current[note.id]) clearTimeout(saveTimeoutRef.current[note.id]);
     saveTimeoutRef.current[note.id] = setTimeout(() => {
       delete saveTimeoutRef.current[note.id];
-      enqueueSave(note);
+      enqueueSave(note).catch(error => {
+        addToast('Could not save the note.', 'error');
+        handleFirestoreError(error, OperationType.WRITE, `notes/${note.id}`);
+      });
     }, 500);
   };
 
   const createNote = () => {
     if (!user) return;
+    const uid = auth.currentUser?.uid || user.uid;
     const n: Note = {
-      id: uuidv4(), uid: user.uid, title: '', content: '', attachments: [],
+      id: uuidv4(), uid, title: '', content: '', attachments: [],
       categoryId: activeCategoryId || undefined,
       order: notes.length,
       createdAt: Date.now(), updatedAt: Date.now(),
     };
     noteDraftsRef.current[n.id] = n;
-    if (!isGuest) {
-      handleSave(n);
-    }
     setNotes(prev => [...prev, n]);
     setActiveNoteId(n.id);
+    if (!isGuest && auth.currentUser) {
+      handleSave(n).catch(error => {
+        addToast('Could not save the note.', 'error');
+        handleFirestoreError(error, OperationType.WRITE, `notes/${n.id}`);
+      });
+    }
   };
 
   const updateActiveNote = (updates: Partial<Note>) => {
@@ -451,19 +489,42 @@ export default function App() {
   };
 
   const createCategory = async (name: string, color: string) => {
-    if (!user) return;
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      addToast('You need to be signed in to create a category.', 'error');
+      return;
+    }
     const id = uuidv4();
-    const cat: Category = { id, uid: user.uid, name, color, order: categories.length, createdAt: Date.now() };
-    await setDoc(doc(db, 'categories', id), cat);
-    addToast(`Category "${name}" created.`, 'success');
+    const cat: Category = { id, uid, name, color, order: categories.length, createdAt: Date.now() };
+    pendingCategoriesRef.current[id] = cat;
+    setCategories(prev => [...prev, cat]);
+    try {
+      await setDoc(doc(db, 'categories', id), cat);
+      addToast(`Category "${name}" created.`, 'success');
+    } catch (error) {
+      delete pendingCategoriesRef.current[id];
+      setCategories(prev => prev.filter(c => c.id !== id));
+      addToast('Could not create the category.', 'error');
+      handleFirestoreError(error, OperationType.CREATE, `categories/${id}`);
+    }
   };
 
   const renameCategory = async (id: string, name: string) => {
-    await setDoc(doc(db, 'categories', id), { name }, { merge: true });
+    try {
+      await setDoc(doc(db, 'categories', id), { name }, { merge: true });
+    } catch (error) {
+      addToast('Could not rename the category.', 'error');
+      handleFirestoreError(error, OperationType.UPDATE, `categories/${id}`);
+    }
   };
 
   const onChangeColor = async (id: string, color: string) => {
-    await setDoc(doc(db, 'categories', id), { color }, { merge: true });
+    try {
+      await setDoc(doc(db, 'categories', id), { color }, { merge: true });
+    } catch (error) {
+      addToast('Could not update the category.', 'error');
+      handleFirestoreError(error, OperationType.UPDATE, `categories/${id}`);
+    }
   };
 
   const deleteCategory = (id: string) => {

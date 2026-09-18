@@ -7,32 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isDocOwner() {
-      return isAuthenticated() && request.auth.uid == resource.data.uid;
-    }
-
-    function isOwner() {
-      return isAuthenticated() && request.resource.data.uid == request.auth.uid;
-    }
-
     function isAdmin() {
       return isAuthenticated() && request.auth.token.email == 'bynrnworld@gmail.com';
     }
 
     match /notes/{noteId} {
-      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || resource.data.isShared == true);
-      allow write: if isAuthenticated() && (
-        !exists(/databases/$(database)/documents/notes/$(noteId)) || 
-        resource.data.uid == request.auth.uid || 
-        request.resource.data.uid == request.auth.uid
+      allow read: if isAuthenticated() && (
+        resource.data.uid == request.auth.uid ||
+        resource.data.isShared == true
       );
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /categories/{categoryId} {
-      allow read, write: if isAuthenticated() && (
-        !exists(/databases/$(database)/documents/categories/$(categoryId)) ||
-        resource.data.uid == request.auth.uid
-      );
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
     match /community/{postId} {
@@ -46,22 +37,25 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated() && request.auth.uid == uid;
     }
-    
+
     match /community_messages/{msgId} {
-      allow read: if isAuthenticated() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow read: if isAuthenticated() && (
+        resource.data.fromUid == request.auth.uid ||
+        resource.data.toUid == request.auth.uid
+      );
       allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
     }
-    
+
     match /community_warnings/{uid} {
       allow read: if true;
       allow write: if false;
     }
-    
+
     match /community_bans/{uid} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    
+
     match /community_profiles/{uid} {
       allow read: if true;
       allow write: if isAuthenticated() && request.auth.uid == uid;
