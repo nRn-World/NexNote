@@ -5,8 +5,8 @@ import { enUS } from 'date-fns/locale';
 import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
-import { cn, compressCoverImage, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_CAPTURE_HELPER, PREVIEW_SANDBOX } from './lib/utils';
-import html2canvasScriptUrl from 'html2canvas/dist/html2canvas.min.js?url';
+import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
+import html2canvasAssetUrl from 'html2canvas/dist/html2canvas.min.js?url';
 import { auth, db, storage, signInWithGoogle, logout, completeGoogleRedirect, getAuthErrorMessage } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -118,7 +118,7 @@ export default function App() {
   useEffect(() => {
     if (activeNote?.code) {
       const { html, css, js } = activeNote.code;
-      setPreviewDoc(`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css}</style></head><body>${html}<script>${js}<\/script>${PREVIEW_CAPTURE_HELPER}</body></html>`);
+      setPreviewDoc(buildPreviewSrcDoc(html, css, js, true));
     } else {
       setPreviewDoc('');
     }
@@ -770,33 +770,48 @@ export default function App() {
   const capturePreview = async () => {
     const iframe = iframeRef.current;
     const noteId = activeNoteId;
-    if (!iframe?.contentWindow || !noteId) {
+    if (!iframe || !noteId) {
       addToast('Could not find the preview.', 'error');
       return;
     }
     setIsCapturing(true);
     try {
-      const scriptUrl = new URL(html2canvasScriptUrl, window.location.origin).href;
+      await new Promise(r => setTimeout(r, 50));
+      const win = iframe.contentWindow;
+      if (!win) throw new Error('Preview is not ready');
+
+      const html2canvasSource = await fetch(new URL(html2canvasAssetUrl, window.location.href)).then(r => {
+        if (!r.ok) throw new Error('Screenshot library missing');
+        return r.text();
+      });
+
+      const captureId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const timer = window.setTimeout(() => {
           window.removeEventListener('message', onMsg);
           reject(new Error('timeout'));
-        }, 10000);
+        }, 15000);
         function onMsg(event: MessageEvent) {
-          if (event.source !== iframe.contentWindow) return;
-          if (!event.data || event.data.type !== 'nexnote-capture-result') return;
+          const data = event.data;
+          if (!data || data.captureId !== captureId) return;
+          if (data.type === 'nexnote-capture-pong') return;
+          if (data.type !== 'nexnote-capture-result') return;
           window.clearTimeout(timer);
           window.removeEventListener('message', onMsg);
-          if (event.data.dataUrl) resolve(event.data.dataUrl);
-          else reject(new Error(event.data.error || 'Empty image'));
+          if (data.dataUrl) resolve(data.dataUrl);
+          else reject(new Error(data.error || 'Empty image'));
         }
         window.addEventListener('message', onMsg);
-        iframe.contentWindow.postMessage({
+        const payload = {
           type: 'nexnote-capture',
-          scriptUrl,
+          captureId,
+          html2canvasSource,
           width: iframe.clientWidth || 800,
           height: iframe.clientHeight || 350,
-        }, '*');
+        };
+        win.postMessage({ type: 'nexnote-capture-ping', captureId }, '*');
+        win.postMessage(payload, '*');
+        window.setTimeout(() => win.postMessage(payload, '*'), 300);
       });
       if (!dataUrl || dataUrl === 'data:,') throw new Error('Empty image');
       const compressed = await compressCoverImage(dataUrl);
@@ -808,8 +823,11 @@ export default function App() {
         handleFirestoreError(error, OperationType.WRITE, `notes/${noteId}/cover`);
       }
       addToast('Cover image saved.', 'success');
-    } catch {
-      addToast('Could not take screenshot.', 'error');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      addToast(message === 'timeout'
+        ? 'Could not take screenshot. Reload the note and try again.'
+        : `Could not take screenshot. ${message}`, 'error');
     } finally {
       setIsCapturing(false);
     }
