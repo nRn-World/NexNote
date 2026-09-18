@@ -24,9 +24,11 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const skipExternalSync = useRef(false);
+  const readyRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
+    readyRef.current = false;
 
     const view = new EditorView({
       state: EditorState.create({
@@ -36,7 +38,7 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
           oneDark,
           langExtension(language),
           EditorView.updateListener.of(update => {
-            if (update.docChanged && !skipExternalSync.current) {
+            if (update.docChanged && !skipExternalSync.current && readyRef.current) {
               onChangeRef.current(update.state.doc.toString());
             }
           }),
@@ -50,7 +52,12 @@ export default function CodeEditor({ value, language, onChange }: CodeEditorProp
     });
 
     viewRef.current = view;
-    return () => view.destroy();
+    const ready = window.requestAnimationFrame(() => { readyRef.current = true; });
+    return () => {
+      window.cancelAnimationFrame(ready);
+      readyRef.current = false;
+      view.destroy();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 

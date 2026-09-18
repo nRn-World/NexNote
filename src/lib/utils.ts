@@ -64,22 +64,27 @@ export const PREVIEW_CAPTURE_HELPER = `<script data-nexnote-capture="1">
 
 export function buildPreviewSrcDoc(html = '', css = '', js = '', withCaptureHelper = false) {
   const helper = withCaptureHelper ? PREVIEW_CAPTURE_HELPER : '';
-  const style = `html,body{margin:0;padding:0;width:100%;height:100%;background:#fff;overflow:hidden;}${css || ''}`;
-  if (/<html[\s>]/i.test(html)) {
-    let doc = html;
-    if (/<head[\s>]/i.test(doc)) {
-      doc = doc.replace(/<head([^>]*)>/i, `<head$1>${helper}<style>${style}</style>`);
-    } else {
-      doc = doc.replace(/<html([^>]*)>/i, `<html$1><head>${helper}<style>${style}</style></head>`);
+  const style = `html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}${css || ''}`;
+  return `<!DOCTYPE html><html><head><base target="_self">${helper}<style>${style}</style></head><body>${html || ''}<script>${js || ''}<\/script></body></html>`;
+}
+
+export function parseNoteCode(raw: unknown): { html: string; css: string; js: string } | undefined {
+  if (raw == null || raw === '') return undefined;
+  let value: unknown = raw;
+  if (typeof raw === 'string') {
+    const parsed = parseStoredJson<unknown>(raw, null);
+    if (parsed == null) {
+      return raw.includes('<') ? { html: raw, css: '', js: '' } : undefined;
     }
-    if (js) {
-      doc = /<\/body>/i.test(doc)
-        ? doc.replace(/<\/body>/i, `<script>${js}<\/script></body>`)
-        : `${doc}<script>${js}<\/script>`;
-    }
-    return doc;
+    value = parsed;
   }
-  return `<!DOCTYPE html><html><head><base target="_self">${helper}<style>${style}</style></head><body>${html}<script>${js}<\/script></body></html>`;
+  if (!value || typeof value !== 'object') return undefined;
+  const code = value as { html?: unknown; css?: unknown; js?: unknown };
+  return {
+    html: typeof code.html === 'string' ? code.html : '',
+    css: typeof code.css === 'string' ? code.css : '',
+    js: typeof code.js === 'string' ? code.js : '',
+  };
 }
 
 export function compressCoverImage(dataUrl: string, maxWidth = 480, quality = 0.72): Promise<string> {

@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Camera, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
-import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
+import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseNoteCode, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
 import html2canvasAssetUrl from 'html2canvas/dist/html2canvas.min.js?url';
 import { auth, db, storage, signInWithGoogle, logout, completeGoogleRedirect, getAuthErrorMessage } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -47,6 +47,26 @@ function decodeContent(raw: string): string {
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 
+let html2canvasSourceCache: Promise<string> | null = null;
+function loadHtml2canvasSource() {
+  if (!html2canvasSourceCache) {
+    html2canvasSourceCache = fetch(new URL(html2canvasAssetUrl, window.location.href)).then(r => {
+      if (!r.ok) throw new Error('Screenshot library missing');
+      return r.text();
+    });
+  }
+  return html2canvasSourceCache;
+}
+
+function codeFingerprint(code?: Note['code'] | null) {
+  if (!code) return '';
+  return `${code.html || ''}||${code.css || ''}||${code.js || ''}`;
+}
+
+function hasPreviewCode(code?: Note['code'] | null) {
+  return !!(code && [code.html, code.css, code.js].some(part => (part || '').trim()));
+}
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 interface ConfirmState {
@@ -69,7 +89,6 @@ export default function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeCodeTab, setActiveCodeTab] = useState<'html' | 'css' | 'js' | 'preview'>('html');
   const [previewDoc, setPreviewDoc] = useState('');
-  const [isCapturing, setIsCapturing] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [showHistory, setShowHistory] = useState(false);
@@ -102,6 +121,10 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const activeNoteIdRef = useRef<string | null>(null);
+  const autoCoverTimerRef = useRef<number | null>(null);
+  const lastCoverFingerprintRef = useRef<Record<string, string>>({});
+  const captureInFlightRef = useRef(false);
   const saveTimeoutRef = useRef<Record<string, any>>({});
   const saveChainRef = useRef<Record<string, Promise<void>>>({});
   const noteDraftsRef = useRef<Record<string, Note>>({});
@@ -109,6 +132,7 @@ export default function App() {
   const notesRef = useRef<Note[]>([]);
   const { toasts, addToast, removeToast } = useToast();
   notesRef.current = notes;
+  activeNoteIdRef.current = activeNoteId;
 
   const shareId = new URLSearchParams(window.location.search).get('share');
   if (shareId) return <SharedNote shareId={shareId} />;
@@ -116,13 +140,18 @@ export default function App() {
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   useEffect(() => {
-    if (activeNote?.code) {
-      const { html, css, js } = activeNote.code;
-      setPreviewDoc(buildPreviewSrcDoc(html, css, js, true));
+    const note = (activeNoteId && noteDraftsRef.current[activeNoteId]) || activeNote;
+    if (note?.code && hasPreviewCode(note.code)) {
+      setPreviewDoc(buildPreviewSrcDoc(note.code.html || '', note.code.css || '', note.code.js || '', true));
     } else {
       setPreviewDoc('');
     }
   }, [activeNoteId, activeNote?.code?.html, activeNote?.code?.css, activeNote?.code?.js]);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (iframe) iframe.srcdoc = previewDoc || '';
+  }, [previewDoc, activeNoteId]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, u => {
@@ -147,7 +176,7 @@ export default function App() {
         return {
           id: d.id, uid: data.uid, title: data.title, content: data.content,
           attachments: parseStoredJson<Attachment[]>(data.attachments, []),
-          code: data.code ? parseStoredJson<Note['code']>(data.code, undefined) : undefined,
+          code: parseNoteCode(data.code),
           coverImage: data.coverImage, isPinned: data.isPinned || false,
           tags: data.tags || [], categoryId: data.categoryId,
           isShared: data.isShared || false, shareId: data.shareId,
@@ -160,7 +189,15 @@ export default function App() {
         const serverIds = new Set(loaded.map(n => n.id));
         const merged = loaded.map(serverNote => {
           const local = noteDraftsRef.current[serverNote.id] || prev.find(n => n.id === serverNote.id);
-          if (local && local.updatedAt > serverNote.updatedAt) return local;
+          if (local && local.updatedAt > serverNote.updatedAt) {
+            const localEmpty = !local.code?.html && !local.code?.css && !local.code?.js;
+            const serverHasCode = !!(serverNote.code?.html || serverNote.code?.css || serverNote.code?.js);
+            if (localEmpty && serverHasCode) {
+              delete noteDraftsRef.current[serverNote.id];
+              return serverNote;
+            }
+            return local;
+          }
           if (noteDraftsRef.current[serverNote.id] && noteDraftsRef.current[serverNote.id].updatedAt <= serverNote.updatedAt) {
             delete noteDraftsRef.current[serverNote.id];
           }
@@ -767,24 +804,27 @@ export default function App() {
     return getDownloadURL(storageRef);
   };
 
-  const capturePreview = async () => {
+  const capturePreview = async (opts?: { silent?: boolean; noteId?: string | null }) => {
+    const silent = opts?.silent ?? false;
+    const noteId = opts?.noteId ?? activeNoteIdRef.current;
     const iframe = iframeRef.current;
-    const noteId = activeNoteId;
-    if (!iframe || !noteId) {
-      addToast('Could not find the preview.', 'error');
+    const note = (noteId && (noteDraftsRef.current[noteId] || notesRef.current.find(n => n.id === noteId))) || null;
+    if (!iframe || !noteId || !note || !hasPreviewCode(note.code)) {
+      if (!silent) addToast('Could not find the preview.', 'error');
       return;
     }
-    setIsCapturing(true);
+    const fingerprint = codeFingerprint(note.code);
+    if (silent && lastCoverFingerprintRef.current[noteId] === fingerprint) return;
+    if (captureInFlightRef.current) return;
+
+    captureInFlightRef.current = true;
     try {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 80));
+      if (activeNoteIdRef.current !== noteId) return;
       const win = iframe.contentWindow;
       if (!win) throw new Error('Preview is not ready');
 
-      const html2canvasSource = await fetch(new URL(html2canvasAssetUrl, window.location.href)).then(r => {
-        if (!r.ok) throw new Error('Screenshot library missing');
-        return r.text();
-      });
-
+      const html2canvasSource = await loadHtml2canvasSource();
       const captureId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const timer = window.setTimeout(() => {
@@ -811,26 +851,42 @@ export default function App() {
         };
         win.postMessage({ type: 'nexnote-capture-ping', captureId }, '*');
         win.postMessage(payload, '*');
-        window.setTimeout(() => win.postMessage(payload, '*'), 300);
+        window.setTimeout(() => {
+          if (activeNoteIdRef.current === noteId) win.postMessage(payload, '*');
+        }, 300);
       });
+      if (activeNoteIdRef.current !== noteId) return;
       if (!dataUrl || dataUrl === 'data:,') throw new Error('Empty image');
       const compressed = await compressCoverImage(dataUrl);
+      if (activeNoteIdRef.current !== noteId) return;
       setNoteCover(noteId, compressed);
+      lastCoverFingerprintRef.current[noteId] = fingerprint;
       try {
         const stored = await persistCoverImage(noteId, compressed);
-        if (stored !== compressed) setNoteCover(noteId, stored);
+        if (stored !== compressed && activeNoteIdRef.current === noteId) {
+          setNoteCover(noteId, stored);
+        }
       } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, `notes/${noteId}/cover`);
       }
-      addToast('Cover image saved.', 'success');
+      if (!silent) addToast('Cover image saved.', 'success');
     } catch (error) {
+      if (silent) return;
       const message = error instanceof Error ? error.message : String(error);
       addToast(message === 'timeout'
         ? 'Could not take screenshot. Reload the note and try again.'
         : `Could not take screenshot. ${message}`, 'error');
     } finally {
-      setIsCapturing(false);
+      captureInFlightRef.current = false;
     }
+  };
+
+  const scheduleAutoCover = () => {
+    if (autoCoverTimerRef.current) window.clearTimeout(autoCoverTimerRef.current);
+    const noteId = activeNoteIdRef.current;
+    autoCoverTimerRef.current = window.setTimeout(() => {
+      void capturePreview({ silent: true, noteId });
+    }, 1100);
   };
 
   if (!isAuthReady) return <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-500">Loading...</div>;
@@ -1035,13 +1091,17 @@ export default function App() {
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                           <Play size={14} className="text-purple-400" /> Live Preview
                         </span>
-                        <button onClick={capturePreview} disabled={isCapturing}
-                          className="flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white glass-card rounded-lg hover:neon-border-cyan transition-all disabled:opacity-50">
-                          <Camera size={14} /> {isCapturing ? 'Saving...' : 'Save image'}
-                        </button>
                       </div>
                       <div className="h-[350px] bg-white relative">
-                        <iframe ref={iframeRef} title="Preview" srcDoc={previewDoc} className="w-full h-full border-none" sandbox={PREVIEW_SANDBOX} />
+                        <iframe
+                          key={activeNoteId || 'preview'}
+                          ref={iframeRef}
+                          title="Preview"
+                          srcDoc={previewDoc}
+                          onLoad={scheduleAutoCover}
+                          className="w-full h-full border-none"
+                          sandbox={PREVIEW_SANDBOX}
+                        />
                       </div>
                     </div>
 
@@ -1094,8 +1154,8 @@ export default function App() {
                       <div className={cn('bg-[#0E111C] relative transition-all duration-300', isCodeExpanded ? 'h-[500px]' : 'h-[120px]')}>
                         {(!isCodeExpanded || activeCodeTab !== 'preview') && (
                           <CodeEditor 
-                            key={isCodeExpanded ? activeCodeTab : 'snippet'} 
-                            value={isCodeExpanded ? (activeCodeTab === 'preview' ? '' : activeNote.code[activeCodeTab]) : activeNote.code.html} 
+                            key={`${activeNoteId}-${isCodeExpanded ? activeCodeTab : 'snippet'}`} 
+                            value={isCodeExpanded ? (activeCodeTab === 'preview' ? '' : (activeNote.code[activeCodeTab] || '')) : (activeNote.code.html || '')} 
                             language={isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html'} 
                             onChange={val => updateCode(isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html', val)} 
                           />
