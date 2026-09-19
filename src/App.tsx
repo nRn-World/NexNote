@@ -154,15 +154,32 @@ export default function App() {
   }, [previewDoc, activeNoteId]);
 
   useEffect(() => {
+    let cancelled = false;
     const unsub = onAuthStateChanged(auth, u => {
+      if (cancelled) return;
       setUser(u);
-      if (u) setIsGuest(false);
+      if (u) {
+        setIsGuest(false);
+        setAuthError(null);
+      }
       setIsAuthReady(true);
     });
-    completeGoogleRedirect().catch(error => {
-      setAuthError(getAuthErrorMessage(error));
-    });
-    return () => unsub();
+    // Finish same-origin redirect if present; ignore stale cross-site leftovers.
+    completeGoogleRedirect()
+      .then(result => {
+        if (!cancelled && result?.user) {
+          setUser(result.user);
+          setIsGuest(false);
+          setAuthError(null);
+        }
+      })
+      .catch(error => {
+        if (!cancelled) setAuthError(getAuthErrorMessage(error));
+      });
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   useEffect(() => {
