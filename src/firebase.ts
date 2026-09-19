@@ -2,20 +2,20 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  browserPopupRedirectResolver,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const productionHost = 'nexnote.vercel.app';
+const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
 const authDomain =
   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-  (typeof window !== 'undefined' && window.location.hostname === productionHost
-    ? productionHost
-    : 'nexnote-1.firebaseapp.com');
+  (currentHost === productionHost ? productionHost : 'nexnote-1.firebaseapp.com');
+const canUseSameOriginRedirect = currentHost === authDomain || currentHost === 'localhost';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCanAf3XY1nJDnyqfQhB6dufDp4W6Oovb0",
@@ -49,7 +49,7 @@ export function getAuthErrorMessage(error: unknown): string {
   switch (getErrorCode(error)) {
     case 'auth/popup-blocked':
     case 'auth/operation-not-supported-in-this-environment':
-      return 'Webbläsaren blockerade inloggningsfönstret. Ladda om sidan och försök igen.';
+      return 'Webbläsaren blockerade inloggningsfönstret. Tillåt popup för NexNote och försök igen.';
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
     case 'auth/redirect-cancelled-by-user':
@@ -70,11 +70,26 @@ export function getAuthErrorMessage(error: unknown): string {
 }
 
 export async function completeGoogleRedirect() {
-  return getRedirectResult(auth, browserPopupRedirectResolver);
+  return getRedirectResult(auth);
 }
 
 export const signInWithGoogle = async () => {
-  await signInWithRedirect(auth, googleProvider, browserPopupRedirectResolver);
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    const code = getErrorCode(error);
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      throw error;
+    }
+    if (
+      (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') &&
+      canUseSameOriginRedirect
+    ) {
+      await signInWithRedirect(auth, googleProvider);
+      return;
+    }
+    throw error;
+  }
 };
 
 export const logout = async () => {
