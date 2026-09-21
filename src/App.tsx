@@ -164,7 +164,7 @@ export default function App() {
       }
       setIsAuthReady(true);
     });
-    // Finish same-origin redirect if present; ignore stale cross-site leftovers.
+    // Finish same-origin redirect if present. Never surface stale redirect noise.
     completeGoogleRedirect()
       .then(result => {
         if (!cancelled && result?.user) {
@@ -173,8 +173,8 @@ export default function App() {
           setAuthError(null);
         }
       })
-      .catch(error => {
-        if (!cancelled) setAuthError(getAuthErrorMessage(error));
+      .catch(() => {
+        /* ignored — incomplete redirects must not block the login screen */
       });
     return () => {
       cancelled = true;

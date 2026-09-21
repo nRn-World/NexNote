@@ -1,35 +1,32 @@
 import { initializeApp } from 'firebase/app';
 import {
-  initializeAuth,
   getAuth,
+  setPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
   type UserCredential,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 /**
- * Google sign-in rules (do not weaken these):
+ * Google sign-in rules (do not weaken):
  *
- * 1. Prefer popup. Cross-site redirect loses sessionStorage when authDomain
- *    differs from the app host ("missing initial state").
- * 2. Redirect only when the app host IS the authDomain (same-origin), e.g.
+ * 1. Use getAuth() — it registers the browser popup/redirect resolver.
+ *    initializeAuth without popupRedirectResolver causes auth/argument-error.
+ * 2. Prefer popup. Cross-site redirect loses sessionStorage when authDomain
+ *    differs from the app host.
+ * 3. Redirect only when the app host IS the authDomain (same-origin), e.g.
  *    nexnote.vercel.app with the /__/auth rewrite in vercel.json.
- * 3. Never fall back to redirect on nrnworld.one, GitHub Pages, or other
- *    hosts that cannot proxy Firebase's auth handler.
  */
 const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
 
-/** Hosts that proxy /__/auth to Firebase and may use that host as authDomain. */
-const SAME_ORIGIN_AUTH_HOSTS = new Set([
-  'nexnote.vercel.app',
-]);
+const SAME_ORIGIN_AUTH_HOSTS = new Set(['nexnote.vercel.app']);
 
 const authDomain =
   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
@@ -51,19 +48,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-function createAuth() {
-  try {
-    return initializeAuth(app, {
-      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-    });
-  } catch {
-    return getAuth(app);
-  }
-}
-
-export const auth = createAuth();
+// Best-effort durable session; never block sign-in if persistence setup fails.
+void setPersistence(auth, indexedDBLocalPersistence).catch(() =>
+  setPersistence(auth, browserLocalPersistence).catch(() => undefined),
+);
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -77,13 +68,13 @@ function getErrorCode(error: unknown): string {
   return match ? match[0] : '';
 }
 
-/** Stale redirect leftovers / partitioned storage — not actionable on cold load. */
 function isIgnorableRedirectError(error: unknown): boolean {
   const code = getErrorCode(error);
   if (
     code === 'auth/no-auth-event' ||
     code === 'auth/argument-error' ||
-    code === 'auth/invalid-credential'
+    code === 'auth/invalid-credential' ||
+    code === 'auth/null-user'
   ) {
     return true;
   }
@@ -91,7 +82,7 @@ function isIgnorableRedirectError(error: unknown): boolean {
     typeof error === 'object' && error && 'message' in error
       ? String((error as { message?: string }).message || '')
       : String(error || '');
-  return /missing initial state|sessionStorage/i.test(message);
+  return /missing initial state|sessionStorage|argument-error/i.test(message);
 }
 
 export function isEmbeddedBrowser(): boolean {
@@ -115,30 +106,21 @@ export function getAuthErrorMessage(error: unknown): string {
     case 'auth/cancelled-popup-request':
     case 'auth/redirect-cancelled-by-user':
       return 'Inloggningen avbröts.';
+    case 'auth/argument-error':
+      return 'Inloggningen kunde inte startas. Ladda om sidan och försök igen.';
     case 'auth/unauthorized-domain': {
       const host = currentHost || 'okänd host';
-      return `Domänen "${host}" är inte godkänd för Google-inloggning. Lägg till den under Firebase → Authentication → Authorized domains.`;
+      return `Domänen "${host}" är inte godkänd för Google-inloggning.`;
     }
     case 'auth/network-request-failed':
       return 'Nätverksfel. Kontrollera din anslutning och försök igen.';
     case 'auth/account-exists-with-different-credential':
       return 'Det finns redan ett konto med samma e-postadress.';
-    default: {
-      const message =
-        typeof error === 'object' && error && 'message' in error
-          ? String((error as { message?: string }).message)
-          : '';
-      return message
-        ? `Inloggningen misslyckades: ${message}`
-        : 'Inloggningen misslyckades. Försök igen.';
-    }
+    default:
+      return 'Inloggningen misslyckades. Ladda om sidan och försök igen.';
   }
 }
 
-/**
- * Completes a same-origin redirect if one is pending.
- * Ignores stale cross-site redirect failures so the login screen stays clean.
- */
 export async function completeGoogleRedirect(): Promise<UserCredential | null> {
   try {
     return await getRedirectResult(auth);
@@ -168,8 +150,6 @@ export const signInWithGoogle = async (): Promise<UserCredential | void> => {
       code === 'auth/popup-blocked' ||
       code === 'auth/operation-not-supported-in-this-environment';
 
-    // Redirect is only safe when auth handler stays on the same origin.
-    // Cross-site redirect (app on nrnworld.one → auth on firebaseapp.com) breaks login.
     if (popupUnavailable && canUseSameOriginRedirect) {
       await signInWithRedirect(auth, googleProvider);
       return;
