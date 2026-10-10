@@ -10,7 +10,7 @@
   
   <br />
   
-  ### [🚀 Open NexNote Live Link](https://nexnote.vercel.app)
+  ### [🚀 Open NexNote Live Link](https://nrnworld.one/NexNote/)
   
   [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 </div>
