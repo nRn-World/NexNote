@@ -3,6 +3,7 @@ import {
   collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc
 } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
+import { useToast } from '../hooks/useToast';
 import { auth, db } from '../firebase';
 import { Heart, UserPlus, UserCheck, X, ArrowLeft, Camera, Flame, Globe, Star, Check, Pencil, Link2 } from 'lucide-react';
 import { cn, PREVIEW_SANDBOX } from '../lib/utils';
@@ -83,6 +84,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   const isOwn = uid === currentUser?.uid;
   const userPosts = allPosts.filter(p => p.uid === uid);
@@ -138,7 +140,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     // Firestore document limit is 1MB total. Base64 adds ~33% overhead.
     // 780KB is the absolute physical peak before the database denies the write.
     if (file.size > 780 * 1024) {
-      alert('The file is too large for the database. Because of the code overhead, pictures over ~780KB exceed the 1MB database limit. For larger GIFs, please use the "Paste Link" (🔗) button instead!');
+      addToast('Bilden är för stor för databasen (max ~780 kB). Använd "Klistra in länk" för större filer.', 'error');
       return;
     }
 
@@ -171,7 +173,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       setProfile((prev: any) => ({ ...(prev || {}), photoURL: finalData }));
     } catch (err: any) {
       console.error('Avatar upload failed:', err);
-      alert(`Could not save the image: ${err.message || 'Unknown error'}`);
+      addToast(`Kunde inte spara bilden: ${err.message || 'okänt fel'}`, 'error');
     } finally { 
       setUploading(false);
       e.target.value = ''; 
@@ -190,7 +192,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       setIsEditingName(false);
     } catch (err: any) {
       console.error('Name update failed:', err);
-      alert(`Could not save the name: ${err.message || 'Unknown error'}`);
+      addToast(`Kunde inte spara namnet: ${err.message || 'okänt fel'}`, 'error');
     }
   };
 
@@ -201,7 +203,7 @@ const handleLinkAvatar = async () => {
     if (!url || !auth.currentUser) return;
     
     if (!url.startsWith('http')) {
-      alert('Please enter a valid URL starting with http:// or https://');
+      addToast('Ange en giltig URL som börjar med http:// eller https://', 'error');
       return;
     }
 
@@ -215,7 +217,7 @@ const handleLinkAvatar = async () => {
       setProfile((prev: any) => ({ ...(prev || {}), photoURL: url }));
     } catch (err: any) {
       console.error('Link avatar failed:', err);
-      alert(`Could not save the link: ${err.message}`);
+      addToast(`Kunde inte spara länken: ${err.message}`, 'error');
     } finally {
       setUploading(false);
     }

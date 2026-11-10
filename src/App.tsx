@@ -16,7 +16,6 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import Sidebar from './components/Sidebar';
 import NoteHeader from './components/NoteHeader';
 import AttachmentList from './components/AttachmentList';
-import Toast from './components/Toast';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import MobileBottomNav from './components/MobileBottomNav';
@@ -161,7 +160,7 @@ export default function App() {
   const pendingCategoriesRef = useRef<Record<string, Category>>({});
   const notesRef = useRef<Note[]>([]);
   const hasSeenWelcomeRef = useRef(false);
-  const { toasts, addToast, removeToast } = useToast();
+  const { addToast } = useToast();
   // Stable pseudo-random pattern for the activity heatmap; regenerating it on every render made it flicker while typing.
   const activityHeatmap = useMemo(() => Array.from({ length: 35 }, () => Math.random()), []);
   notesRef.current = notes;
@@ -1154,8 +1153,10 @@ export default function App() {
           }));
           setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
           setTrash(prev => {
-            const merged = [...noteIds.map(id => notes.find(n => n.id === id)).filter(Boolean), ...prev];
-            return merged.sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || b.updatedAt));
+            const moved = noteIds
+              .map(id => notes.find(n => n.id === id))
+              .filter((n): n is Note => Boolean(n));
+            return [...moved, ...prev].sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt));
           });
           if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
           addToast(`${noteIds.length} anteckning(er) flyttade till papperskorgen.`, 'success');
@@ -1525,7 +1526,7 @@ export default function App() {
               readingTime={readingTime}
               onSetReminder={(reminderAt) => {
                 if (!activeNote) return;
-                updateActiveNote({ reminderAt, reminderDone: false });
+                updateActiveNote({ reminderAt: reminderAt ?? undefined, reminderDone: false });
               }}
               onToggleLock={toggleLock}
             />
@@ -1885,7 +1886,7 @@ export default function App() {
                           </div>
                           <p className="text-[11px] text-zinc-400 line-clamp-2 mb-3">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
                           <div className="flex items-center gap-1">
-                            {note.tags.slice(0, 2).map(tag => (
+                            {(note.tags || []).slice(0, 2).map(tag => (
                               <span key={tag} className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 rounded-full text-[10px] font-bold border border-cyan-400/20">{tag}</span>
                             ))}
                           </div>
@@ -2072,7 +2073,6 @@ export default function App() {
         onProfile={() => setShowProfile(true)}
       />
 
-      <Toast toasts={toasts} onRemove={removeToast} />
       <ConfirmDialog
         open={confirm.open} title={confirm.title} message={confirm.message}
         danger={confirm.danger} confirmLabel={confirm.confirmLabel || 'Bekräfta'}
@@ -2160,6 +2160,23 @@ export default function App() {
         onClose={() => setShowDesignAi(false)}
         initialPrompt={designAiPrompt}
         isDark={isDark}
+        onInsert={(code) => {
+          const uid = auth.currentUser?.uid || user?.uid;
+          if (!uid) return;
+          const created: Note = {
+            id: uuidv4(), uid,
+            title: designAiPrompt || 'AI-design', content: '',
+            attachments: [],
+            code: { html: code.html, css: code.css, js: code.js },
+            order: notes.length, createdAt: Date.now(), updatedAt: Date.now(),
+          };
+          noteDraftsRef.current[created.id] = created;
+          setNotes(prev => [created, ...prev]);
+          setActiveNoteId(created.id);
+          if (!isGuest && auth.currentUser) {
+            handleSave(created).catch(() => addToast('Kunde inte spara AI-designen.', 'error'));
+          }
+        }}
       />
 
       {showTrash && (

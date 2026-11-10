@@ -195,6 +195,7 @@ export default function CommunityBackground() {
     }
 
     function init(): void {
+      if (!canvas || !ctx) return;
       const W = window.innerWidth;
       const H = window.innerHeight;
       const dpr = window.devicePixelRatio || 1;
@@ -222,6 +223,7 @@ export default function CommunityBackground() {
     }
 
     function tick(): void {
+      if (!ctx) return;
       if (!grid) {
         rafId = requestAnimationFrame(tick);
         return;

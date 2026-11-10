@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Download, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useToast } from '../hooks/useToast';
 
 interface BackupModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface BackupModalProps {
 export default function BackupModal({ open, onClose, onExport, onImport }: BackupModalProps) {
   const [imported, setImported] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToast();
 
   if (!open) return null;
 
@@ -20,7 +22,7 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.json')) {
       setImported(null);
-      alert('Välj en .json-fil som exporterats från NexNote.');
+      addToast('Välj en .json-fil som exporterats från NexNote.', 'error');
       return;
     }
     onImport(file);

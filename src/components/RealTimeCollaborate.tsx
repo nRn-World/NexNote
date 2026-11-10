@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { User, User2, Activity, Lock, Send, Code, FileText, X } from 'lucide-react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import React, { useEffect, useRef, useState } from 'react';
+import { Activity, CheckCircle2, CloudOff, RefreshCw, X } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { format } from 'date-fns';
 import { db } from '../firebase';
 import { Note } from '../types';
 
@@ -13,34 +14,38 @@ interface RealTimeCollaborateProps {
   isDark?: boolean;
 }
 
+/**
+ * Shows the note's real cloud sync state.
+ * The previous version simulated other participants and an "online" count;
+ * NexNote syncs note content through Firestore but has no presence tracking.
+ */
 export default function RealTimeCollaborate({
-  open, note, user, onContentChange, onClose, isDark = true,
+  open, note, onContentChange, onClose,
 }: RealTimeCollaborateProps) {
-  const [collaborators, setCollaborators] = useState<any[]>([{ ...(user || {}), cursor: { x: 0, y: 0 }, color: 'cyan' }]);
-  const [localUsers, setLocalUsers] = useState<Record<string, any>>({});
   const onContentChangeRef = useRef(onContentChange);
   onContentChangeRef.current = onContentChange;
+
   const noteId = note?.id;
+  const [lastSync, setLastSync] = useState<number | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
 
   useEffect(() => {
     if (!open || !noteId) return;
-
-    // Listen for real-time changes to the note
-    const unsub = onSnapshot(doc(db, 'notes', noteId), (snapshot) => {
-      if (snapshot.exists()) {
+    setLastSync(null);
+    setSyncFailed(false);
+    const unsub = onSnapshot(
+      doc(db, 'notes', noteId),
+      snapshot => {
+        if (!snapshot.exists()) return;
         const data = snapshot.data();
-        onContentChangeRef.current(data.content || '');
-      }
-    });
-
-    // Listen for presence (who else has this note open)
-    // In a real app, use Firebase Realtime Database or Firestore presence
-    // For now, simulate with local state
+        onContentChangeRef.current(typeof data.content === 'string' ? data.content : '');
+        setLastSync(Date.now());
+        setSyncFailed(false);
+      },
+      () => setSyncFailed(true),
+    );
     return () => unsub();
   }, [open, noteId]);
-
-  // Simulate cursor movement for other users
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
   if (!open || !note) return null;
 
@@ -50,90 +55,67 @@ export default function RealTimeCollaborate({
       <div className="glass-panel border-b border-white/10 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-            {user?.displayName?.[0] || 'U'}
+            {typeof note.title === 'string' && note.title.trim() ? note.title.trim().charAt(0) : 'N'}
           </div>
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-white">Redigerar tillsammans</h3>
+            <h3 className="text-sm font-bold text-white">Molnsynk</h3>
             <p className="text-[10px] text-zinc-500">{note.title || 'Namnlös anteckning'}</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-[10px] font-bold flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            {collaborators.length} online
-          </span>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white">
-            <X size={20} />
-          </button>
-        </div>
+        <button onClick={onClose} className="text-zinc-400 hover:text-white">
+          <X size={20} />
+        </button>
       </div>
 
-      {/* Collaborators list */}
+      {/* Status */}
       <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/3">
         <div className="flex items-center gap-2">
-          <User2 size={14} className="text-zinc-500" />
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Deltagare</span>
+          <Activity size={14} className="text-zinc-500" />
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Status</span>
         </div>
-        <div className="flex gap-2">
-          {collaborators.map((c, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
-              <div className={`w-2 h-2 rounded-full ${c.color === 'cyan' ? 'bg-cyan-400' : c.color === 'purple' ? 'bg-purple-400' : 'bg-emerald-400'}`} />
-              <span className="text-[10px] font-bold text-zinc-300">{c.displayName || 'Användare'}</span>
-            </div>
-          ))}
-          <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-[10px] font-bold text-cyan-400">Du</span>
-          </div>
-        </div>
+        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${syncFailed ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? 'bg-red-400' : 'bg-green-400 animate-pulse'}`} />
+          {syncFailed ? 'Ingen kontakt med Firestore' : 'Molnsynk aktiv'}
+        </span>
       </div>
 
-      {/* Editor area placeholder - in real app this would be a shared editor */}
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto">
           <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-            <Activity size={32} className="text-cyan-400" />
+            {syncFailed ? <CloudOff size={32} className="text-red-400" /> : <CheckCircle2 size={32} className="text-cyan-400" />}
           </div>
-          <h4 className="text-lg font-bold text-white mb-2">Realidsamarbete aktivt</h4>
-          <p className="text-zinc-500 text-sm mb-6 max-w-md">
-            Ändringar synkroniseras automatiskt mellan alla deltagare i realtid.
-            Se andra användares markörer och val när de skriver.
+          <h4 className="text-lg font-bold text-white mb-2">
+            {syncFailed ? 'Kunde inte läsa anteckningen' : 'Ändringar sparas direkt i molnet'}
+          </h4>
+          <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
+            Anteckningens innehåll lyssnas av i realtid från Firestore, så det du skriver här
+            syns på andra enheter som har anteckningen öppen. Innehållet är det som synkas —
+            markörpositioner eller deltagarlistor visas inte.
           </p>
-          
-          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            <button className="px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all">
-              <Code size={16} className="mr-2" /> Kodläge
-            </button>
-            <button className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-zinc-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
-              <FileText size={16} className="mr-2" /> Textläge
-            </button>
+
+          <div className="w-full p-4 rounded-xl bg-white/3 border border-white/5 text-left space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-400 flex items-center gap-2"><RefreshCw size={12} /> Senaste synk</span>
+              <span className="text-xs font-mono text-zinc-300">
+                {lastSync ? format(lastSync, 'HH:mm:ss') : 'väntar…'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-400">Antecknings-id</span>
+              <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[220px]">{note.id}</span>
+            </div>
           </div>
 
-          <div className="mt-8 p-4 rounded-xl bg-white/3 border border-white/5">
-            <div className="flex items-center gap-3 mb-2">
-              <Lock size={16} className="text-zinc-500" />
-              <span className="text-xs font-bold text-zinc-400">Säkerhet</span>
-            </div>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Alla ändringar krypteras och sparas i molnet. Endast inbjudna deltagare kan se och redigera.
-            </p>
-          </div>
+          <p className="mt-6 text-[10px] text-zinc-600 leading-relaxed">
+            Stäng panelen och fortsätt skriva — synken sker i bakgrunden.
+          </p>
         </div>
       </div>
 
-      {/* Bottom action bar */}
-      <div className="p-4 border-t border-white/10 bg-white/3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-all">
-              <Send size={16} />
-              <span>Bjud in</span>
-            </button>
-          </div>
-          <button onClick={onClose} className="px-6 py-2 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
-            Stäng samarbete
-          </button>
-        </div>
+      <div className="p-4 border-t border-white/10 bg-white/3 flex justify-end">
+        <button onClick={onClose} className="px-6 py-2 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
+          Stäng
+        </button>
       </div>
     </div>
   );

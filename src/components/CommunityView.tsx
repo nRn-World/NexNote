@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import UserProfilePage from './UserProfilePage';
 import CommunityBackground from './CommunityBackground';
+import { useToast } from '../hooks/useToast';
 
 export interface CommunityPost {
   id: string;
@@ -107,6 +108,7 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
   onProfileClick: (uid: string, name: string, photo?: string) => void;
   isGuest?: boolean;
 }) {
+  const { addToast } = useToast();
   const hasLiked = post.likes.includes(userId);
   const isFollowing = following.includes(post.uid);
   const isOwn = post.uid === userId;
@@ -159,7 +161,7 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
           }
           <span onClick={e => { e.stopPropagation(); onProfileClick(post.uid, post.displayName, post.photoURL); }} className="text-xs text-zinc-400 truncate flex-1 cursor-pointer hover:text-white transition-colors">{post.displayName}</span>
           {!isOwn && (
-<button onClick={e => { e.stopPropagation(); if (isGuest) { alert('Sign in to follow users!'); return; } onFollow(); }}
+<button onClick={e => { e.stopPropagation(); if (isGuest) { addToast('Logga in för att följa användare.', 'info'); return; } onFollow(); }}
               className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0', isGuest ? 'opacity-40 cursor-not-allowed' :
                 isFollowing
                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
@@ -169,7 +171,7 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
               {isFollowing ? 'Following' : isGuest ? 'Guest' : 'Follow'}
             </button>
           )}
-<button onClick={e => { e.stopPropagation(); if (isGuest) { alert('Sign in to like!'); return; } onLike(); }}
+<button onClick={e => { e.stopPropagation(); if (isGuest) { addToast('Logga in för att gilla inlägg.', 'info'); return; } onLike(); }}
             className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border shrink-0',
               hasLiked
                 ? 'bg-red-500/10 border-red-500/30 text-red-400'
@@ -192,6 +194,7 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
   isGuest?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const { addToast } = useToast();
   const decoded = decodeContent(post.fullCode || post.content);
   const hasLiked = post.likes.includes(userId);
   const isFollowing = following.includes(post.uid);
@@ -199,7 +202,7 @@ function PostModal({ post, userId, isAdmin, following, onLike, onFollow, onClose
 
 const handleCopy = async () => {
     if (isGuest) {
-      alert('Copy is disabled in Guest Mode. Sign in to copy code!');
+      addToast('Kopiering är avstängd i gästläge. Logga in för att kopiera kod.', 'info');
       return;
     }
     await navigator.clipboard.writeText(decoded);
@@ -628,6 +631,7 @@ export default function CommunityView({
   const [activeTab, setActiveTab] = useState<'trending' | 'following' | 'challenges'>(initialTab);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [profileTarget, setProfileTarget] = useState<{ uid: string; name: string; photo?: string } | null>(null);
+  const { addToast } = useToast();
 
   const isAdmin = user?.email === ADMIN_EMAIL;
   const myBan = bans.find(b => b.uid === user?.uid);
@@ -696,7 +700,7 @@ export default function CommunityView({
   const handleLike = async (post: CommunityPost) => {
     if (!user) return;
     if (post.uid === user.uid) {
-      alert('You cannot like your own projects.');
+      addToast('Du kan inte gilla dina egna projekt.', 'info');
       return;
     }
     const hasLiked = post.likes.includes(user.uid);
@@ -722,14 +726,14 @@ export default function CommunityView({
   const handleUpload = async (noteId: string, category: string) => {
     if (!noteId || !user || isBanned) return;
     if (weeklyCount >= currentLimit) { 
-      alert(`Max ${currentLimit} uploads per week. ${isAdmin ? 'Admin' : 'Regular'} limit reached.`); 
+      addToast(`Max ${currentLimit} uppladdningar per vecka. ${isAdmin ? 'Admin' : 'Vanlig'} gräns nådd.`, 'error');
       return; 
     }
     
     if (category === 'challenges') {
       const hasEntry = posts.find(p => p.uid === user.uid && p.category === 'challenges');
       if (hasEntry) {
-        alert('You can only submit ONE entry per challenge.');
+        addToast('Du kan bara skicka in ett bidrag per utmaning.', 'error');
         return;
       }
     }
@@ -745,7 +749,7 @@ export default function CommunityView({
         coverImage: note.coverImage || null, likes: [], createdAt: Date.now(),
       });
       setShowUpload(false);
-    } catch (err) { console.error(err); alert('Could not share.'); }
+    } catch (err) { console.error(err); addToast('Kunde inte dela koden.', 'error'); }
   };
 
   const handleDelete = async (id: string) => { if (isAdmin) await deleteDoc(doc(db, 'community', id)); };
@@ -774,7 +778,7 @@ export default function CommunityView({
   const handleMessage = async () => {
     if (!msgTarget || !user) return;
     await addDoc(collection(db, 'community_messages'), { fromUid: user.uid, fromName: user.displayName || 'Admin', toUid: msgTarget.uid, toName: msgTarget.displayName, message: msgText, isReply: false, createdAt: Date.now() });
-    setMsgTarget(null); setMsgText(''); alert('Message sent!');
+    setMsgTarget(null); setMsgText(''); addToast('Meddelande skickat.', 'success');
   };
 
   const canUpload = weeklyCount < currentLimit && !isBanned;
@@ -856,7 +860,7 @@ export default function CommunityView({
             }
             My profile
           </button>
-<button onClick={() => { if (isGuest) { alert('Sign in to share code with community!'); return; } setShowUpload(true); }} disabled={isGuest || !canUpload}
+<button onClick={() => { if (isGuest) { addToast('Logga in för att dela kod med communityn.', 'info'); return; } setShowUpload(true); }} disabled={isGuest || !canUpload}
             className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
               (canUpload && !isGuest) ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-[var(--bg-panel-hover)] text-[var(--text-secondary)] cursor-not-allowed'
             )}>
@@ -923,7 +927,7 @@ export default function CommunityView({
                       <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
                     </div>
                     <div className="w-px h-8 bg-white/3" />
-<button onClick={() => { if (isGuest) { alert('Logga in för att skicka in till utmaningar!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+<button onClick={() => { if (isGuest) { addToast('Logga in för att skicka in till utmaningar.', 'info'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                       {isGuest ? 'Login to Submit' : 'Submit Entry'}
                     </button>
                   </div>
