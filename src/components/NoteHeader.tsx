@@ -4,7 +4,7 @@ import { enUS } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, HistoryIcon,
   ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2,
-  Printer, Copy, Maximize, Maximize2
+  Printer, Copy, Maximize, Maximize2, Image
 } from 'lucide-react';
 import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
@@ -28,6 +28,7 @@ interface NoteHeaderProps {
   onPrint: () => void;
   onDuplicate: () => void;
   onToggleFocus: () => void;
+  onDownloadImage: () => void;
   isFocusMode: boolean;
   wordCount: number;
   readingTime: number;
@@ -37,7 +38,8 @@ export default function NoteHeader({
   note, isAiProcessing, showHistory, categories, isSaving, isSaved,
   onBack, onTogglePin, onToggleHistory,
   onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
-  onPrint, onDuplicate, onToggleFocus, isFocusMode, wordCount, readingTime,
+  onPrint, onDuplicate, onToggleFocus, onDownloadImage, isFocusMode,
+  wordCount, readingTime,
 }: NoteHeaderProps) {
   return (
     <div className="glass-panel border-b border-white/5 sticky top-0 z-20 transition-all">
@@ -107,12 +109,16 @@ export default function NoteHeader({
             className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Duplicera anteckning">
             <Copy size={18} />
           </button>
-          <button onClick={onToggleFocus}
-            className={cn('p-2 rounded-xl transition-all',
-              isFocusMode ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white hover:bg-white/5'
-            )} title={isFocusMode ? 'Avsluta fokusläge' : 'Fokusläge'}>
-            {isFocusMode ? <Maximize2 size={18} /> : <Maximize size={18} />}
-          </button>
+            <button onClick={onToggleFocus}
+              className={cn('p-2 rounded-xl transition-all',
+                isFocusMode ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white hover:bg-white/5'
+              )} title={isFocusMode ? 'Avsluta fokusläge' : 'Fokusläge'}>
+              {isFocusMode ? <Maximize2 size={18} /> : <Maximize size={18} />}
+            </button>
+            <button onClick={onDownloadImage}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Ladda ned som bild">
+              <Image size={18} />
+            </button>
           <button
             onClick={onSave}
             disabled={isSaving || isSaved}

@@ -798,6 +798,73 @@ export default function App() {
 
   const escapeHtml = (text: string) => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c));
 
+  const downloadNoteAsImage = async () => {
+    if (!activeNote) return;
+    try {
+      const html2canvasSource = await loadHtml2canvasSource();
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'display:none;width:720px;height:960px;';
+      document.body.appendChild(frame);
+      const captureId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const attachmentsHtml = activeNote.attachments.filter(a => a.type.startsWith('image/')).map(a =>
+        `<img src="${a.data}" style="max-width:100%;margin:1rem 0;border-radius:8px;" alt="${escapeHtml(a.name)}"/>`
+      ).join('');
+      const codeHtml = activeNote.code && hasPreviewCode(activeNote.code)
+        ? `<details style="margin-top:1.5rem;"><summary style="font-weight:700;">Kodförhandsgranskning</summary><iframe src="${'data:text/html;charset=utf-8,' + encodeURIComponent(buildPreviewSrcDoc(activeNote.code.html || '', activeNote.code.css || '', activeNote.code.js || '', false))}" style="width:100%;height:320px;border:none;border-radius:8px;"></iframe></details>`
+        : '';
+      const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        body{margin:0;padding:32px;background:#ffffff;color:#1e293b;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
+        h1{font-size:28px;margin:0 0 1rem;line-height:1.3;}
+        .content{line-height:1.7;}
+        .content p{margin:0.75rem 0;}
+      </style></head><body>
+        <h1>${escapeHtml(activeNote.title || 'Anteckning')}</h1>
+        <div class="content">${activeNote.content}</div>
+        ${attachmentsHtml}
+        ${codeHtml}
+      </body></html>`;
+      const win = frame.contentWindow;
+      if (!win) throw new Error('Kunde inte skapa förhandsgranskningsfönster');
+      win.document.open();
+      win.document.write(doc + `<script>${html2canvasSource}</script>
+        <script>
+          window.addEventListener('message', async (ev) => {
+            if (!ev.data || ev.data.type !== 'nexnote-capture' || ev.data.captureId !== '${captureId}') return;
+            try {
+              const canvas = await html2canvas(document.body, { backgroundColor: '#ffffff', scale: 2, logging: false, useCORS: true });
+              window.parent.postMessage({ type: 'nexnote-capture-result', captureId: '${captureId}', dataUrl: canvas.toDataURL('image/png', 1.0) }, '*');
+            } catch (err) {
+              window.parent.postMessage({ type: 'nexnote-capture-result', captureId: '${captureId}', error: String(err && err.message || err) }, '*');
+            }
+          });
+        </script>`);
+      win.document.close();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const timer = setTimeout(() => { window.removeEventListener('message', onMsg); reject(new Error('timeout')); }, 20000);
+        const onMsg = (ev: MessageEvent) => {
+          if (ev.data?.captureId !== captureId || ev.data?.type !== 'nexnote-capture-result') return;
+          clearTimeout(timer);
+          window.removeEventListener('message', onMsg);
+          if (ev.data.dataUrl) resolve(ev.data.dataUrl);
+          else reject(new Error(ev.data.error || 'Tom bild'));
+        };
+        window.addEventListener('message', onMsg);
+        win.postMessage({ type: 'nexnote-capture', captureId }, '*');
+      });
+      document.body.removeChild(frame);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${escapeHtml(activeNote.title || 'anteckning').slice(0, 40)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      addToast('Anteckning nedladdad som bild.', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      addToast(message === 'timeout' ? 'Bildrenderingen tog för lång tid.' : 'Kunde inte skapa bilden.', 'error');
+    }
+  };
+
   const handleExportNotes = () => {
     if (!user) return;
     const data = {
@@ -1280,6 +1347,7 @@ export default function App() {
               onPrint={printNote}
               onDuplicate={() => activeNote && duplicateNote(activeNote)}
               onToggleFocus={toggleFocusMode}
+              onDownloadImage={downloadNoteAsImage}
               isFocusMode={isFocusMode}
               wordCount={wordCount}
               readingTime={readingTime}
