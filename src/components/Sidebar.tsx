@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut, Copy } from 'lucide-react';
+import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut, Copy, Tag, Star, Filter } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -32,7 +32,7 @@ interface SidebarProps {
   onMoveNote: (noteId: string, categoryId: string | undefined) => void;
   onMoveManyNotes: (noteIds: string[], categoryId: string | undefined) => void;
   onDeleteManyNotes: (noteIds: string[]) => void;
-  onRenameNote: (noteId: string, title: string) => void;
+  onRenameNote: (id: string, title: string) => void;
   onDuplicateNote?: (id: string) => void;
   onChangeColor?: (id: string, color: string) => void;
   onOpenCommunity: () => void;
@@ -43,6 +43,11 @@ interface SidebarProps {
   user: any;
   isLoading?: boolean;
   isGuest?: boolean;
+  // New filter props
+  activeTag: string | null;
+  onSelectTag: (tag: string | null) => void;
+  showPinnedOnly: boolean;
+  onTogglePinnedOnly: () => void;
 }
 
 function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
@@ -177,6 +182,10 @@ export default function Sidebar({
   onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
   isLoading = false,
   isGuest = false,
+  activeTag = null,
+  onSelectTag = () => {},
+  showPinnedOnly = false,
+  onTogglePinnedOnly = () => {},
 }: SidebarProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } })) ;
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -191,11 +200,15 @@ export default function Sidebar({
 
   const isSelecting = selectedIds.size > 0;
 
+  const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
+
   const filtered = notes.filter(n => {
     const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       n.content.replace(/<[^>]*>/g, '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategoryId === null || n.categoryId === activeCategoryId;
-    return matchesSearch && matchesCategory;
+    const matchesTag = activeTag === null || (n.tags || []).includes(activeTag);
+    const matchesPinned = !showPinnedOnly || n.isPinned;
+    return matchesSearch && matchesCategory && matchesTag && matchesPinned;
   });
 
   const noteCountByCategory: Record<string, number> = {};
@@ -345,10 +358,55 @@ export default function Sidebar({
           </button>
         </div>
 
+        {/* Tag filter */}
+        {allTags.length > 0 && (
+          <div className="mt-4 px-2 mb-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Taggar</span>
+              {activeTag && (
+                <button onClick={() => onSelectTag(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300">Rensa</button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onSelectTag(null)}
+                className={cn(
+                  'px-2.5 py-1 rounded-full text-xs font-bold transition-all border',
+                  !activeTag ? 'bg-cyan-400/20 text-cyan-400 border-cyan-400/40' : 'bg-white/5 text-zinc-500 border-white/5 hover:bg-white/10'
+                )}
+              >
+                Alla
+              </button>
+              {allTags.map(tag => (
+                <button key={tag} onClick={() => onSelectTag(tag)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-xs font-bold transition-all border',
+                    activeTag === tag ? 'bg-cyan-400/20 text-cyan-400 border-cyan-400/40' : 'bg-white/5 text-zinc-500 border-white/5 hover:bg-white/10'
+                  )}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 pt-2">
            <div className="flex items-center justify-between mb-4 px-2">
               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Anteckningar</span>
-              {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Valda</span>}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onTogglePinnedOnly}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold transition-all border',
+                    showPinnedOnly ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' : 'bg-white/5 text-zinc-500 border-white/5 hover:bg-white/10'
+                  )}
+                >
+                  <Star size={12} className="fill-yellow-400" />
+                  <span>Pinnade</span>
+                </button>
+                {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Valda</span>}
+              </div>
            </div>
 
           {isLoading ? (

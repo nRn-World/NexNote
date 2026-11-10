@@ -42,4 +42,10 @@ export interface Note {
   deletedAt?: number;
   createdAt: number;
   updatedAt: number;
+  // Reminder
+  reminderAt?: number;
+  reminderDone?: boolean;
+  // Lock / privacy
+  isLocked?: boolean;
+  lockPassword?: string;
 }

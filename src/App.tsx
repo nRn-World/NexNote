@@ -87,6 +87,8 @@ export default function App() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [isTitleCopied, setIsTitleCopied] = useState(false);
   const [isContentCopied, setIsContentCopied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -885,6 +887,31 @@ export default function App() {
     addToast('Säkerhetskopia nedladdad.', 'success');
   };
 
+  const exportNoteAsMarkdown = (note: Note) => {
+    const md = [
+      `# ${note.title || 'Untitled'}`,
+      '',
+      `*Exporterad från NexNote ${new Date().toISOString()}*`,
+      '',
+      note.content.replace(/<[^>]*>/g, ' ').trim(),
+      '',
+      note.tags && note.tags.length > 0
+        ? `Tags: ${note.tags.map(t => `#${t}`).join(' ')}`
+        : '',
+      note.code ? `\n---\n\n## Code\n\n\`\`\`html\n${note.code.html}\n\`\`\`\n\n\`\`\`css\n${note.code.css}\n\`\`\`\n\n\`\`\`js\n${note.code.js}\n\`\`\`` : '',
+    ].join('\n').trim();
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(note.title || 'anteckning').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast('Exporterad som Markdown.', 'success');
+  };
+
   const handleImportNotes = (file: File) => {
     if (!user) return;
     const reader = new FileReader();
@@ -1323,6 +1350,10 @@ export default function App() {
         user={user}
         isLoading={isLoading}
         isGuest={isGuest}
+        activeTag={activeTag}
+        onSelectTag={setActiveTag}
+        showPinnedOnly={showPinnedOnly}
+        onTogglePinnedOnly={() => setShowPinnedOnly(!showPinnedOnly)}
       />
 
       <div className={cn(
@@ -1465,6 +1496,9 @@ export default function App() {
                                 </button>
                                 <button onClick={() => setShowJamSession(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/5 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-all">
                                   <Globe size={12} /> Jam
+                                </button>
+                                <button onClick={() => activeNote && exportNoteAsMarkdown(activeNote)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-400/5 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/10 transition-all">
+                                  <FileText size={12} /> Markdown
                                 </button>
                               </>
                             )}
