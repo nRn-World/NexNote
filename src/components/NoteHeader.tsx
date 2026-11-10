@@ -61,7 +61,7 @@ export default function NoteHeader({
             <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-0.5">
               <span>{wordCount} ord</span>
               <span className="w-px h-2 bg-zinc-700 mx-1" />
-              <span>{readingTime} min lästid</span>
+              <span>{readingTime} min read</span>
             </div>
           </div>
         </div>
@@ -71,13 +71,13 @@ export default function NoteHeader({
             <button onClick={onTogglePin}
               className={cn('p-2 rounded-xl transition-all',
                 note.isPinned ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={note.isPinned ? 'Avfäst' : 'Fäst'}>
+              )} title={note.isPinned ? 'Unpin' : 'Pin'}>
               <Pin size={18} className={cn(note.isPinned && 'fill-cyan-400')} />
             </button>
             <button onClick={onToggleLock}
               className={cn('p-2 rounded-xl transition-all',
                 note.isLocked ? 'text-yellow-400 bg-yellow-400/10 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={note.isLocked ? 'Lås upp anteckning' : 'Lås anteckning'}>
+              )} title={note.isLocked ? 'Unlock note' : 'Lock note'}>
               {note.isLocked ? <LockOpen size={18} className="fill-yellow-400" /> : <Lock size={18} />}
             </button>
             <button onClick={onToggleHistory}
@@ -89,13 +89,13 @@ export default function NoteHeader({
             <button onClick={onShare}
               className={cn('p-2 rounded-xl transition-all',
                 note.isShared ? 'text-purple-400 bg-purple-400/10 shadow-[0_0_15px_rgba(188,0,255,0.15)]' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title="Dela anteckning">
+              )} title="Share note">
               <Share2 size={18} />
             </button>
           </div>
 
           <div className="flex items-center gap-1">
-            <button onClick={onImageClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Lägg till bild">
+            <button onClick={onImageClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Add image">
               <ImageIcon size={18} />
             </button>
             <button onClick={onFileClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Bifoga fil">
@@ -104,7 +104,7 @@ export default function NoteHeader({
             <button onClick={onToggleCode}
               className={cn('p-2 rounded-xl transition-all',
                 note.code ? 'text-cyan-400 bg-cyan-400/10' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title="Kodeditor">
+              )} title="Code editor">
               <Code size={18} />
             </button>
             <button onClick={onPrint}
@@ -118,7 +118,7 @@ export default function NoteHeader({
             <button onClick={onToggleFocus}
               className={cn('p-2 rounded-xl transition-all',
                 isFocusMode ? 'text-cyan-400 bg-cyan-400/10' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={isFocusMode ? 'Avsluta fokusläge' : 'Fokusläge'}>
+              )} title={isFocusMode ? 'Exit focus mode' : 'Focus mode'}>
               {isFocusMode ? <Maximize2 size={18} /> : <Maximize size={18} />}
             </button>
             <button onClick={onDownloadImage}
@@ -128,7 +128,7 @@ export default function NoteHeader({
             <button onClick={() => onSetReminder(note.reminderAt ? null : Date.now() + 3600000)}
               className={cn('p-2 rounded-xl transition-all', 
                 note.reminderAt ? 'text-yellow-400 bg-yellow-400/10' : 'text-zinc-500 hover:text-yellow-400 hover:bg-white/3'
-              )} title={note.reminderAt ? 'Ta bort påminnelse' : 'Sätt påminnelse (1 timme)'}>
+              )} title={note.reminderAt ? 'Remove reminder' : 'Set reminder (1 hour)'}>
               <Bell size={18} />
               {note.reminderAt && <span className="text-[10px] font-bold text-yellow-400">⏰</span>}
             </button>
@@ -151,7 +151,7 @@ export default function NoteHeader({
                 ? <Check size={14} />
                 : <Save size={14} />}
             <span className="hidden sm:inline">
-              {isSaving ? 'Synkar...' : isSaved ? 'Sparad' : 'Spara'}
+              {isSaving ? 'Syncing...' : isSaved ? 'Saved' : 'Save'}
             </span>
           </button>
         </div>

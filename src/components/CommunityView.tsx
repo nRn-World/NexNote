@@ -927,7 +927,7 @@ export default function CommunityView({
                       <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
                     </div>
                     <div className="w-px h-8 bg-white/3" />
-<button onClick={() => { if (isGuest) { addToast('Logga in för att skicka in till utmaningar.', 'info'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+<button onClick={() => { if (isGuest) { addToast('Sign in to submit to challenges.', 'info'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                       {isGuest ? 'Login to Submit' : 'Submit Entry'}
                     </button>
                   </div>

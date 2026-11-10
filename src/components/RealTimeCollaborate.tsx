@@ -58,8 +58,8 @@ export default function RealTimeCollaborate({
             {typeof note.title === 'string' && note.title.trim() ? note.title.trim().charAt(0) : 'N'}
           </div>
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-white">Molnsynk</h3>
-            <p className="text-[10px] text-zinc-500">{note.title || 'Namnlös anteckning'}</p>
+            <h3 className="text-sm font-bold text-white">Cloud sync</h3>
+            <p className="text-[10px] text-zinc-500">{note.title || 'Untitled note'}</p>
           </div>
         </div>
         <button onClick={onClose} className="text-zinc-400 hover:text-white">
@@ -75,7 +75,7 @@ export default function RealTimeCollaborate({
         </div>
         <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${syncFailed ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${syncFailed ? 'bg-red-400' : 'bg-green-400 animate-pulse'}`} />
-          {syncFailed ? 'Ingen kontakt med Firestore' : 'Molnsynk aktiv'}
+          {syncFailed ? 'No connection to Firestore' : 'Cloud sync active'}
         </span>
       </div>
 
@@ -85,36 +85,36 @@ export default function RealTimeCollaborate({
             {syncFailed ? <CloudOff size={32} className="text-red-400" /> : <CheckCircle2 size={32} className="text-cyan-400" />}
           </div>
           <h4 className="text-lg font-bold text-white mb-2">
-            {syncFailed ? 'Kunde inte läsa anteckningen' : 'Ändringar sparas direkt i molnet'}
+            {syncFailed ? 'Could not read the note' : 'Changes are saved directly to the cloud'}
           </h4>
           <p className="text-zinc-500 text-sm mb-6 leading-relaxed">
-            Anteckningens innehåll lyssnas av i realtid från Firestore, så det du skriver här
-            syns på andra enheter som har anteckningen öppen. Innehållet är det som synkas —
-            markörpositioner eller deltagarlistor visas inte.
+            The note's content is synced in real time from Firestore, so what you write here
+            appears on other devices that have the note open. Only the content is synced—
+            cursor positions and participant lists are not shown.
           </p>
 
           <div className="w-full p-4 rounded-xl bg-white/3 border border-white/5 text-left space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400 flex items-center gap-2"><RefreshCw size={12} /> Senaste synk</span>
+              <span className="text-xs text-zinc-400 flex items-center gap-2"><RefreshCw size={12} /> Last sync</span>
               <span className="text-xs font-mono text-zinc-300">
-                {lastSync ? format(lastSync, 'HH:mm:ss') : 'väntar…'}
+                {lastSync ? format(lastSync, 'HH:mm:ss') : 'waiting…'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400">Antecknings-id</span>
+              <span className="text-xs text-zinc-400">Note ID</span>
               <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[220px]">{note.id}</span>
             </div>
           </div>
 
           <p className="mt-6 text-[10px] text-zinc-600 leading-relaxed">
-            Stäng panelen och fortsätt skriva — synken sker i bakgrunden.
+            Close this panel and keep writing—syncing continues in the background.
           </p>
         </div>
       </div>
 
       <div className="p-4 border-t border-white/10 bg-white/3 flex justify-end">
         <button onClick={onClose} className="px-6 py-2 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
-          Stäng
+          Close
         </button>
       </div>
     </div>

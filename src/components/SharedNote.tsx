@@ -34,14 +34,14 @@ export default function SharedNote({ shareId }: SharedNoteProps) {
   }, [shareId]);
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-500">Laddar...</div>
+    <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-500">Loading...</div>
   );
 
   if (notFound || !note) return (
     <div className="flex h-screen items-center justify-center bg-zinc-950">
       <div className="text-center">
         <p className="text-2xl font-bold text-white mb-2">Anteckning hittades inte</p>
-        <p className="text-zinc-400">Länken kan ha inaktiverats av ägaren.</p>
+        <p className="text-zinc-400">The link may have been disabled by the owner.</p>
       </div>
     </div>
   );
@@ -53,7 +53,7 @@ export default function SharedNote({ shareId }: SharedNoteProps) {
           <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">NexNote</span>
           <span className="text-xs text-zinc-500">{format(note.updatedAt, 'MMM d, yyyy', { locale: enUS })}</span>
         </div>
-        <h1 className="text-3xl font-bold text-white mb-4">{note.title || 'Namnlös anteckning'}</h1>
+        <h1 className="text-3xl font-bold text-white mb-4">{note.title || 'Untitled note'}</h1>
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
             {note.tags.map(t => (

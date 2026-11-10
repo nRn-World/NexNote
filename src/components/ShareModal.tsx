@@ -25,13 +25,13 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
       <div className="bg-zinc-900 rounded-xl shadow-2xl max-w-md w-full p-6 border border-white/10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-white">Dela anteckning</h2>
+          <h2 className="text-base font-semibold text-white">Share note</h2>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <p className="text-sm text-zinc-400 mb-5 truncate">"{noteTitle || 'Namnlös anteckning'}"</p>
+        <p className="text-sm text-zinc-400 mb-5 truncate">"{noteTitle || 'Untitled note'}"</p>
 
         <div className={cn(
           'flex items-center gap-3 p-4 rounded-lg border mb-4',
@@ -44,10 +44,10 @@ export default function ShareModal({ noteTitle, isShared, shareUrl, onEnable, on
             : <Lock size={20} className="text-zinc-500 shrink-0" />}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white">
-              {isShared ? 'Publika länk aktiv' : 'Privat'}
+              {isShared ? 'Public link active' : 'Private'}
             </p>
             <p className="text-xs text-zinc-400">
-              {isShared ? 'Vem som helst med länken kan läsa.' : 'Endast du kan se denna anteckning.'}
+              {isShared ? 'Anyone with the link can read it.' : 'Only you can see this note.'}
             </p>
           </div>
           <button

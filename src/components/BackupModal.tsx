@@ -22,7 +22,7 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.json')) {
       setImported(null);
-      addToast('Välj en .json-fil som exporterats från NexNote.', 'error');
+      addToast('Select a .json file exported from NexNote.', 'error');
       return;
     }
     onImport(file);
@@ -36,7 +36,7 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
         <div className="p-5 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-800/30">
           <div className="flex items-center gap-2">
             <Download size={20} className="text-indigo-500" />
-            <h2 className="text-base font-bold text-white">Säkerhetskopia</h2>
+            <h2 className="text-base font-bold text-white">Backup</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors">
             <X size={18} />
@@ -45,9 +45,9 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
 
         <div className="p-6 space-y-5 overflow-y-auto max-h-[50vh] no-scrollbar">
           <div className="p-4 rounded-xl border border-zinc-800/50 bg-zinc-800/30">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Ladda ned säkerhetskopia</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Download backup</h3>
             <p className="text-sm text-zinc-400 mb-4">
-              Alla dina anteckningar, papperskorg och kategorier sparas i en JSON-fil som du kan importera senare — på en annan enhet eller efter en installation.
+              All your notes, trash and categories are saved to a JSON file that you can import later — on another device or after reinstalling.
             </p>
             <button onClick={onExport} className="w-full py-3 px-4 rounded-xl text-xs font-bold text-indigo-400 bg-indigo-900/20 hover:bg-indigo-900/30 border border-indigo-800 transition-colors flex items-center justify-center gap-2">
               <Download size={16} /> Exportera alla anteckningar
@@ -55,9 +55,9 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
           </div>
 
           <div className="p-4 rounded-xl border border-zinc-800/50 bg-zinc-800/30">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Återställ från fil</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Restore from file</h3>
             <p className="text-sm text-zinc-400 mb-4">
-              Välj en tidigare exporterad NexNote-fil (.json). Anteckningarna läggs till i ditt nuvarande konto.
+              Select a previously exported NexNote file (.json). The notes are added to your current account.
             </p>
             <input ref={fileInputRef} type="file" accept=".json" className="sr-only" onChange={handleImportChange} />
             <button
@@ -65,11 +65,11 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
               onClick={() => fileInputRef.current?.click()}
               className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors flex items-center justify-center gap-2"
             >
-              <Upload size={16} /> Välj säkerhetskopia…
+              <Upload size={16} /> Choose backup…
             </button>
             {imported && (
               <p className="mt-2 text-xs flex items-center gap-1.5 text-green-400">
-                <CheckCircle size={14} /> Importerade: <span className="font-mono truncate max-w-xs">{imported}</span>
+                <CheckCircle size={14} /> Imported: <span className="font-mono truncate max-w-xs">{imported}</span>
               </p>
             )}
           </div>
@@ -77,14 +77,14 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
           <div className="p-3 rounded-xl border border-amber-900/30 bg-amber-900/10">
             <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-400 mt-1">
-              Importering skapar nya kopior av anteckningarna — inget som redan finns skrivs över.
+              Importing creates new copies of the notes — nothing existing is overwritten.
             </p>
           </div>
         </div>
 
         <div className="p-4 border-t border-zinc-800/50 bg-zinc-800/30">
           <button onClick={onClose} className="w-full py-2 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
-            Stäng
+            Close
           </button>
         </div>
       </div>

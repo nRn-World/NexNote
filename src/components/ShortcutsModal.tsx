@@ -11,9 +11,9 @@ interface ShortcutsModalProps {
 const shortcuts = [
   { key: '⌘/ Ctrl + N', label: 'Ny anteckning' },
   { key: '⌘/ Ctrl + S', label: 'Spara anteckning' },
-  { key: '⌘/ Ctrl + /', label: 'Visa genvägslista' },
-  { key: 'Esc', label: 'Gå tillbaka / stäng paneler' },
-  { key: '?', label: 'Genvägslista' },
+  { key: '⌘/ Ctrl + /', label: 'Show shortcuts list' },
+  { key: 'Esc', label: 'Go back / close panels' },
+  { key: '?', label: 'Shortcuts list' },
 ];
 
 export default function ShortcutsModal({ open, onClose, isDark }: ShortcutsModalProps) {
@@ -25,7 +25,7 @@ export default function ShortcutsModal({ open, onClose, isDark }: ShortcutsModal
         <div className="p-5 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-800/30">
           <div className="flex items-center gap-2">
             <Keyboard size={20} className="text-cyan-400" />
-            <h2 className="text-base font-bold text-white">Genvägar</h2>
+            <h2 className="text-base font-bold text-white">Shortcuts</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors">
             <X size={18} />
@@ -34,7 +34,7 @@ export default function ShortcutsModal({ open, onClose, isDark }: ShortcutsModal
 
         <div className="p-5 space-y-3 overflow-y-auto max-h-[60vh] no-scrollbar">
           <p className="text-sm text-zinc-400">
-            Fungerar överallt i appen. <span className="font-mono text-xs text-zinc-500">⌘</span> = Command (Mac), <span className="font-mono text-xs text-zinc-500">Ctrl</span> = Windows/Linux.
+            Works everywhere in the app. <span className="font-mono text-xs text-zinc-500">⌘</span> = Command (Mac), <span className="font-mono text-xs text-zinc-500">Ctrl</span> = Windows/Linux.
           </p>
           <div className="space-y-1.5">
             {shortcuts.map((s, i) => (
@@ -50,7 +50,7 @@ export default function ShortcutsModal({ open, onClose, isDark }: ShortcutsModal
 
         <div className="p-4 border-t border-zinc-800/50 bg-zinc-800/30">
           <button onClick={onClose} className="w-full py-2 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
-            Stäng
+            Close
           </button>
         </div>
       </div>

@@ -71,8 +71,8 @@ export default function ProjectPickerModal({
                  <FileCode className="text-white" size={20} />
               </div>
               <div>
-                 <h2 className="text-lg font-black text-white italic uppercase tracking-widest">Välj design</h2>
-                 <p className="text-[10px] text-zinc-500 font-bold uppercase">Välj ett projekt för dina Top 5</p>
+                 <h2 className="text-lg font-black text-white italic uppercase tracking-widest">Choose design</h2>
+                 <p className="text-[10px] text-zinc-500 font-bold uppercase">Pick a project for your Top 5</p>
               </div>
            </div>
            {currentProject && (
@@ -113,7 +113,7 @@ export default function ProjectPickerModal({
                 type="text" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Sök projekt..."
+                placeholder="Search projects..."
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-indigo-500/50"
               />
            </div>
@@ -144,7 +144,7 @@ export default function ProjectPickerModal({
                     </div>
                     {currentProject?.id === n.id ? <Check size={18} className="text-green-500" /> : <Plus size={18} className="text-zinc-700 opacity-0 group-hover:opacity-100" />}
                  </button>
-              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">Inga matchande anteckningar hittades.</div>
+              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">No matching notes found.</div>
            ) : (
               filteredCommunity.length > 0 ? filteredCommunity.map(p => (
                  <button 
@@ -169,12 +169,12 @@ export default function ProjectPickerModal({
                     </div>
                     {currentProject?.id === p.id ? <Check size={18} className="text-green-500" /> : <Plus size={18} className="text-zinc-700 opacity-0 group-hover:opacity-100" />}
                  </button>
-              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">Inga matchande community-inlägg.</div>
+              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">No matching community posts.</div>
            )}
         </div>
 
         <div className="p-4 bg-zinc-900/20 border-t border-zinc-800/50 text-center">
-           <p className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.2em]">Välj en design för att visa den på din startsida</p>
+           <p className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.2em]">Pick a design to feature on your home page</p>
         </div>
       </div>
     </div>

@@ -143,7 +143,7 @@ function SortableNote({
           <h3 className={cn(
             'font-semibold truncate flex-1 tracking-tight',
             isActive ? 'text-white' : 'text-zinc-300 group-hover:text-white'
-          )}>{note.title || 'Namnlös anteckning'}</h3>
+          )}>{note.title || 'Untitled note'}</h3>
         </div>
         <p className="text-[11px] text-zinc-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
         <div className="flex items-center justify-between mt-2.5">
@@ -246,7 +246,7 @@ export default function Sidebar({
         onClick: () => { onDuplicateNote?.(note.id); setCtxMenu(null); },
       },
       {
-        label: 'Ändra namn',
+        label: 'Rename',
         icon: <Pencil size={14} />,
         onClick: () => {
           const newTitle = window.prompt('Nytt namn:', note.title);
@@ -254,7 +254,7 @@ export default function Sidebar({
         },
       },
       {
-        label: 'Ändra omslagsbild',
+        label: 'Change cover image',
         icon: <Image size={14} />,
         onClick: () => { setPendingCoverNoteId(note.id); coverInputRef.current?.click(); },
       },
@@ -298,7 +298,7 @@ export default function Sidebar({
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/10">
         <div className="flex justify-center w-full">
            <img
-             src="./logoandtextWhite2.png"
+             src="./logoandtext2.png"
              alt="NexNote"
              onClick={onGoHome}
              className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300"
@@ -320,7 +320,7 @@ export default function Sidebar({
 
           <div className="flex items-center gap-4">
             <button onClick={onLogout} className="text-[13px] font-bold text-zinc-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
-              {isGuest ? 'Avsluta gäst' : 'Logga ut'}
+              {isGuest ? 'Exit guest mode' : 'Sign out'}
             </button>
             <button onClick={onCreateNote} className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-zinc-800 transition-all shadow-lg active:scale-95" title="Ny anteckning">
                <Plus size={20} />
@@ -331,7 +331,7 @@ export default function Sidebar({
 
       <div className="relative mt-2 px-4">
         <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-        <input id="nexnote-search" type="text" placeholder="Sök anteckningar..." value={searchQuery}
+        <input id="nexnote-search" type="text" placeholder="Search notes..." value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
           className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-zinc-500 border-none outline-none focus:ring-1 focus:ring-zinc-600/20 transition-all font-medium"
         />
@@ -413,7 +413,7 @@ export default function Sidebar({
                   )}
                 >
                   <Star size={12} className="fill-yellow-400" />
-                  <span>Pinnade</span>
+                  <span>Pinned</span>
                 </button>
                 {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Valda</span>}
               </div>
@@ -428,7 +428,7 @@ export default function Sidebar({
           ) : filtered.length === 0 && activeCategoryId ? (
             <EmptyState variant="category" actionLabel="Skapa anteckning" onAction={onCreateNote} />
           ) : filtered.length === 0 ? (
-            <EmptyState variant="notes" actionLabel="Skapa din första anteckning" onAction={onCreateNote} />
+            <EmptyState variant="notes" actionLabel="Create your first note" onAction={onCreateNote} />
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>

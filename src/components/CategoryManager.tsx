@@ -41,23 +41,23 @@ export default function CategoryManager({
     e.stopPropagation();
     const items: ContextMenuItem[] = [
       {
-        label: 'Ändra namn',
+        label: 'Rename',
         icon: <span className="text-xs">✏️</span>,
         onClick: () => {
-          const name = window.prompt('Nytt namn:', cat.name);
+          const name = window.prompt('New name:', cat.name);
           if (name?.trim()) onRename(cat.id, name.trim());
         },
       },
       {
-        label: 'Ändra färg',
+        label: 'Change color',
         icon: <span className="text-xs">🎨</span>,
         onClick: () => {
-          const color = window.prompt('Hex-färg (t.ex. #00F2FF):', cat.color);
+          const color = window.prompt('Hex color (e.g. #00F2FF):', cat.color);
           if (color?.trim()) onChangeColor(cat.id, color.trim());
         },
       },
       {
-        label: 'Ta bort kategori',
+        label: 'Delete category',
         icon: <span className="text-xs">🗑️</span>,
         danger: true,
         divider: true,
@@ -127,15 +127,15 @@ export default function CategoryManager({
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCreate} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-white rounded-xl hover:scale-105 transition-transform">Skapa</button>
-            <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors">Stäng</button>
+            <button onClick={handleCreate} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-white rounded-xl hover:scale-105 transition-transform">Create</button>
+            <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors">Close</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setIsAdding(true)}
           className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-zinc-500 hover:text-zinc-300 transition-all mt-2 group">
           <Plus size={14} className="text-zinc-500" />
-          <span>Ny kategori</span>
+          <span>New category</span>
         </button>
       )}
 

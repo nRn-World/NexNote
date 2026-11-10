@@ -93,31 +93,31 @@ export function isEmbeddedBrowser(): boolean {
 
 export function getAuthErrorMessage(error: unknown): string {
   if (isEmbeddedBrowser()) {
-    return 'Öppna NexNote i Chrome eller Safari (inte i Instagram/Facebook-webbläsaren) och försök igen.';
+    return 'Open NexNote in Chrome or Safari (not the Instagram/Facebook browser) and try again.';
   }
 
   switch (getErrorCode(error)) {
     case 'auth/popup-blocked':
     case 'auth/operation-not-supported-in-this-environment':
       return canUseSameOriginRedirect
-        ? 'Webbläsaren blockerade popup. Försöker öppna Google i samma flik…'
-        : 'Webbläsaren blockerade inloggningsfönstret. Tillåt popup för den här sajten och försök igen.';
+        ? 'The browser blocked the popup. Trying to open Google in the same tab…'
+        : 'The browser blocked the sign-in window. Allow popups for this site and try again.';
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
     case 'auth/redirect-cancelled-by-user':
-      return 'Inloggningen avbröts.';
+      return 'Sign-in was cancelled.';
     case 'auth/argument-error':
-      return 'Inloggningen kunde inte startas. Ladda om sidan och försök igen.';
+      return 'Sign-in could not be started. Reload the page and try again.';
     case 'auth/unauthorized-domain': {
-      const host = currentHost || 'okänd host';
-      return `Domänen "${host}" är inte godkänd för Google-inloggning.`;
+      const host = currentHost || 'unknown host';
+      return `The domain "${host}" is not approved for Google sign-in.`;
     }
     case 'auth/network-request-failed':
-      return 'Nätverksfel. Kontrollera din anslutning och försök igen.';
+      return 'Network error. Check your connection and try again.';
     case 'auth/account-exists-with-different-credential':
-      return 'Det finns redan ett konto med samma e-postadress.';
+      return 'An account with the same email address already exists.';
     default:
-      return 'Inloggningen misslyckades. Ladda om sidan och försök igen.';
+      return 'Sign-in failed. Reload the page and try again.';
   }
 }
 

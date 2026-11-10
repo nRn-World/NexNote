@@ -40,9 +40,9 @@ export default function JamSession({ currentCode, onClose }: JamSessionProps) {
       await navigator.clipboard.writeText(html);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      addToast('Färdig HTML kopierad.', 'success');
+      addToast('Standalone HTML copied.', 'success');
     } catch {
-      addToast('Kunde inte kopiera till urklipp.', 'error');
+      addToast('Could not copy to the clipboard.', 'error');
     }
   };
 
@@ -56,7 +56,7 @@ export default function JamSession({ currentCode, onClose }: JamSessionProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    addToast('HTML-fil nedladdad.', 'success');
+    addToast('HTML file downloaded.', 'success');
   };
 
   return (
@@ -67,8 +67,8 @@ export default function JamSession({ currentCode, onClose }: JamSessionProps) {
             <Globe className="text-white" size={16} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Dela kod</h3>
-            <p className="text-[10px] text-zinc-500 font-bold">Exportera anteckningens kod som en färdig HTML-fil</p>
+            <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Share code</h3>
+            <p className="text-[10px] text-zinc-500 font-bold">Export the note's code as a standalone HTML file</p>
           </div>
         </div>
         <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors"><X size={18} /></button>
@@ -78,15 +78,15 @@ export default function JamSession({ currentCode, onClose }: JamSessionProps) {
         <div className="grid grid-cols-3 gap-2">
           <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-xl">
             <div className="text-[10px] text-cyan-400 font-mono mb-1">HTML</div>
-            <div className="text-[10px] text-zinc-500 truncate">{currentCode.html ? `${currentCode.html.length} tecken` : 'Tom'}</div>
+            <div className="text-[10px] text-zinc-500 truncate">{currentCode.html ? `${currentCode.html.length} characters` : 'Empty'}</div>
           </div>
           <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-xl">
             <div className="text-[10px] text-indigo-400 font-mono mb-1">CSS</div>
-            <div className="text-[10px] text-zinc-500 truncate">{currentCode.css ? `${currentCode.css.length} tecken` : 'Tom'}</div>
+            <div className="text-[10px] text-zinc-500 truncate">{currentCode.css ? `${currentCode.css.length} characters` : 'Empty'}</div>
           </div>
           <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-xl">
             <div className="text-[10px] text-yellow-400 font-mono mb-1">JS</div>
-            <div className="text-[10px] text-zinc-500 truncate">{currentCode.js ? `${currentCode.js.length} tecken` : 'Tom'}</div>
+            <div className="text-[10px] text-zinc-500 truncate">{currentCode.js ? `${currentCode.js.length} characters` : 'Empty'}</div>
           </div>
         </div>
 
@@ -100,19 +100,19 @@ export default function JamSession({ currentCode, onClose }: JamSessionProps) {
             className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-black uppercase tracking-[0.2em] transition-all"
           >
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
-            {copied ? 'Kopierat' : 'Kopiera HTML'}
+            {copied ? 'Copied' : 'Copy HTML'}
           </button>
           <button
             onClick={handleDownload}
             className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 transition-all"
           >
-            <Download size={16} /> Ladda ned .html
+            <Download size={16} /> Download .html
           </button>
         </div>
 
         <p className="text-[10px] text-zinc-600 leading-relaxed">
           <Code2 size={12} className="inline mr-1" />
-          Filen är helt fristående och kan öppnas i vilken webbläsare som helst.
+          The file is fully standalone and can be opened in any browser.
         </p>
       </div>
     </div>

@@ -20,6 +20,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import StarryBackground from './components/StarryBackground';
+import LoginShowcase from './components/LoginShowcase';
 
 // Heavy views, editors and modals are split into their own chunks and loaded on demand.
 const RichEditor = lazy(() => import('./components/RichEditor'));
@@ -280,8 +281,8 @@ export default function App() {
         if (!user.isGuest && !hasSeenWelcomeRef.current && activeNotes.length === 0 && trashed.length === 0) {
           hasSeenWelcomeRef.current = true;
           const welcome: Note = {
-            id: uuidv4(), uid: user.uid, title: 'Välkommen till NexNote 👋',
-            content: '<p>Det här är din första anteckning.</p><p>Prova att:<ul><li>Skriva i rich-text-editorn nedan</li><li>Koda i HTML/CSS/JS-fönstret och förhandsgranska live</li><li>Lägga till taggar, bilagor och ett omslag</li><li>Dela anteckningen med en publika länk</li></ul></p>',
+            id: uuidv4(), uid: user.uid, title: 'Welcome to NexNote 👋',
+            content: '<p>This is your first note.</p><p>Try out:<ul><li>Writing in the rich text editor below</li><li>Coding in the HTML/CSS/JS window with a live preview</li><li>Adding tags, attachments and a cover image</li><li>Sharing the note with a public link</li></ul></p>',
             attachments: [], tags: ['welcome'], order: 0,
             createdAt: Date.now(), updatedAt: Date.now(),
           };
@@ -406,7 +407,7 @@ export default function App() {
     if (signInTimeoutRef.current) clearTimeout(signInTimeoutRef.current);
     signInTimeoutRef.current = setTimeout(() => {
       setIsSigningIn(false);
-      setAuthError('Inloggningen tog för lång tid. Försök igen.');
+      setAuthError('Sign-in took too long. Please try again.');
     }, 30000);
 
     try {
@@ -463,7 +464,7 @@ export default function App() {
       const now = Date.now();
       notes.forEach(n => {
         if (n.reminderAt && !n.reminderDone && n.reminderAt <= now) {
-          addToast(`Påminnelse: ${n.title || 'Anteckning'}`, 'info');
+          addToast(`Reminder: ${n.title || 'Note'}`, 'info');
           markReminderDone(n.id);
         }
       });
@@ -760,8 +761,8 @@ export default function App() {
     const noteToDelete = notes.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Flytta till papperskorg', danger: true, confirmLabel: 'Flytta',
-      message: 'Anteckningen flyttas till papperskorgen och kan återställas senare.',
+      open: true, title: 'Move to trash', danger: true, confirmLabel: 'Move',
+      message: 'The note will be moved to the trash and can be restored later.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
@@ -771,9 +772,9 @@ export default function App() {
           setTrash(prev => [trashed, ...prev].sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt)));
           if (activeNoteId === id) setActiveNoteId(null);
           await writeNoteToFirestore(trashed);
-          addToast('Anteckning flyttad till papperskorgen.', 'success');
+          addToast('Note moved to the trash.', 'success');
         } catch (err) {
-          addToast('Kunde inte flytta anteckningen.', 'error');
+          addToast('Could not move the note to the trash.', 'error');
           handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
         }
       },
@@ -791,9 +792,9 @@ export default function App() {
       setNotes(prev => [restored, ...prev]);
       if (!activeNoteId) setActiveNoteId(id);
       await writeNoteToFirestore(restored);
-      addToast('Anteckning återställd.', 'success');
+      addToast('Note restored.', 'success');
     } catch (err) {
-      addToast('Kunde inte återställa anteckningen.', 'error');
+      addToast('Could not restore the note.', 'error');
       handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
     }
   };
@@ -802,8 +803,8 @@ export default function App() {
     const noteToDelete = trash.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Radera permanent', danger: true, confirmLabel: 'Radera',
-      message: 'Anteckningen och alla bilagor raderas permanent. Detta går inte att ångra.',
+      open: true, title: 'Delete permanently', danger: true, confirmLabel: 'Delete',
+      message: 'The note and all its attachments will be permanently deleted. This cannot be undone.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
@@ -830,8 +831,8 @@ export default function App() {
   const emptyTrash = async () => {
     if (!user) return;
     setConfirm({
-      open: true, title: 'Töm papperskorg', danger: true, confirmLabel: 'Töm',
-      message: 'Alla anteckningar i papperskorgen raderas permanent.',
+      open: true, title: 'Empty trash', danger: true, confirmLabel: 'Empty',
+      message: 'All notes in the trash will be permanently deleted.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
@@ -847,9 +848,9 @@ export default function App() {
           }));
           trash.forEach(n => delete noteDraftsRef.current[n.id]);
           setTrash([]);
-          addToast('Papperskorg tömd.', 'success');
+          addToast('Trash emptied.', 'success');
         } catch (err) {
-          addToast('Kunde inte tömma papperskorgen.', 'error');
+          addToast('Could not empty the trash.', 'error');
           handleFirestoreError(err, OperationType.DELETE, 'notes/trash');
         }
       },
@@ -906,7 +907,7 @@ export default function App() {
         `<img src="${a.data}" style="max-width:100%;margin:1rem 0;border-radius:8px;" alt="${escapeHtml(a.name)}"/>`
       ).join('');
       const codeHtml = activeNote.code && hasPreviewCode(activeNote.code)
-        ? `<details style="margin-top:1.5rem;"><summary style="font-weight:700;">Kodförhandsgranskning</summary><iframe src="${'data:text/html;charset=utf-8,' + encodeURIComponent(buildPreviewSrcDoc(activeNote.code.html || '', activeNote.code.css || '', activeNote.code.js || '', false))}" style="width:100%;height:320px;border:none;border-radius:8px;"></iframe></details>`
+        ? `<details style="margin-top:1.5rem;"><summary style="font-weight:700;">Code preview</summary><iframe src="${'data:text/html;charset=utf-8,' + encodeURIComponent(buildPreviewSrcDoc(activeNote.code.html || '', activeNote.code.css || '', activeNote.code.js || '', false))}" style="width:100%;height:320px;border:none;border-radius:8px;"></iframe></details>`
         : '';
       const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         body{margin:0;padding:32px;background:#ffffff;color:#1e293b;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
@@ -920,7 +921,7 @@ export default function App() {
         ${codeHtml}
       </body></html>`;
       const win = frame.contentWindow;
-      if (!win) throw new Error('Kunde inte skapa förhandsgranskningsfönster');
+      if (!win) throw new Error('Could not open the preview window');
       win.document.open();
       win.document.write(doc + `<script>${html2canvasSource}</script>
         <script>
@@ -957,7 +958,7 @@ export default function App() {
       addToast('Anteckning nedladdad som bild.', 'success');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      addToast(message === 'timeout' ? 'Bildrenderingen tog för lång tid.' : 'Kunde inte skapa bilden.', 'error');
+      addToast(message === 'timeout' ? 'Image rendering took too long.' : 'Could not create the image.', 'error');
     }
   };
 
@@ -979,14 +980,14 @@ export default function App() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    addToast('Säkerhetskopia nedladdad.', 'success');
+    addToast('Backup downloaded.', 'success');
   };
 
   const exportNoteAsMarkdown = (note: Note) => {
     const md = [
       `# ${note.title || 'Untitled'}`,
       '',
-      `*Exporterad från NexNote ${new Date().toISOString()}*`,
+      `*Exported from NexNote ${new Date().toISOString()}*`,
       '',
       note.content.replace(/<[^>]*>/g, ' ').trim(),
       '',
@@ -999,12 +1000,12 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${(note.title || 'anteckning').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    a.download = `${(note.title || 'note').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    addToast('Exporterad som Markdown.', 'success');
+    addToast('Exported as Markdown.', 'success');
   };
 
   const handleImportNotes = (file: File) => {
@@ -1014,12 +1015,12 @@ export default function App() {
       try {
         const data = JSON.parse(e.target?.result as string);
         const notesToImport: Note[] = data.notes || [];
-        if (notesToImport.length === 0) { addToast('Inga anteckningar hittades i filen.', 'error'); return; }
+        if (notesToImport.length === 0) { addToast('No notes found in the file.', 'error'); return; }
         let imported = 0;
         for (const n of notesToImport) {
           const importedNote: Note = {
             id: uuidv4(), uid: user.uid,
-            title: n.title || 'Importerad anteckning',
+            title: n.title || 'Imported note',
             content: n.content || '',
             attachments: n.attachments || [],
             categoryId: n.categoryId,
@@ -1034,9 +1035,9 @@ export default function App() {
           await writeNoteToFirestore(importedNote);
           imported++;
         }
-        addToast(`${imported} anteckning(er) importerade.`, 'success');
+        addToast(`${imported} note(s) imported.`, 'success');
       } catch (err) {
-        addToast('Kunde inte importera säkerhetskopian.', 'error');
+        addToast('Could not import the backup.', 'error');
         console.error(err);
       }
     };
@@ -1061,7 +1062,7 @@ export default function App() {
     setActiveNoteId(n.id);
     setShowTemplatePicker(false);
     if (!isGuest && auth.currentUser) handleSave(n).catch(() => {});
-    addToast(`Anteckning skapad från mall "${template.title}".`, 'success');
+    addToast(`Note created from template "${template.title}".`, 'success');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1198,15 +1199,15 @@ export default function App() {
       if (activeNote.lockPassword && password === activeNote.lockPassword) {
         updateActiveNote({ isLocked: false, lockPassword: undefined });
         setShowLockModal(false);
-        addToast('Anteckning upplåst.', 'success');
+        addToast('Note unlocked.', 'success');
       } else {
-        addToast('Felaktigt lösenord.', 'error');
+        addToast('Incorrect password.', 'error');
       }
     } else {
       // Lock
       updateActiveNote({ isLocked: true, lockPassword: password });
       setShowLockModal(false);
-      addToast('Anteckning låst.', 'success');
+      addToast('Note locked.', 'success');
     }
     setLockingNoteId(null);
   };
@@ -1362,29 +1363,11 @@ export default function App() {
     return (
       <div className="flex flex-col md:flex-row h-screen w-full bg-[#0B0D17]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
-          <video
-            className="absolute inset-0 w-full h-full object-cover z-0"
-            src="/NexNote.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-          />
-          <div className="absolute inset-0 z-0">
-            <div className="w-full h-full bg-gradient-to-br from-[#0B0D17] to-[#1a1a2e]"></div>
-            <div className="absolute top-0 left-0 w-full h-full opacity-40" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(188,0,255,0.1) 0%, transparent 50%)' }}></div>
-            <div className="absolute inset-0 bg-black/20"></div>
-          </div>
-           <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
-              <img src="./favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
-              <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
-           </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/30 to-transparent pointer-events-none"></div>
+          <LoginShowcase />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-[#0B0D17]/30 backdrop-blur-sm">
             <div className="w-full max-w-sm text-center z-10">
-               <img src="./logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
+               <img src="./logoandtext2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
@@ -1403,7 +1386,7 @@ export default function App() {
                   </svg>
                   )}
                 </div>
-                <span>{isSigningIn ? 'Öppnar Google...' : 'Sign in with Google'}</span>
+                <span>{isSigningIn ? 'Opening Google...' : 'Sign in with Google'}</span>
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
               {authError && (
@@ -1419,7 +1402,7 @@ export default function App() {
               </button>
               <div className="mt-24">
                 <p className="text-sm text-zinc-500 font-medium tracking-wide">
-                  Genom att logga in godkänner du vår{' '}
+                  By signing in you accept our{' '}
                   <button onClick={() => setShowPrivacy(true)} className="underline hover:text-cyan-400 transition-colors decoration-white/30 underline-offset-4">
                     integritetspolicy
                   </button>
@@ -1444,7 +1427,7 @@ export default function App() {
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center px-4 py-2 bg-amber-600/90 backdrop-blur-sm text-white text-sm font-medium shadow-lg border-b border-amber-400/50">
           <span>⚠️</span>
-          <span className="ml-2">Du är offline — appen fungerar i cache-läge. Ändringar synkas när du är uppkopplad igen.</span>
+          <span className="ml-2">You are offline — the app is running in cache mode. Changes will sync when you are back online.</span>
         </div>
       )}
 
@@ -1559,8 +1542,8 @@ export default function App() {
                     {(!activeNote.history || activeNote.history.length === 0) ? (
                       <div className="flex flex-col items-center justify-center py-12 text-xs text-slate-600 font-medium italic space-y-2">
                         <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center mb-2"><Clock size={16} /></div>
-                        <div>Inga sparade versioner än</div>
-                        <div className="text-[10px] text-zinc-500">Versioner sparas automatiskt vid större ändringar</div>
+                        <div>No saved versions yet</div>
+                        <div className="text-[10px] text-zinc-500">Versions are saved automatically on major changes</div>
                       </div>
                     ) : activeNote.history.map((v, i) => (
                       <div key={i} className="p-3 rounded-xl border border-white/5 hover:bg-white/5 group transition-colors cursor-pointer" onClick={() => restoreVersion(v)}>
@@ -1770,7 +1753,7 @@ export default function App() {
                       <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Code.</span> Create.
                     </h1>
                     <p className="text-[var(--text-secondary)] text-base font-medium max-w-lg leading-relaxed mb-8 lg:mb-0">
-                      Bygg vackra anteckningar, kodsnuttar och designer. Allt på ett ställe — med live-förhandsgranskning och molnsynkronisering.
+                      Build beautiful notes, code snippets and designs. All in one place — with live preview and cloud sync.
                     </p>
 
                     <div className="flex flex-wrap gap-3 justify-center lg:justify-start mt-2">
@@ -1780,23 +1763,23 @@ export default function App() {
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                         <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                        <span className="relative z-10">Skapa ny anteckning</span>
+                        <span className="relative z-10">Create new note</span>
                       </button>
                       <button
                         onClick={() => setShowTemplatePicker(true)}
                         className="group relative flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 text-zinc-300 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 hover:text-white transition-all overflow-hidden"
                       >
                         <Sparkles size={18} className="group-hover:rotate-12 transition-transform duration-500" />
-                        <span className="relative z-10">Ny från mall</span>
+                        <span className="relative z-10">New from template</span>
                       </button>
                     </div>
                   </div>
 
                   {/* RIGHT: Quick Stats */}
                   <div className="hidden lg:flex flex-col gap-4">
-                    <StatCard label="Anteckningar" value={notes.length} icon={<FileText size={16} className="text-cyan-400" />} />
-                    <StatCard label="Kategorier" value={categories.length} icon={<FolderOpen size={16} className="text-purple-400" />} />
-                    <StatCard label="Delat" value={notes.filter(n => n.isShared).length} icon={<Share2 size={16} className="text-indigo-400" />} />
+                    <StatCard label="Notes" value={notes.length} icon={<FileText size={16} className="text-cyan-400" />} />
+                    <StatCard label="Categories" value={categories.length} icon={<FolderOpen size={16} className="text-purple-400" />} />
+                    <StatCard label="Shared" value={notes.filter(n => n.isShared).length} icon={<Share2 size={16} className="text-indigo-400" />} />
                   </div>
                 </div>
 
@@ -1817,7 +1800,7 @@ export default function App() {
                           <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
                         </div>
                         <h3 className="text-xl font-black text-white italic tracking-tight">Neon Pulse <span className="text-yellow-400">#01</span></h3>
-                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Skicka in ditt designer för att vinna</p>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Submit your design to win</p>
                       </div>
                     </div>
                     <div className="flex -space-x-2">
@@ -1834,29 +1817,29 @@ export default function App() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-4xl">
                   <QuickActionCard
                     icon={<Code size={20} />}
-                    title="Kodredigerare"
-                    desc="HTML, CSS och JS med live-förhandsgranskning"
+                    title="Code Editor"
+                    desc="HTML, CSS and JS with live preview"
                     onClick={() => { createNote(); setActiveCodeTab('html'); }}
                     color="cyan"
                   />
                   <QuickActionCard
                     icon={<FileText size={20} />}
                     title="Rich Text"
-                    desc="Skriv formaterade anteckningar med Tiptap-editor"
+                    desc="Write formatted notes with the Tiptap editor"
                     onClick={createNote}
                     color="purple"
                   />
                   <QuickActionCard
                     icon={<Users size={20} />}
                     title="Community"
-                    desc="Upptäck och dela projekt med andra"
+                    desc="Discover and share projects with others"
                     onClick={() => setShowCommunity(true)}
                     color="indigo"
                   />
                   <QuickActionCard
                     icon={<Download size={20} />}
-                    title="Säkerhetskopia"
-                    desc="Exportera och importera alla dina anteckningar"
+                    title="Backup"
+                    desc="Export and import all your notes"
                     onClick={() => setShowBackup(true)}
                     color="emerald"
                   />
@@ -1867,10 +1850,10 @@ export default function App() {
                   <div className="w-full max-w-6xl">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                        <Clock size={12} /> Senaste anteckningar
+                        <Clock size={12} /> Recent notes
                       </h3>
                       <button onClick={() => setActiveNoteId(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300 transition-colors">
-                        Visa alla
+                        View all
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1881,7 +1864,7 @@ export default function App() {
                           className="group p-4 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer"
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-bold text-white truncate">{note.title || 'Namnlös'}</h4>
+                            <h4 className="text-sm font-bold text-white truncate">{note.title || 'Untitled'}</h4>
                             <span className="text-[10px] text-zinc-500">{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
                           </div>
                           <p className="text-[11px] text-zinc-400 line-clamp-2 mb-3">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
@@ -1919,7 +1902,7 @@ export default function App() {
 
                   {/* AI Inspiration */}
                   <div className="space-y-3">
-                    <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Behöver inspiration?</h4>
+                    <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Need inspiration?</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {[
                         { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
@@ -1943,7 +1926,7 @@ export default function App() {
                   <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
                     <div className="flex items-center justify-between">
                       <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2">
-                        <Trophy size={12} className="text-yellow-500"/> Topp 5 Designer
+                        <Trophy size={12} className="text-yellow-500"/> Top 5 Designs
                       </h4>
                       <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
                     </div>
