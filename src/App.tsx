@@ -1208,7 +1208,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
+      <div className="flex flex-col md:flex-row h-screen w-full bg-[#0B0D17]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0">
              <video 
@@ -1224,18 +1224,18 @@ export default function App() {
               <img src="./favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
            </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/20 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-[#0B0D17]/30 backdrop-blur-sm">
             <div className="w-full max-w-sm text-center z-10">
                <img src="./logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
-                className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5 disabled:opacity-70 disabled:cursor-wait"
+                className="group w-full py-4 px-6 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center gap-4 text-white font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-white/10 disabled:opacity-70 disabled:cursor-wait"
               >
-                <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg">
+                <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-lg">
                   {isSigningIn ? (
                     <Loader2 size={20} className="animate-spin text-blue-500" />
                   ) : (
@@ -1251,21 +1251,21 @@ export default function App() {
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
               {authError && (
-                <p className="mt-3 text-sm text-red-500 font-medium">{authError}</p>
+                <p className="mt-3 text-sm text-red-400 font-medium">{authError}</p>
               )}
               <button
                 onClick={enterGuestMode}
-                className="w-full mt-3 py-4 px-6 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center justify-center gap-3 text-zinc-600 font-medium transition-all duration-300 hover:bg-zinc-200 hover:border-zinc-300"
+                className="w-full mt-3 py-4 px-6 bg-zinc-800 border border-zinc-700 rounded-2xl flex items-center justify-center gap-3 text-zinc-300 font-medium transition-all duration-300 hover:bg-zinc-700 hover:border-zinc-600"
               >
                 <span>👁</span>
                 <span>Guest Mode</span>
-                <span className="text-xs text-zinc-400 ml-1">(1 min demo)</span>
+                <span className="text-xs text-zinc-500 ml-1">(1 min demo)</span>
               </button>
               <div className="mt-24">
-                <p className="text-sm text-zinc-400 font-medium tracking-wide">
-                  By logging in you agree to our{' '}
-                  <button onClick={() => setShowPrivacy(true)} className="underline hover:text-blue-500 transition-colors decoration-zinc-300 underline-offset-4">
-                    privacy policy
+                <p className="text-sm text-zinc-500 font-medium tracking-wide">
+                  Genom att logga in godkänner du vår{' '}
+                  <button onClick={() => setShowPrivacy(true)} className="underline hover:text-cyan-400 transition-colors decoration-white/30 underline-offset-4">
+                    integritetspolicy
                   </button>
                 </p>
               </div>
@@ -1550,13 +1550,13 @@ export default function App() {
                           <div className="relative">
                              <div className="absolute inset-0 translate-x-4 translate-y-4 bg-blue-500/20 rounded-2xl blur-lg"></div>
                              <div className="relative z-10 w-32 h-44 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-2xl border-2 border-white/20 backdrop-blur-xl shadow-[0_0_60px_rgba(0,242,255,0.15)] flex flex-col items-center justify-center -rotate-6 animate-float">
-                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
-                                <div className="w-16 h-1 bg-white/40 rounded-full mb-4 mr-6" />
-                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
-                                <div className="w-12 h-1 bg-white/40 rounded-full mr-10" />
+                                <div className="w-20 h-1 bg-white/20 rounded-full mb-4" />
+                                <div className="w-16 h-1 bg-white/20 rounded-full mb-4 mr-6" />
+                                <div className="w-20 h-1 bg-white/20 rounded-full mb-4" />
+                                <div className="w-12 h-1 bg-white/20 rounded-full mr-10" />
                              </div>
                              <div className="absolute top-1/2 -right-6 z-20 w-10 h-28 bg-gradient-to-t from-cyan-300/40 to-blue-500/40 rounded-full border border-white/30 backdrop-blur text-white/50 rotate-12 flex justify-center items-end pb-3 shadow-2xl">
-                               <div className="w-1.5 h-4 bg-white/60 rounded-full" />
+                               <div className="w-1.5 h-4 bg-white/30 rounded-full" />
                              </div>
                           </div>
                        </div>
@@ -1586,13 +1586,13 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => setShowTrash(true)}
-                        className="flex items-center gap-3 px-8 py-3.5 bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
+                        className="flex items-center gap-3 px-8 py-3.5 bg-white/3 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
                       >
                         <Trash2 size={18} /> Papperskorg
                       </button>
                       <button
                         onClick={() => setShowBackup(true)}
-                        className="flex items-center gap-3 px-8 py-3.5 bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
+                        className="flex items-center gap-3 px-8 py-3.5 bg-white/3 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
                       >
                         <Download size={18} /> Säkerhetskopia
                       </button>
