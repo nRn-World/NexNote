@@ -14,6 +14,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
       if ('serviceWorker' in navigator) {
+        // Unregister ALL old service workers first so cached broken versions are cleared
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => {
+            registration.unregister();
+            console.log('NexNote: Unregistered old service worker');
+          });
+        }).catch(() => {});
+        
         navigator.serviceWorker.register('./sw.js')
           .then(() => console.log('NexNote: Service Worker registered'))
           .catch(err => console.log('NexNote: SW registration failed', err));

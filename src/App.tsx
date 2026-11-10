@@ -1316,19 +1316,14 @@ export default function App() {
       <div className="flex flex-col md:flex-row h-screen w-full bg-[#0B0D17]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0">
-             <video 
-               src="./NexNote.mp4" 
-               loop 
-               muted 
-               playsInline 
-               className="w-full h-full object-cover opacity-80"
-             />
+            <div className="w-full h-full bg-gradient-to-br from-[#0B0D17] to-[#1a1a2e]"></div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(188,0,255,0.1) 0%, transparent 50%)' }}></div>
           </div>
            <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
               <img src="./favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
            </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/30 to-transparent pointer-events-none"></div>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-[#0B0D17]/30 backdrop-blur-sm">
             <div className="w-full max-w-sm text-center z-10">
