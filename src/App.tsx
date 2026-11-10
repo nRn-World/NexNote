@@ -104,6 +104,7 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [guestSecondsLeft, setGuestSecondsLeft] = useState(60);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const guestTimerRef = useRef<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -396,6 +397,18 @@ export default function App() {
     const onPageHide = () => { void flushPendingSaves(); };
     window.addEventListener('pagehide', onPageHide);
     return () => window.removeEventListener('pagehide', onPageHide);
+  }, []);
+
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Reminder checker — fires toast when a reminder is due
@@ -1321,6 +1334,14 @@ export default function App() {
   return (
     <div className="flex h-screen w-full bg-[var(--bg-deep)] font-sans overflow-hidden relative" style={{ color: 'var(--text-primary)' }}>
       <StarryBackground />
+
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center px-4 py-2 bg-amber-600/90 backdrop-blur-sm text-white text-sm font-medium shadow-lg border-b border-amber-400/50">
+          <span>⚠️</span>
+          <span className="ml-2">Du är offline — appen fungerar i cache-läge. Ändringar synkas när du är uppkopplad igen.</span>
+        </div>
+      )}
 
       {/* Guest Mode Timer Banner */}
       {isGuest && (
