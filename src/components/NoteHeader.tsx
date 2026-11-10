@@ -4,7 +4,7 @@ import { enUS } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, HistoryIcon,
   ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2,
-  Printer, Copy, Maximize, Maximize2, Image, Clock, Bell
+  Printer, Copy, Maximize, Maximize2, Image, Clock, Bell, Lock, LockOpen
 } from 'lucide-react';
 import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
@@ -33,6 +33,7 @@ interface NoteHeaderProps {
   wordCount: number;
   readingTime: number;
   onSetReminder: (reminderAt: number | null) => void;
+  onToggleLock: () => void;
 }
 
 export default function NoteHeader({
@@ -40,7 +41,7 @@ export default function NoteHeader({
   onBack, onTogglePin, onToggleHistory,
   onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
   onPrint, onDuplicate, onToggleFocus, onDownloadImage, isFocusMode,
-  wordCount, readingTime, onSetReminder,
+  wordCount, readingTime, onSetReminder, onToggleLock,
 }: NoteHeaderProps) {
   return (
     <div className="glass-panel border-b border-white/10 sticky top-0 z-20 transition-all">
@@ -72,6 +73,12 @@ export default function NoteHeader({
                 note.isPinned ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-zinc-500 hover:text-white hover:bg-white/3'
               )} title={note.isPinned ? 'Avfäst' : 'Fäst'}>
               <Pin size={18} className={cn(note.isPinned && 'fill-cyan-400')} />
+            </button>
+            <button onClick={onToggleLock}
+              className={cn('p-2 rounded-xl transition-all',
+                note.isLocked ? 'text-yellow-400 bg-yellow-400/10 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : 'text-zinc-500 hover:text-white hover:bg-white/3'
+              )} title={note.isLocked ? 'Lås upp anteckning' : 'Lås anteckning'}>
+              {note.isLocked ? <LockOpen size={18} className="fill-yellow-400" /> : <Lock size={18} />}
             </button>
             <button onClick={onToggleHistory}
               className={cn('p-2 rounded-xl transition-all',

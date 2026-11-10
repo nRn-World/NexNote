@@ -38,6 +38,7 @@ import TrashModal from './components/TrashModal';
 import ShortcutsModal from './components/ShortcutsModal';
 import BackupModal from './components/BackupModal';
 import TemplatePickerModal from './components/TemplatePickerModal';
+import LockModal from './components/LockModal';
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -129,6 +130,9 @@ export default function App() {
   const [showBackup, setShowBackup] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [lockPassword, setLockPassword] = useState('');
+  const [lockingNoteId, setLockingNoteId] = useState<string | null>(null);
   const [communityPostId, setCommunityPostId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1115,6 +1119,33 @@ export default function App() {
 
   const togglePin = () => { if (!activeNote) return; updateActiveNote({ isPinned: !activeNote.isPinned }); };
 
+  const toggleLock = () => {
+    if (!activeNote) return;
+    setLockingNoteId(activeNote.id);
+    setLockPassword('');
+    setShowLockModal(true);
+  };
+
+  const handleLockUnlock = (password: string) => {
+    if (!activeNote || !lockingNoteId) return;
+    if (activeNote.isLocked) {
+      // Unlock
+      if (activeNote.lockPassword && password === activeNote.lockPassword) {
+        updateActiveNote({ isLocked: false, lockPassword: undefined });
+        setShowLockModal(false);
+        addToast('Anteckning upplåst.', 'success');
+      } else {
+        addToast('Felaktigt lösenord.', 'error');
+      }
+    } else {
+      // Lock
+      updateActiveNote({ isLocked: true, lockPassword: password });
+      setShowLockModal(false);
+      addToast('Anteckning låst.', 'success');
+    }
+    setLockingNoteId(null);
+  };
+
   const addTag = (tag: string) => {
     const clean = tag.trim().toLowerCase();
     if (activeNote.tags?.includes(clean)) return;
@@ -1420,6 +1451,7 @@ export default function App() {
                 if (!activeNote) return;
                 updateActiveNote({ reminderAt, reminderDone: false });
               }}
+              onToggleLock={toggleLock}
             />
 
             <input type="file" ref={imageInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" multiple />
@@ -1962,6 +1994,16 @@ export default function App() {
         open={confirm.open} title={confirm.title} message={confirm.message}
         danger={confirm.danger} confirmLabel="Delete"
         onConfirm={confirm.onConfirm} onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
+
+      <LockModal
+        open={showLockModal}
+        onClose={() => { setShowLockModal(false); setLockingNoteId(null); }}
+        isLocked={activeNote?.isLocked || false}
+        password={lockPassword}
+        setPassword={setLockPassword}
+        onUnlock={p => handleLockUnlock(p)}
+        onSetLock={p => handleLockUnlock(p)}
       />
 
       {showAiModal && (
