@@ -65,14 +65,14 @@ export default function ProjectPickerModal({
     <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <div className="w-full max-w-2xl bg-[#0B0D17] border border-white/10 rounded-[32px] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)]">
         
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/2">
+        <div className="p-6 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/30">
            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
                  <FileCode className="text-white" size={20} />
               </div>
               <div>
-                 <h2 className="text-lg font-black text-white italic uppercase tracking-widest">Select Design</h2>
-                 <p className="text-[10px] text-zinc-500 font-bold uppercase">Choose a project for your Top 5</p>
+                 <h2 className="text-lg font-black text-white italic uppercase tracking-widest">Välj design</h2>
+                 <p className="text-[10px] text-zinc-500 font-bold uppercase">Välj ett projekt för dina Top 5</p>
               </div>
            </div>
            {currentProject && (
@@ -80,28 +80,28 @@ export default function ProjectPickerModal({
                 onClick={() => { onRemove(); onClose(); }}
                 className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500/20 transition-all mr-4"
               >
-                 <Trash2 size={14} /> Remove Slot
+                 <Trash2 size={14} /> Ta bort slot
               </button>
            )}
-           <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white"><X size={20} /></button>
+           <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors"><X size={20} /></button>
         </div>
 
-        <div className="p-4 bg-white/2 border-b border-white/5 flex items-center gap-4">
-           <div className="flex gap-1 p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner">
+        <div className="p-4 bg-zinc-900/20 border-b border-zinc-800/50 flex items-center gap-4">
+           <div className="flex gap-1 p-1 bg-black/30 rounded-xl border border-zinc-700 shadow-inner">
               <button 
                 onClick={() => setActiveTab('my')}
                 className={cn(
                   "px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
-                  activeTab === 'my' ? "bg-white text-black" : "text-zinc-500 hover:text-zinc-300"
+                  activeTab === 'my' ? "bg-zinc-900 text-white border border-zinc-700" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
                 )}
               >
-                 My Vault
+                 Mitt valv
               </button>
               <button 
                 onClick={() => setActiveTab('community')}
                 className={cn(
                   "px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
-                  activeTab === 'community' ? "bg-white text-black" : "text-zinc-500 hover:text-zinc-300"
+                  activeTab === 'community' ? "bg-zinc-900 text-white border border-zinc-700" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
                 )}
               >
                  Community
@@ -113,8 +113,8 @@ export default function ProjectPickerModal({
                 type="text" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search projects..."
-                className="w-full bg-white/2 border border-white/5 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-indigo-500/50"
+                placeholder="Sök projekt..."
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-indigo-500/50"
               />
            </div>
         </div>
@@ -131,20 +131,20 @@ export default function ProjectPickerModal({
                      type: 'note', 
                      code: n.code 
                    })}
-                   className="w-full p-4 bg-white/2 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/5 transition-all text-left group"
+                   className="w-full p-4 bg-zinc-900/20 border border-zinc-700 rounded-2xl flex items-center justify-between hover:bg-zinc-800/50 transition-all text-left group"
                  >
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-white/5 shadow-inner">
+                       <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-zinc-700 shadow-inner">
                           {n.code ? <MiniCodePreview code={n.code} title={n.title} /> : n.coverImage ? <img src={n.coverImage} alt="" className="w-full h-full object-cover" /> : <FileCode size={16} className="text-zinc-500" />}
                        </div>
                        <div>
                           <p className="text-xs font-bold text-white uppercase tracking-wider">{n.title}</p>
-                          <p className="text-[9px] text-zinc-600 font-bold uppercase italic mt-0.5">Note • {n.attachments.length} Assets</p>
+                          <p className="text-[9px] text-zinc-500 font-bold uppercase italic mt-0.5">Anteckning • {n.attachments.length} Bilagor</p>
                        </div>
                     </div>
-                    {currentProject?.id === n.id ? <Check size={18} className="text-green-500" /> : <Plus className="text-zinc-700 opacity-0 group-hover:opacity-100" size={18} />}
+                    {currentProject?.id === n.id ? <Check size={18} className="text-green-500" /> : <Plus size={18} className="text-zinc-700 opacity-0 group-hover:opacity-100" />}
                  </button>
-              )) : <div className="text-center py-12 text-zinc-600 italic text-xs">No matching notes found.</div>
+              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">Inga matchande anteckningar hittades.</div>
            ) : (
               filteredCommunity.length > 0 ? filteredCommunity.map(p => (
                  <button 
@@ -156,32 +156,32 @@ export default function ProjectPickerModal({
                      type: 'community', 
                      code: p.fullCode || p.content 
                    })}
-                   className="w-full p-4 bg-white/2 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/5 transition-all text-left group"
+                   className="w-full p-4 bg-zinc-900/20 border border-zinc-700 rounded-2xl flex items-center justify-between hover:bg-zinc-800/50 transition-all text-left group"
                  >
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-white/5 shadow-inner">
+                       <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-zinc-700 shadow-inner">
                           {(p.fullCode || p.content) ? <MiniCodePreview code={p.fullCode || p.content} title={p.title} /> : p.photoURL ? <img src={p.photoURL} alt="" className="w-full h-full object-cover" /> : <Globe size={16} className="text-zinc-500" />}
                        </div>
                        <div>
                           <p className="text-xs font-bold text-white uppercase tracking-wider">{p.title}</p>
-                          <p className="text-[9px] text-zinc-600 font-bold uppercase italic mt-0.5">Community • by {p.displayName}</p>
+                          <p className="text-[9px] text-zinc-500 font-bold uppercase italic mt-0.5">Community • av {p.displayName}</p>
                        </div>
                     </div>
-                    {currentProject?.id === p.id ? <Check size={18} className="text-green-500" /> : <Plus className="text-zinc-700 opacity-0 group-hover:opacity-100" size={18} />}
+                    {currentProject?.id === p.id ? <Check size={18} className="text-green-500" /> : <Plus size={18} className="text-zinc-700 opacity-0 group-hover:opacity-100" />}
                  </button>
-              )) : <div className="text-center py-12 text-zinc-600 italic text-xs">No matching community posts.</div>
+              )) : <div className="text-center py-12 text-zinc-500 italic text-xs">Inga matchande community-inlägg.</div>
            )}
         </div>
 
-        <div className="p-4 bg-white/2 border-t border-white/5 text-center">
-           <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em]">Select a design to feature it on your home screen</p>
+        <div className="p-4 bg-zinc-900/20 border-t border-zinc-800/50 text-center">
+           <p className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.2em]">Välj en design för att visa den på din startsida</p>
         </div>
       </div>
     </div>
   );
 }
 
-// Reuse Plus icon from lucide-react (using local Plus in Picker is fine)
+// Plus icon
 function Plus({ size, className }: { size: number, className?: string }) {
   return (
     <svg 

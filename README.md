@@ -26,7 +26,7 @@
 
 ### 📝 Overview
 
-**NexNote** is a sleek, modern platform designed for developers and creatives to store and share their favorite code snippets and notes. Built with speed and user experience in mind, NexNote allows you to manage **SVG, HTML, CSS, and JS** directly in your profile, while participating in a curated community showcase.
+**NexNote** is a sleek, modern platform designed for developers and creatives to store and share their favorite code snippets and notes. Built with speed and user experience in mind, NexNote allows you to manage **SVG, HTML, CSS, and JS** directly in your profile, while participating in a curated community showcase. Now with a completely dark-themed, professional-grade interface with animated background orbs, hero sections, smart widgets, and real-time collaboration.
 
 ---
 
@@ -36,10 +36,28 @@
 - 🎨 **Powerful Editors**:
   - **Rich Text Editor**: Powered by TipTap for beautiful note-taking.
   - **Code Editor**: syntax-highlighted editor for web technologies (HTML, CSS, JS, SVG).
-- 🤝 **Community Sharing**: Share up to **2 projects per month** to the global community feed.
-- 🌙 **Modern UI**: A responsive, dark-mode-first aesthetic built with Framer Motion for smooth transitions.
+- 🤝 **Community Sharing**: Share projects to the global community feed.
+- 🌙 **Dark-Only Theme**: Professional dark-mode-first UI with animated background orbs and glassmorphism.
 - ☁️ **Cloud Sync**: All your notes and snippets are safely stored in Firebase and synced across devices.
 - 📸 **Code-to-Image**: Export your snippets as beautiful images for social media sharing.
+- 🏠 **Pro Home Page**: Animated hero section, quick stats, action grid, recent notes, and sidebar widgets.
+
+---
+
+### 🆕 Nya Funktioner (Senaste Uppdatering)
+
+| # | Funktion | Beskrivning |
+|---|----------|-------------|
+| 1️⃣ | **Taggar** | Lägg till och filtrera anteckningar med taggar för bättre organisation |
+| 2️⃣ | **Favoriter** | Markera anteckningar som pinnade och filtrera för att bara visa favoriter |
+| 3️⃣ | **Avancerad Sökning** | Sök i titel, innehåll, taggar och kategori samtidigt |
+| 4️⃣ | **Markdown Export** | Exportera enskilda anteckningar som Markdown-filer |
+| 5️⃣ | **Påminnelser** | Ställ in påminnelser som skickar notifikationer när tiden är inne |
+| 6️⃣ | **Offline-läge (PWA)** | Service worker låter appen fungera utan internetuppkoppling |
+| 7️⃣ | **Versionshistorik** | Se och återställ tidigare versioner av anteckningar |
+| 8️⃣ | **Låsta Anteckningar** | Skydda känsliga anteckningar med lösenord |
+| 9️⃣ | **Kalender-vy** | Se alla dina anteckningar i en månadskalender |
+| 🔟 | **Realtidsamarbete** | Redigera anteckningar tillsammans med andra i realtid |
 
 ---
 
@@ -51,6 +69,7 @@
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/)
 - **Editors**: [TipTap](https://tiptap.dev/) (Rich Text) & [CodeMirror 6](https://codemirror.net/) (Code)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **PWA**: Service Worker för offline-läge
 
 ---
 
@@ -79,6 +98,7 @@
 ### 🚀 Getting Started
 
 #### Prerequisites
+
 - Node.js (v18 or higher)
 - A Firebase project
 
@@ -103,6 +123,11 @@
    npm run dev
    ```
    Open `http://localhost:3000` to see the result.
+
+5. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
 ---
 

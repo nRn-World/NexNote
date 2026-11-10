@@ -57,14 +57,14 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
   return (
     <div
       className={cn(
-        'flex items-start gap-3 px-4 py-3 bg-[var(--bg-panel)] border rounded-xl shadow-2xl text-sm max-w-sm w-full backdrop-blur-xl transition-all duration-300',
+        'flex items-start gap-3 px-4 py-3 bg-zinc-800/90 border rounded-xl shadow-2xl text-sm max-w-sm w-full backdrop-blur-xl transition-all duration-300',
         borders[toast.type],
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
     >
       {icons[toast.type]}
-      <p className="flex-1 text-[var(--text-primary)]">{toast.message}</p>
-      <button onClick={() => { setVisible(false); setTimeout(() => onRemove(toast.id), 300); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] shrink-0 transition-colors">
+      <p className="flex-1 text-white">{toast.message}</p>
+      <button onClick={() => { setVisible(false); setTimeout(() => onRemove(toast.id), 300); }} className="text-zinc-500 hover:text-white shrink-0 transition-colors">
         <X size={14} />
       </button>
       <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-xl overflow-hidden">

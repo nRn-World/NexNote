@@ -195,7 +195,9 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     }
   };
 
-  const handleLinkAvatar = async () => {
+  const [uploading, setUploading] = useState(false);
+
+const handleLinkAvatar = async () => {
     const url = prompt('Paste a direct link to your image or animated GIF (e.g. from Imgur or Discord):');
     if (!url || !auth.currentUser) return;
     
@@ -219,8 +221,6 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       setUploading(false);
     }
   };
-
-  const [uploading, setUploading] = useState(false);
 
   const displayName = profile?.displayName || allPosts.find(p => p.uid === uid)?.displayName || 'Anonymous';
   const photoURL = profile?.photoURL || allPosts.find(p => p.uid === uid)?.photoURL;
@@ -309,7 +309,7 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
                   <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
                   {isOwn && (
                     <button onClick={() => { setIsEditingName(true); setEditingName(displayName); }} 
-                      className="p-1.5 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-cyan-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/5">
+                      className="p-1.5 bg-white/3 hover:bg-white/5 text-zinc-500 hover:text-cyan-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/10">
                       <Pencil size={14} />
                     </button>
                   )}

@@ -21,17 +21,17 @@ function formatFileSize(bytes: number) {
 export default function AttachmentList({ attachments, onDownload, onRemove, onImageClick }: AttachmentListProps) {
   if (attachments.length === 0) return null;
   return (
-    <div className="mt-12 pt-6 border-t border-zinc-100">
-      <h4 className="text-sm font-medium text-zinc-500 mb-4 flex items-center gap-2">
+    <div className="mt-12 pt-6 border-t border-zinc-800/50">
+      <h4 className="text-sm font-medium text-zinc-400 mb-4 flex items-center gap-2">
         <Paperclip size={16} />
-        Attachments ({attachments.length})
+        Bilagor ({attachments.length})
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {attachments.map(a => (
-          <div key={a.id} className="flex items-center p-3 bg-zinc-50 border border-zinc-200 rounded-lg group">
+          <div key={a.id} className="flex items-center p-3 bg-zinc-800 border border-zinc-700 rounded-lg group">
             <div
               className={cn(
-                'w-10 h-10 rounded bg-zinc-200 flex items-center justify-center text-zinc-500 shrink-0 overflow-hidden',
+                'w-10 h-10 rounded bg-zinc-700 flex items-center justify-center text-zinc-400 shrink-0 overflow-hidden',
                 a.type.startsWith('image/') && 'cursor-pointer hover:opacity-80 transition-opacity'
               )}
               onClick={() => a.type.startsWith('image/') && onImageClick(a.data)}
@@ -43,14 +43,14 @@ export default function AttachmentList({ attachments, onDownload, onRemove, onIm
               )}
             </div>
             <div className="ml-3 flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-900 truncate" title={a.name}>{a.name}</p>
+              <p className="text-sm font-medium text-white truncate" title={a.name}>{a.name}</p>
               <p className="text-xs text-zinc-500">{formatFileSize(a.size)}</p>
             </div>
-            <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-md" title="Download">
+            <div className="flex items-center gap-1 opacity-0 md:opacity-100 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700 rounded-md" title="Ladda ned">
                 <Download size={16} />
               </button>
-              <button onClick={() => onRemove(a.id)} className="p-1.5 text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-md" title="Delete">
+              <button onClick={() => onRemove(a.id)} className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded-md" title="Ta bort">
                 <Trash2 size={16} />
               </button>
             </div>

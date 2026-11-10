@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Download, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2, FileText, Share2, FolderOpen, Users } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseNoteCode, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
@@ -34,6 +34,13 @@ import JamSession from './components/JamSession';
 import DesignAIModal from './components/DesignAIModal';
 import StarryBackground from './components/StarryBackground';
 import ProjectPickerModal from './components/ProjectPickerModal';
+import TrashModal from './components/TrashModal';
+import ShortcutsModal from './components/ShortcutsModal';
+import BackupModal from './components/BackupModal';
+import TemplatePickerModal from './components/TemplatePickerModal';
+import LockModal from './components/LockModal';
+import CalendarView from './components/CalendarView';
+import RealTimeCollaborate from './components/RealTimeCollaborate';
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -45,7 +52,6 @@ function decodeContent(raw: string): string {
   return d.trim();
 }
 import { useToast } from './hooks/useToast';
-import { useDarkMode } from './hooks/useDarkMode';
 
 let html2canvasSourceCache: Promise<string> | null = null;
 function loadHtml2canvasSource() {
@@ -74,7 +80,7 @@ interface ConfirmState {
 }
 
 export default function App() {
-  const { isDark, toggle: toggleDark } = useDarkMode();
+  const isDark = true;
   const [user, setUser] = useState<any>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -84,6 +90,8 @@ export default function App() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [isTitleCopied, setIsTitleCopied] = useState(false);
   const [isContentCopied, setIsContentCopied] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -99,6 +107,7 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [guestSecondsLeft, setGuestSecondsLeft] = useState(60);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const guestTimerRef = useRef<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -116,6 +125,18 @@ export default function App() {
   const [topDesigns, setTopDesigns] = useState<any[]>(Array(5).fill(null));
   const [showProjectPicker, setShowProjectPicker] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [trash, setTrash] = useState<Note[]>([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCollaborate, setShowCollaborate] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [lockPassword, setLockPassword] = useState('');
+  const [lockingNoteId, setLockingNoteId] = useState<string | null>(null);
   const [communityPostId, setCommunityPostId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +159,9 @@ export default function App() {
   if (shareId) return <SharedNote shareId={shareId} />;
 
   const activeNote = notes.find(n => n.id === activeNoteId);
+  const plainText = activeNote?.content ? activeNote.content.replace(/<[^>]*>/g, ' ') : '';
+  const wordCount = plainText.split(/\s+/).filter(Boolean).length;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   useEffect(() => {
     const note = (activeNoteId && noteDraftsRef.current[activeNoteId]) || activeNote;
@@ -230,7 +254,25 @@ export default function App() {
             merged.push(draft);
           }
         }
-        return merged.sort((a, b) => {
+        const activeNotes = merged.filter(n => !n.isDeleted);
+        const trashed = merged.filter(n => n.isDeleted).sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt));
+        setTrash(trashed);
+
+        // Välkomstanteckning för nya användare (endast en gång per användare)
+        if (!user.isGuest && !hasSeenWelcome && activeNotes.length === 0 && trashed.length === 0) {
+          setHasSeenWelcome(true);
+          const welcome: Note = {
+            id: uuidv4(), uid: user.uid, title: 'Välkommen till NexNote 👋',
+            content: '<p>Det här är din första anteckning.</p><p>Prova att:<ul><li>Skriva i rich-text-editorn nedan</li><li>Koda i HTML/CSS/JS-fönstret och förhandsgranska live</li><li>Lägga till taggar, bilagor och ett omslag</li><li>Dela anteckningen med en publika länk</li></ul></p>',
+            attachments: [], tags: ['welcome'], order: 0,
+            createdAt: Date.now(), updatedAt: Date.now(),
+          };
+          noteDraftsRef.current[welcome.id] = welcome;
+          setNotes(prev => [welcome, ...prev]);
+          handleSave(welcome).catch(() => {});
+        }
+
+        return activeNotes.sort((a, b) => {
           if (a.isPinned && !b.isPinned) return -1;
           if (!a.isPinned && b.isPinned) return 1;
           return b.updatedAt - a.updatedAt;
@@ -239,7 +281,7 @@ export default function App() {
       setIsLoading(false);
     }, err => { handleFirestoreError(err, OperationType.LIST, 'notes'); setIsLoading(false); });
     return () => unsub();
-  }, [user, isAuthReady]);
+  }, [user, isAuthReady, hasSeenWelcome]);
 
   useEffect(() => {
     if (!isAuthReady || !user || user.isGuest) { setCategories([]); return; }
@@ -365,11 +407,40 @@ export default function App() {
     return () => window.removeEventListener('pagehide', onPageHide);
   }, []);
 
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Reminder checker — fires toast when a reminder is due
+  useEffect(() => {
+    if (!user || user.isGuest) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      notes.forEach(n => {
+        if (n.reminderAt && !n.reminderDone && n.reminderAt <= now) {
+          addToast(`Påminnelse: ${n.title || 'Anteckning'}`, 'info');
+          updateActiveNote({ id: n.id, reminderDone: true });
+        }
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user, notes, addToast]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleManualSave(); }
-      if (e.key === 'Escape') { setActiveNoteId(null); setShowHistory(false); setShowShare(false); }
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') { e.preventDefault(); setShowShortcuts(true); }
+      if (e.key === '?') { setShowShortcuts(true); }
+      if (e.key === 'Escape') { setActiveNoteId(null); setShowHistory(false); setShowShare(false); setShowShortcuts(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -389,6 +460,8 @@ export default function App() {
       order: note.order ?? 0,
       createdAt: note.createdAt || now,
       updatedAt: note.updatedAt || now,
+      isDeleted: note.isDeleted || false,
+      deletedAt: note.deletedAt || null,
       attachments: JSON.stringify(note.attachments || []),
     };
     if (note.categoryId) noteData.categoryId = note.categoryId;
@@ -637,8 +710,50 @@ export default function App() {
     const noteToDelete = notes.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Delete note', danger: true,
-      message: 'Are you sure? The note and all attachments will be permanently deleted.',
+      open: true, title: 'Flytta till papperskorg', danger: true,
+      message: 'Anteckningen flyttas till papperskorgen och kan återställas senare.',
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          const trashed = { ...noteToDelete, isDeleted: true, deletedAt: Date.now(), updatedAt: Date.now() };
+          noteDraftsRef.current[id] = trashed;
+          setNotes(prev => prev.filter(n => n.id !== id));
+          setTrash(prev => [trashed, ...prev].sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt)));
+          if (activeNoteId === id) setActiveNoteId(null);
+          await writeNoteToFirestore(trashed);
+          addToast('Anteckning flyttad till papperskorgen.', 'success');
+        } catch (err) {
+          addToast('Kunde inte flytta anteckningen.', 'error');
+          handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
+        }
+      },
+    });
+  };
+
+  const restoreNote = async (id: string) => {
+    if (!user) return;
+    const note = trash.find(n => n.id === id);
+    if (!note) return;
+    try {
+      const restored = { ...note, isDeleted: false, deletedAt: undefined, updatedAt: Date.now() };
+      noteDraftsRef.current[id] = restored;
+      setTrash(prev => prev.filter(n => n.id !== id));
+      setNotes(prev => [restored, ...prev]);
+      if (!activeNoteId) setActiveNoteId(id);
+      await writeNoteToFirestore(restored);
+      addToast('Anteckning återställd.', 'success');
+    } catch (err) {
+      addToast('Kunde inte återställa anteckningen.', 'error');
+      handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
+    }
+  };
+
+  const deleteForever = async (id: string) => {
+    const noteToDelete = trash.find(n => n.id === id);
+    if (!noteToDelete || !user) return;
+    setConfirm({
+      open: true, title: 'Radera permanent', danger: true,
+      message: 'Anteckningen och alla bilagor raderas permanent. Detta går inte att ångra.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
@@ -651,14 +766,243 @@ export default function App() {
           }
           await deleteDoc(doc(db, 'notes', id));
           delete noteDraftsRef.current[id];
+          setTrash(prev => prev.filter(n => n.id !== id));
           if (activeNoteId === id) setActiveNoteId(null);
-          addToast('Note deleted.', 'success');
+          addToast('Anteckning raderad permanent.', 'success');
         } catch (err) {
-          addToast('Could not delete the note.', 'error');
+          addToast('Kunde inte radera anteckningen.', 'error');
           handleFirestoreError(err, OperationType.DELETE, `notes/${id}`);
         }
       },
     });
+  };
+
+  const emptyTrash = async () => {
+    if (!user) return;
+    setConfirm({
+      open: true, title: 'Töm papperskorg', danger: true,
+      message: 'Alla anteckningar i papperskorgen raderas permanent.',
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          await Promise.all(trash.map(n => deleteDoc(doc(db, 'notes', n.id))));
+          trash.forEach(n => delete noteDraftsRef.current[n.id]);
+          setTrash([]);
+          addToast('Papperskorg tömd.', 'success');
+        } catch (err) {
+          addToast('Kunde inte tömma papperskorgen.', 'error');
+          handleFirestoreError(err, OperationType.DELETE, 'notes/trash');
+        }
+      },
+    });
+  };
+
+  const duplicateNote = (note: Note) => {
+    if (!user) return;
+    const copy: Note = {
+      id: uuidv4(), uid: user.uid,
+      title: `(Kopia) ${note.title || 'Anteckning'}`,
+      content: note.content, attachments: [], categoryId: note.categoryId,
+      code: note.code ? { ...note.code } : undefined,
+      coverImage: note.coverImage, isPinned: false,
+      tags: [...(note.tags || [])],
+      order: notes.length,
+      createdAt: Date.now(), updatedAt: Date.now(),
+    };
+    noteDraftsRef.current[copy.id] = copy;
+    setNotes(prev => [copy, ...prev]);
+    setActiveNoteId(copy.id);
+    handleSave(copy).catch(error => {
+      addToast('Kunde inte duplicera anteckningen.', 'error');
+      handleFirestoreError(error, OperationType.WRITE, `notes/${copy.id}`);
+    });
+    addToast('Anteckning duplicerad.', 'success');
+  };
+
+  const printNote = () => {
+    if (!activeNote) return;
+    const el = document.createElement('div');
+    el.className = 'print-page no-print';
+    el.innerHTML = `
+      <h1>${escapeHtml(activeNote.title || 'Untitled')}</h1>
+      <div class="prose">${activeNote.content}</div>
+      ${activeNote.attachments.filter(a => a.type.startsWith('image/')).map(a => `<img src="${a.data}" style="max-width:100%;margin:1rem 0;" alt="${escapeHtml(a.name)}"/>`).join('')}
+    `;
+    document.body.appendChild(el);
+    window.print();
+    document.body.removeChild(el);
+  };
+
+  const escapeHtml = (text: string) => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c));
+
+  const downloadNoteAsImage = async () => {
+    if (!activeNote) return;
+    try {
+      const html2canvasSource = await loadHtml2canvasSource();
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'display:none;width:720px;height:960px;';
+      document.body.appendChild(frame);
+      const captureId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const attachmentsHtml = activeNote.attachments.filter(a => a.type.startsWith('image/')).map(a =>
+        `<img src="${a.data}" style="max-width:100%;margin:1rem 0;border-radius:8px;" alt="${escapeHtml(a.name)}"/>`
+      ).join('');
+      const codeHtml = activeNote.code && hasPreviewCode(activeNote.code)
+        ? `<details style="margin-top:1.5rem;"><summary style="font-weight:700;">Kodförhandsgranskning</summary><iframe src="${'data:text/html;charset=utf-8,' + encodeURIComponent(buildPreviewSrcDoc(activeNote.code.html || '', activeNote.code.css || '', activeNote.code.js || '', false))}" style="width:100%;height:320px;border:none;border-radius:8px;"></iframe></details>`
+        : '';
+      const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        body{margin:0;padding:32px;background:#ffffff;color:#1e293b;font-family:'Plus Jakarta Sans',system-ui,sans-serif;}
+        h1{font-size:28px;margin:0 0 1rem;line-height:1.3;}
+        .content{line-height:1.7;}
+        .content p{margin:0.75rem 0;}
+      </style></head><body>
+        <h1>${escapeHtml(activeNote.title || 'Anteckning')}</h1>
+        <div class="content">${activeNote.content}</div>
+        ${attachmentsHtml}
+        ${codeHtml}
+      </body></html>`;
+      const win = frame.contentWindow;
+      if (!win) throw new Error('Kunde inte skapa förhandsgranskningsfönster');
+      win.document.open();
+      win.document.write(doc + `<script>${html2canvasSource}</script>
+        <script>
+          window.addEventListener('message', async (ev) => {
+            if (!ev.data || ev.data.type !== 'nexnote-capture' || ev.data.captureId !== '${captureId}') return;
+            try {
+              const canvas = await html2canvas(document.body, { backgroundColor: '#ffffff', scale: 2, logging: false, useCORS: true });
+              window.parent.postMessage({ type: 'nexnote-capture-result', captureId: '${captureId}', dataUrl: canvas.toDataURL('image/png', 1.0) }, '*');
+            } catch (err) {
+              window.parent.postMessage({ type: 'nexnote-capture-result', captureId: '${captureId}', error: String(err && err.message || err) }, '*');
+            }
+          });
+        </script>`);
+      win.document.close();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const timer = setTimeout(() => { window.removeEventListener('message', onMsg); reject(new Error('timeout')); }, 20000);
+        const onMsg = (ev: MessageEvent) => {
+          if (ev.data?.captureId !== captureId || ev.data?.type !== 'nexnote-capture-result') return;
+          clearTimeout(timer);
+          window.removeEventListener('message', onMsg);
+          if (ev.data.dataUrl) resolve(ev.data.dataUrl);
+          else reject(new Error(ev.data.error || 'Tom bild'));
+        };
+        window.addEventListener('message', onMsg);
+        win.postMessage({ type: 'nexnote-capture', captureId }, '*');
+      });
+      document.body.removeChild(frame);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${escapeHtml(activeNote.title || 'anteckning').slice(0, 40)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      addToast('Anteckning nedladdad som bild.', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      addToast(message === 'timeout' ? 'Bildrenderingen tog för lång tid.' : 'Kunde inte skapa bilden.', 'error');
+    }
+  };
+
+  const handleExportNotes = () => {
+    if (!user) return;
+    const data = {
+      exportedAt: Date.now(),
+      user: { uid: user.uid, displayName: user.displayName, email: user.email },
+      notes: notes.map(n => ({ ...n })),
+      trash: trash.map(n => ({ ...n })),
+      categories,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nexnote-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast('Säkerhetskopia nedladdad.', 'success');
+  };
+
+  const exportNoteAsMarkdown = (note: Note) => {
+    const md = [
+      `# ${note.title || 'Untitled'}`,
+      '',
+      `*Exporterad från NexNote ${new Date().toISOString()}*`,
+      '',
+      note.content.replace(/<[^>]*>/g, ' ').trim(),
+      '',
+      note.tags && note.tags.length > 0
+        ? `Tags: ${note.tags.map(t => `#${t}`).join(' ')}`
+        : '',
+      note.code ? `\n---\n\n## Code\n\n\`\`\`html\n${note.code.html}\n\`\`\`\n\n\`\`\`css\n${note.code.css}\n\`\`\`\n\n\`\`\`js\n${note.code.js}\n\`\`\`` : '',
+    ].join('\n').trim();
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(note.title || 'anteckning').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast('Exporterad som Markdown.', 'success');
+  };
+
+  const handleImportNotes = (file: File) => {
+    if (!user) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        const notesToImport: Note[] = data.notes || [];
+        if (notesToImport.length === 0) { addToast('Inga anteckningar hittades i filen.', 'error'); return; }
+        let imported = 0;
+        for (const n of notesToImport) {
+          const importedNote: Note = {
+            id: uuidv4(), uid: user.uid,
+            title: n.title || 'Importerad anteckning',
+            content: n.content || '',
+            attachments: n.attachments || [],
+            categoryId: n.categoryId,
+            code: n.code,
+            coverImage: n.coverImage,
+            tags: n.tags || [],
+            order: notes.length + imported,
+            createdAt: n.createdAt || Date.now(),
+            updatedAt: Date.now(),
+          };
+          noteDraftsRef.current[importedNote.id] = importedNote;
+          await writeNoteToFirestore(importedNote);
+          imported++;
+        }
+        addToast(`${imported} anteckning(er) importerade.`, 'success');
+      } catch (err) {
+        addToast('Kunde inte importera säkerhetskopian.', 'error');
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const toggleFocusMode = () => setIsFocusMode(d => {
+    const next = !d;
+    document.documentElement.classList.toggle('focus-mode', next);
+    return next;
+  });
+
+  const createFromTemplate = (template: { id: string; title: string; content: string; tags?: string[]; categoryId?: string }) => {
+    if (!user) return;
+    const n: Note = {
+      id: uuidv4(), uid: auth.currentUser?.uid || user.uid, title: template.title, content: template.content,
+      attachments: [], tags: template.tags || [], categoryId: template.categoryId || activeCategoryId || undefined,
+      order: notes.length, createdAt: Date.now(), updatedAt: Date.now(),
+    };
+    noteDraftsRef.current[n.id] = n;
+    setNotes(prev => [n, ...prev]);
+    setActiveNoteId(n.id);
+    setShowTemplatePicker(false);
+    if (!isGuest && auth.currentUser) handleSave(n).catch(() => {});
+    addToast(`Anteckning skapad från mall "${template.title}".`, 'success');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -727,23 +1071,40 @@ export default function App() {
     debouncedSave(updated);
   };
 
-  const onChangeCoverImage = (noteId: string) => {};
-
   const onMoveManyNotes = (noteIds: string[], categoryId: string | undefined) => {
     noteIds.forEach(id => onMoveNote(id, categoryId));
     addToast(`${noteIds.length} notes moved.`, 'success');
   };
 
   const onDeleteManyNotes = (noteIds: string[]) => {
-    noteIds.forEach(id => {
-      const note = notes.find(n => n.id === id);
-      if (!note) return;
-      delete noteDraftsRef.current[id];
-      deleteDoc(doc(db, 'notes', id));
+    if (!user) return;
+    setConfirm({
+      open: true, title: 'Flytta till papperskorg', danger: true,
+      message: `${noteIds.length} anteckning(er) flyttas till papperskorgen.`,
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          const now = Date.now();
+          await Promise.all(noteIds.map(id => {
+            const note = notes.find(n => n.id === id);
+            if (!note) return Promise.resolve();
+            const trashed = { ...note, isDeleted: true, deletedAt: now, updatedAt: now };
+            noteDraftsRef.current[id] = trashed;
+            return writeNoteToFirestore(trashed);
+          }));
+          setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
+          setTrash(prev => {
+            const merged = [...noteIds.map(id => notes.find(n => n.id === id)).filter(Boolean), ...prev];
+            return merged.sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || b.updatedAt));
+          });
+          if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
+          addToast(`${noteIds.length} anteckning(er) flyttade till papperskorgen.`, 'success');
+        } catch (err) {
+          addToast('Kunde inte flytta anteckningarna.', 'error');
+          handleFirestoreError(err, OperationType.WRITE, 'notes');
+        }
+      },
     });
-    setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
-    if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
-    addToast(`${noteIds.length} notes deleted.`, 'success');
   };
 
   useEffect(() => {
@@ -761,6 +1122,33 @@ export default function App() {
   }, [notes]);
 
   const togglePin = () => { if (!activeNote) return; updateActiveNote({ isPinned: !activeNote.isPinned }); };
+
+  const toggleLock = () => {
+    if (!activeNote) return;
+    setLockingNoteId(activeNote.id);
+    setLockPassword('');
+    setShowLockModal(true);
+  };
+
+  const handleLockUnlock = (password: string) => {
+    if (!activeNote || !lockingNoteId) return;
+    if (activeNote.isLocked) {
+      // Unlock
+      if (activeNote.lockPassword && password === activeNote.lockPassword) {
+        updateActiveNote({ isLocked: false, lockPassword: undefined });
+        setShowLockModal(false);
+        addToast('Anteckning upplåst.', 'success');
+      } else {
+        addToast('Felaktigt lösenord.', 'error');
+      }
+    } else {
+      // Lock
+      updateActiveNote({ isLocked: true, lockPassword: password });
+      setShowLockModal(false);
+      addToast('Anteckning låst.', 'success');
+    }
+    setLockingNoteId(null);
+  };
 
   const addTag = (tag: string) => {
     const clean = tag.trim().toLowerCase();
@@ -910,7 +1298,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col md:flex-row h-screen w-full bg-[#FFFFFF]">
+      <div className="flex flex-col md:flex-row h-screen w-full bg-[#0B0D17]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <div className="absolute inset-0 z-0">
              <video 
@@ -926,18 +1314,18 @@ export default function App() {
               <img src="./favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
               <span className="text-2xl font-bold text-white tracking-tight">NexNote</span>
            </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/20 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#0B0D17]/40 to-transparent pointer-events-none"></div>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-white">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 relative overflow-hidden bg-[#0B0D17]/30 backdrop-blur-sm">
             <div className="w-full max-w-sm text-center z-10">
                <img src="./logoandtextWhite2.png" alt="NexNote" className="mx-auto mb-12 w-64" />
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isSigningIn}
-                className="group w-full py-4 px-6 bg-white border border-[#E0E4E8] rounded-2xl flex items-center justify-center gap-4 text-[#333] font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-black/5 disabled:opacity-70 disabled:cursor-wait"
+                className="group w-full py-4 px-6 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center gap-4 text-white font-semibold transition-all duration-300 hover:border-blue-400/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.35)] relative overflow-hidden ring-1 ring-white/10 disabled:opacity-70 disabled:cursor-wait"
               >
-                <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg">
+                <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-lg">
                   {isSigningIn ? (
                     <Loader2 size={20} className="animate-spin text-blue-500" />
                   ) : (
@@ -953,21 +1341,21 @@ export default function App() {
                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               </button>
               {authError && (
-                <p className="mt-3 text-sm text-red-500 font-medium">{authError}</p>
+                <p className="mt-3 text-sm text-red-400 font-medium">{authError}</p>
               )}
               <button
                 onClick={enterGuestMode}
-                className="w-full mt-3 py-4 px-6 bg-zinc-100 border border-zinc-200 rounded-2xl flex items-center justify-center gap-3 text-zinc-600 font-medium transition-all duration-300 hover:bg-zinc-200 hover:border-zinc-300"
+                className="w-full mt-3 py-4 px-6 bg-zinc-800 border border-zinc-700 rounded-2xl flex items-center justify-center gap-3 text-zinc-300 font-medium transition-all duration-300 hover:bg-zinc-700 hover:border-zinc-600"
               >
                 <span>👁</span>
                 <span>Guest Mode</span>
-                <span className="text-xs text-zinc-400 ml-1">(1 min demo)</span>
+                <span className="text-xs text-zinc-500 ml-1">(1 min demo)</span>
               </button>
               <div className="mt-24">
-                <p className="text-sm text-zinc-400 font-medium tracking-wide">
-                  By logging in you agree to our{' '}
-                  <button onClick={() => setShowPrivacy(true)} className="underline hover:text-blue-500 transition-colors decoration-zinc-300 underline-offset-4">
-                    privacy policy
+                <p className="text-sm text-zinc-500 font-medium tracking-wide">
+                  Genom att logga in godkänner du vår{' '}
+                  <button onClick={() => setShowPrivacy(true)} className="underline hover:text-cyan-400 transition-colors decoration-white/30 underline-offset-4">
+                    integritetspolicy
                   </button>
                 </p>
               </div>
@@ -981,6 +1369,14 @@ export default function App() {
   return (
     <div className="flex h-screen w-full bg-[var(--bg-deep)] font-sans overflow-hidden relative" style={{ color: 'var(--text-primary)' }}>
       <StarryBackground />
+
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center px-4 py-2 bg-amber-600/90 backdrop-blur-sm text-white text-sm font-medium shadow-lg border-b border-amber-400/50">
+          <span>⚠️</span>
+          <span className="ml-2">Du är offline — appen fungerar i cache-läge. Ändringar synkas när du är uppkopplad igen.</span>
+        </div>
+      )}
 
       {/* Guest Mode Timer Banner */}
       {isGuest && (
@@ -1010,22 +1406,26 @@ export default function App() {
         onCreateNote={createNote} onDeleteNote={deleteNote}
         onLogout={handleLogout} onImageClick={setSelectedImage}
         onReorderNotes={handleReorderNotes}
-        isDark={isDark} onToggleDark={toggleDark}
         categories={categories} activeCategoryId={activeCategoryId}
         onSelectCategory={setActiveCategoryId}
         onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}
         onMoveNote={onMoveNote} onMoveManyNotes={onMoveManyNotes}
         onDeleteManyNotes={onDeleteManyNotes}
-        onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
+        onRenameNote={onRenameNote} onDuplicateNote={(id) => { const n = notes.find(x => x.id === id); if (n) duplicateNote(n); }}
         onChangeColor={onChangeColor}
         onOpenCommunity={() => { setCommunityTab('trending'); setShowCommunity(true); }}
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
+        onOpenCalendar={() => setShowCalendar(true)}
         onGoHome={() => setActiveNoteId(null)}
         allPosts={communityPosts}
         user={user}
         isLoading={isLoading}
         isGuest={isGuest}
+        activeTag={activeTag}
+        onSelectTag={setActiveTag}
+        showPinnedOnly={showPinnedOnly}
+        onTogglePinnedOnly={() => setShowPinnedOnly(!showPinnedOnly)}
       />
 
       <div className={cn(
@@ -1045,6 +1445,18 @@ export default function App() {
               onShare={() => setShowShare(true)}
               onSave={handleManualSave}
               onCategoryChange={categoryId => updateActiveNote({ categoryId })}
+              onPrint={printNote}
+              onDuplicate={() => activeNote && duplicateNote(activeNote)}
+              onToggleFocus={toggleFocusMode}
+              onDownloadImage={downloadNoteAsImage}
+              isFocusMode={isFocusMode}
+              wordCount={wordCount}
+              readingTime={readingTime}
+              onSetReminder={(reminderAt) => {
+                if (!activeNote) return;
+                updateActiveNote({ reminderAt, reminderDone: false });
+              }}
+              onToggleLock={toggleLock}
             />
 
             <input type="file" ref={imageInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" multiple />
@@ -1052,18 +1464,40 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 max-w-5xl mx-auto w-full flex flex-col relative no-scrollbar">
               {showHistory && (
-                <div className="absolute right-4 top-4 w-72 glass-panel border border-white/10 rounded-2xl shadow-2xl z-30 flex flex-col max-h-[80%] overflow-hidden">
+                <div className="absolute right-4 top-4 w-80 glass-panel border border-white/10 rounded-2xl shadow-2xl z-30 flex flex-col max-h-[80%] overflow-hidden">
                   <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><Clock size={14} /> History</span>
-                    <button onClick={() => setShowHistory(false)} className="text-slate-500 hover:text-white"><X size={16} /></button>
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">History ({activeNote.history?.length || 0})</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => {
+                        if (!activeNote) return;
+                        const manualVersion = { title: activeNote.title, content: activeNote.content, updatedAt: Date.now() };
+                        updateActiveNote({ history: [manualVersion, ...(activeNote.history || [])].slice(0, 10) });
+                        setShowHistory(false);
+                        addToast('Version skapad.', 'success');
+                      }} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300 flex items-center gap-1">
+                        <Plus size={12} /> Ny version
+                      </button>
+                      <button onClick={() => setShowHistory(false)} className="text-slate-500 hover:text-white"><X size={16} /></button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
                     {(!activeNote.history || activeNote.history.length === 0) ? (
-                      <div className="text-center py-12 text-xs text-slate-600 font-medium italic">No history yet</div>
+                      <div className="flex flex-col items-center justify-center py-12 text-xs text-slate-600 font-medium italic space-y-2">
+                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center mb-2"><Clock size={16} /></div>
+                        <div>Inga sparade versioner än</div>
+                        <div className="text-[10px] text-zinc-500">Versioner sparas automatiskt vid större ändringar</div>
+                      </div>
                     ) : activeNote.history.map((v, i) => (
                       <div key={i} className="p-3 rounded-xl border border-white/5 hover:bg-white/5 group transition-colors cursor-pointer" onClick={() => restoreVersion(v)}>
-                        <div className="text-[10px] text-cyan-400 font-black tracking-widest mb-1.5 uppercase">{format(v.updatedAt, 'MMM d, HH:mm', { locale: enUS })}</div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] text-cyan-400 font-black tracking-widest uppercase">{format(v.updatedAt, 'MMM d, HH:mm', { locale: enUS })}</div>
+                          <span className="text-[10px] text-zinc-500 font-bold">v.{i + 1}</span>
+                        </div>
                         <div className="text-xs font-semibold truncate mb-1 text-slate-200">{v.title || 'Untitled'}</div>
+                        <div className="text-[9px] text-zinc-500 mt-1">{v.content.replace(/<[^>]*>/g, '').slice(0, 80)}{v.content.replace(/<[^>]*>/g, '').length > 80 ? '...' : ''}</div>
                       </div>
                     ))}
                   </div>
@@ -1162,6 +1596,12 @@ export default function App() {
                                 <button onClick={() => setShowJamSession(true)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/5 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 transition-all">
                                   <Globe size={12} /> Jam
                                 </button>
+                                <button onClick={() => activeNote && exportNoteAsMarkdown(activeNote)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-400/5 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/10 transition-all">
+                                  <FileText size={12} /> Markdown
+                                </button>
+                                <button onClick={() => { setShowCollaborate(true); }} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-400 bg-purple-400/5 border border-purple-500/20 rounded-lg hover:bg-purple-500/10 transition-all">
+                                  <User size={12} /> Samarbete
+                                </button>
                               </>
                             )}
                           <button onClick={toggleCodeEditor} className="p-2 text-slate-500 hover:text-red-400 transition-colors"><X size={18} /></button>
@@ -1197,11 +1637,18 @@ export default function App() {
             </div>
           </>
         ) : (
-          <div 
+          <div
             onMouseMove={handleMouseMove}
             className="flex-1 flex flex-col items-center justify-start py-12 px-8 hidden md:flex text-center bg-[#090A0F] relative overflow-hidden no-scrollbar"
           >
              <StarryBackground />
+
+             {/* Animated Background Orbs */}
+             <div className="absolute inset-0 -z-10 overflow-hidden">
+               <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[120px] animate-fluid-1" />
+               <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-fluid-2" />
+               <div className="absolute top-[30%] left-[50%] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] animate-float" />
+             </div>
 
              <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
                 
@@ -1233,156 +1680,248 @@ export default function App() {
                   </div>
                 </button>
 
-                <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start w-full">
+                {/* HERO SECTION */}
+                <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between w-full gap-8 px-4 lg:px-0">
                   
-                  {/* LEFT COLUMN: Main Illustration & Title */}
-                  <div className="flex-1 flex flex-col items-center text-center lg:text-left lg:items-start">
-                    <div 
-                      className="relative mb-12 transition-transform duration-200 ease-out preserve-3d"
-                      style={{ transform: `perspective(1000px) rotateY(${mousePos.x}deg) rotateX(${-mousePos.y}deg)` }}
-                    >
-                       <div className="absolute inset-0 bg-cyan-400/20 blur-[80px] rounded-full scale-150 animate-pulse" />
-                       <div className="relative flex justify-center lg:justify-start">
-                          <div className="relative">
-                             <div className="absolute inset-0 translate-x-4 translate-y-4 bg-blue-500/20 rounded-2xl blur-lg"></div>
-                             <div className="relative z-10 w-32 h-44 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-2xl border-2 border-white/20 backdrop-blur-xl shadow-[0_0_60px_rgba(0,242,255,0.15)] flex flex-col items-center justify-center -rotate-6 animate-float">
-                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
-                                <div className="w-16 h-1 bg-white/40 rounded-full mb-4 mr-6" />
-                                <div className="w-20 h-1 bg-white/40 rounded-full mb-4" />
-                                <div className="w-12 h-1 bg-white/40 rounded-full mr-10" />
-                             </div>
-                             <div className="absolute top-1/2 -right-6 z-20 w-10 h-28 bg-gradient-to-t from-cyan-300/40 to-blue-500/40 rounded-full border border-white/30 backdrop-blur text-white/50 rotate-12 flex justify-center items-end pb-3 shadow-2xl">
-                               <div className="w-1.5 h-4 bg-white/60 rounded-full" />
-                             </div>
-                          </div>
-                       </div>
+                  {/* LEFT: Hero Content */}
+                  <div className="flex-1 flex flex-col items-center lg:text-left lg:items-start">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-6">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      <span>Vault Active</span>
                     </div>
-
-                    <h2 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter mb-4 leading-none italic">
-                      Imagine. <br/>
-                      <span className="text-cyan-400">Code.</span> Create.
-                    </h2>
-                    <p className="text-[var(--text-secondary)] text-sm font-medium max-w-sm leading-relaxed mb-8">
-                       Every great project starts with a single line. Choose a starter or dive into your vault.
+                    
+                    <h1 className="text-5xl md:text-7xl font-black text-[var(--text-primary)] tracking-tighter mb-4 leading-none italic">
+                      Imagine.<br />
+                      <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Code.</span> Create.
+                    </h1>
+                    <p className="text-[var(--text-secondary)] text-base font-medium max-w-lg leading-relaxed mb-8 lg:mb-0">
+                      Bygg vackra anteckningar, kodsnuttar och designer. Allt på ett ställe — med live-förhandsgranskning och molnsynkronisering.
                     </p>
 
-                    <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                      <button 
-                        onClick={createNote} 
-                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25"
+                    <div className="flex flex-wrap gap-3 justify-center lg:justify-start mt-2">
+                      <button
+                        onClick={createNote}
+                        className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25 overflow-hidden"
                       >
-                         <Plus size={18} /> Create new vault
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="relative z-10">Skapa ny anteckning</span>
                       </button>
-                      <button 
-                        onClick={() => setShowCommunity(true)}
-                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
+                      <button
+                        onClick={() => setShowTemplatePicker(true)}
+                        className="group relative flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 text-zinc-300 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 hover:text-white transition-all overflow-hidden"
                       >
-                         <Globe size={18} className="group-hover:rotate-12 transition-transform" /> 
-                         <span>Community View</span>
-                         <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
+                        <Sparkles size={18} className="group-hover:rotate-12 transition-transform duration-500" />
+                        <span className="relative z-10">Ny från mall</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: Activities & Dashboard Widgets */}
-                  <div className="w-full lg:w-96 space-y-6">
-                    
-                    {/* Activity Heatmap Widget */}
-                    <div className="glass-panel p-6 rounded-[32px] border-white/5 space-y-4">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><History size={12}/> Dev Activity</h4>
-                          <span className="text-[10px] font-bold text-cyan-400">{notes.length} Active Notes</span>
-                       </div>
-                       <div className="grid grid-cols-7 gap-1.5">
-                          {Array.from({ length: 35 }).map((_, i) => (
-                            <div key={i} className={cn(
-                               "w-3.5 h-3.5 rounded-[3px] transition-colors",
-                               Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
-                            )} />
-                          ))}
-                       </div>
-                    </div>
+                  {/* RIGHT: Quick Stats */}
+                  <div className="hidden lg:flex flex-col gap-4">
+                    <StatCard label="Anteckningar" value={notes.length} icon={<FileText size={16} className="text-cyan-400" />} />
+                    <StatCard label="Kategorier" value={categories.length} icon={<FolderOpen size={16} className="text-purple-400" />} />
+                    <StatCard label="Delat" value={notes.filter(n => n.isShared).length} icon={<Share2 size={16} className="text-indigo-400" />} />
+                  </div>
+                </div>
 
-                    {/* AI Inspiration Starters */}
-                    <div className="space-y-3">
-                       <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Need Inspiration?</h4>
-                       <div className="grid grid-cols-1 gap-2">
-                          {[
-                            { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
-                            { label: 'Glassmorphism Card', icon: '🫧', prompt: 'a frosted glass card layout' },
-                            { label: 'SVG Wave Animation', icon: '🌊', prompt: 'flowing animated ocean waves' }
-                          ].map((item, i) => (
-                            <button 
-                              key={i}
-                              onClick={() => createInspiredNote(item.label)}
-                              className="w-full flex items-center gap-3 p-3 bg-white/2 border border-white/5 hover:bg-white/5 hover:border-white/10 rounded-2xl text-left transition-all group"
-                            >
-                               <span className="text-xl">{item.icon}</span>
-                               <span className="text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
-                               <Sparkles size={12} className="ml-auto text-zinc-600 opacity-0 group-hover:opacity-100 transition-all" />
-                            </button>
-                          ))}
-                       </div>
+                {/* GLOBAL CHALLENGE */}
+                <button
+                  onClick={() => { setCommunityTab('challenges'); setShowCommunity(true); }}
+                  className="w-full lg:w-auto group relative mb-8 p-6 rounded-3xl overflow-hidden border border-yellow-500/20 bg-[#0B0D17]/50 backdrop-blur-sm hover:border-yellow-500/40 transition-all shadow-[0_0_40px_rgba(245,158,11,0.15)]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-transparent to-yellow-500/10 animate-pulse" />
+                  <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:rotate-6 transition-transform">
+                        <Trophy className="text-white" size={20} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Live Challenge</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                        </div>
+                        <h3 className="text-xl font-black text-white italic tracking-tight">Neon Pulse <span className="text-yellow-400">#01</span></h3>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Skicka in ditt designer för att vinna</p>
+                      </div>
                     </div>
+                    <div className="flex -space-x-2">
+                      {communityPosts.slice(0, 3).map((p, i) => (
+                        <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0B0D17] bg-zinc-800 overflow-hidden shadow-xl">
+                          {p.photoURL ? <img src={p.photoURL} alt="" /> : <div className="w-full h-full bg-indigo-500" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </button>
 
-                    {/* My Top 5 Design Section */}
-                    <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><Trophy size={12} className="text-yellow-500"/> My Top 5 Design</h4>
-                          <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
-                       </div>
-                       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                          {topDesigns.map((p, i) => (
-                             <div key={i} className="relative group shrink-0">
-                                {p ? (
-                                   <div className="relative">
-                                      <div 
-                                        onClick={() => handleNavigateToProject(p)}
-                                        className="w-12 h-12 rounded-2xl ring-2 ring-indigo-500/30 bg-[#0B0D17] overflow-hidden cursor-pointer hover:ring-indigo-500 transition-all shadow-lg relative z-0"
-                                      >
-                                         {p.code ? (
-                                            <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
-                                               <iframe 
-                                                 title="preview"
-                                                 sandbox={PREVIEW_SANDBOX}
-                                                 srcDoc={(() => {
-                                                   if (typeof p.code === 'string') {
-                                                      const decoded = decodeContent(p.code);
-                                                      return (decoded.includes('<html') || decoded.includes('<!DOCTYPE'))
-                                                         ? decoded
-                                                         : `<!DOCTYPE html><html><body style="margin:0;overflow:hidden;background:transparent;">${decoded}</body></html>`;
-                                                   }
-                                                   return `<!DOCTYPE html><html><head><style>${p.code.css || ''}</style></head><body style="margin:0;overflow:hidden;background:transparent;">${p.code.html || ''}<script>${p.code.js || ''}<\/script></body></html>`;
-                                                 })()}
-                                                 className="w-full h-full border-none bg-transparent"
-                                               />
-                                            </div>
-                                         ) : p.image ? (
-                                            <img src={p.image} alt="" className="w-full h-full object-cover" />
-                                         ) : (
-                                            <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white italic">{p.title.charAt(0)}</div>
-                                         )}
-                                      </div>
-                                      {/* Hover Edit Action */}
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); setActiveSlot(i); setShowProjectPicker(true); }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 hover:scale-110 shadow-lg"
-                                        title="Edit Slot"
-                                      >
-                                         <Settings size={10} />
-                                      </button>
-                                   </div>
+                {/* MAIN ACTION GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-4xl">
+                  <QuickActionCard
+                    icon={<Code size={20} />}
+                    title="Kodredigerare"
+                    desc="HTML, CSS och JS med live-förhandsgranskning"
+                    onClick={() => { createNote(); setActiveCodeTab('html'); }}
+                    color="cyan"
+                  />
+                  <QuickActionCard
+                    icon={<FileText size={20} />}
+                    title="Rich Text"
+                    desc="Skriv formaterade anteckningar med Tiptap-editor"
+                    onClick={createNote}
+                    color="purple"
+                  />
+                  <QuickActionCard
+                    icon={<Users size={20} />}
+                    title="Community"
+                    desc="Upptäck och dela projekt med andra"
+                    onClick={() => setShowCommunity(true)}
+                    color="indigo"
+                  />
+                  <QuickActionCard
+                    icon={<Download size={20} />}
+                    title="Säkerhetskopia"
+                    desc="Exportera och importera alla dina anteckningar"
+                    onClick={() => setShowBackup(true)}
+                    color="emerald"
+                  />
+                </div>
+
+                {/* RECENT NOTES */}
+                {notes.length > 0 && (
+                  <div className="w-full max-w-6xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Clock size={12} /> Senaste anteckningar
+                      </h3>
+                      <button onClick={() => setActiveNoteId(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300 transition-colors">
+                        Visa alla
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {notes.slice(0, 6).map(note => (
+                        <div
+                          key={note.id}
+                          onClick={() => setActiveNoteId(note.id)}
+                          className="group p-4 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-bold text-white truncate">{note.title || 'Namnlös'}</h4>
+                            <span className="text-[10px] text-zinc-500">{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400 line-clamp-2 mb-3">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
+                          <div className="flex items-center gap-1">
+                            {note.tags.slice(0, 2).map(tag => (
+                              <span key={tag} className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 rounded-full text-[10px] font-bold border border-cyan-400/20">{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* RIGHT COLUMN WIDGETS (Mobile hidden) */}
+                <div className="hidden lg:flex lg:w-96 flex-col gap-6">
+                  
+                  {/* Activity Heatmap */}
+                  <div className="glass-panel p-6 rounded-[32px] border-white/5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2">
+                        <History size={12} /> Aktivitet
+                      </h4>
+                      <span className="text-[10px] font-bold text-cyan-400">{notes.length} anteckningar</span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {Array.from({ length: 35 }).map((_, i) => (
+                        <div key={i} className={cn(
+                           "w-3.5 h-3.5 rounded-[3px] transition-colors",
+                           Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
+                        )} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* AI Inspiration */}
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Behöver inspiration?</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
+                        { label: 'Glassmorphism Card', icon: '🫧', prompt: 'a frosted glass card layout' },
+                        { label: 'SVG Wave Animation', icon: '🌊', prompt: 'flowing animated ocean waves' }
+                      ].map((item, i) => (
+                        <button
+                          key={i}
+                          onClick={() => createInspiredNote(item.label)}
+                          className="w-full flex items-center gap-3 p-3 bg-white/2 border border-white/5 hover:bg-white/5 hover:border-white/10 rounded-2xl text-left transition-all group"
+                        >
+                           <span className="text-xl">{item.icon}</span>
+                           <span className="text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
+                           <Sparkles size={12} className="ml-auto text-zinc-600 opacity-0 group-hover:opacity-100 transition-all" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Top 5 Designs */}
+                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Trophy size={12} className="text-yellow-500"/> Topp 5 Designer
+                      </h4>
+                      <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                      {topDesigns.map((p, i) => (
+                        <div key={i} className="relative group shrink-0">
+                          {p ? (
+                            <div className="relative">
+                              <div
+                                onClick={() => handleNavigateToProject(p)}
+                                className="w-12 h-12 rounded-2xl ring-2 ring-indigo-500/30 bg-[#0B0D17] overflow-hidden cursor-pointer hover:ring-indigo-500 transition-all shadow-lg relative z-0"
+                              >
+                                {p.code ? (
+                                  <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
+                                    <iframe
+                                      title="preview"
+                                      sandbox={PREVIEW_SANDBOX}
+                                      srcDoc={(() => {
+                                        if (typeof p.code === 'string') {
+                                          const decoded = decodeContent(p.code);
+                                          return (decoded.includes('<html') || decoded.includes('<!DOCTYPE'))
+                                            ? decoded
+                                            : `<!DOCTYPE html><html><body style="margin:0;overflow:hidden;background:transparent;">${decoded}</body></html>`;
+                                        }
+                                        return `<!DOCTYPE html><html><head><style>${p.code.css || ''}</style></head><body style="margin:0;overflow:hidden;background:transparent;">${p.code.html || ''}<script>${p.code.js || ''}<\/script></body></html>`;
+                                      })()}
+                                      className="w-full h-full border-none bg-transparent"
+                                    />
+                                  </div>
+                                ) : p.image ? (
+                                  <img src={p.image} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                   <button 
-                                     onClick={() => { setActiveSlot(i); setShowProjectPicker(true); }}
-                                     className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all"
-                                   >
-                                      <Plus size={18} />
-                                   </button>
+                                  <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white italic">{p.title.charAt(0)}</div>
                                 )}
-                             </div>
-                          ))}
-                       </div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setActiveSlot(i); setShowProjectPicker(true); }}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 hover:scale-110 shadow-lg"
+                                title="Redigera plats"
+                              >
+                                <Settings size={10} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setActiveSlot(i); setShowProjectPicker(true); }}
+                              className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all"
+                            >
+                              <Plus size={18} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1465,6 +2004,36 @@ export default function App() {
         onConfirm={confirm.onConfirm} onCancel={() => setConfirm(c => ({ ...c, open: false }))}
       />
 
+      <LockModal
+        open={showLockModal}
+        onClose={() => { setShowLockModal(false); setLockingNoteId(null); }}
+        isLocked={activeNote?.isLocked || false}
+        password={lockPassword}
+        setPassword={setLockPassword}
+        onUnlock={p => handleLockUnlock(p)}
+        onSetLock={p => handleLockUnlock(p)}
+      />
+
+      <CalendarView
+        open={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        notes={notes}
+        onSelectNote={(id) => { setActiveNoteId(id); setShowCalendar(false); }}
+      />
+
+      <RealTimeCollaborate
+        open={showCollaborate}
+        note={activeNote}
+        user={user}
+        onContentChange={(content) => {
+          if (activeNote) {
+            updateActiveNote({ content });
+          }
+        }}
+        onClose={() => setShowCollaborate(false)}
+        isDark={isDark}
+      />
+
       {showAiModal && (
         <AIModal 
           isDark={isDark} 
@@ -1496,7 +2065,7 @@ export default function App() {
       {showAnimationEditor && activeNote?.code && (
         <AnimationEditor
           onClose={() => setShowAnimationEditor(false)}
-          currentCode={activeNote.code}
+          currentCode={activeNote.code!}
           onUpdate={(newCss) => updateActiveNote({ code: { ...activeNote.code!, css: newCss } })}
         />
       )}
@@ -1517,6 +2086,96 @@ export default function App() {
         initialPrompt={designAiPrompt}
         isDark={isDark}
       />
+
+      {showTrash && (
+        <TrashModal
+          open={showTrash}
+          trash={trash}
+          onClose={() => setShowTrash(false)}
+          onRestore={restoreNote}
+          onDeleteForever={deleteForever}
+          onEmpty={emptyTrash}
+        />
+      )}
+
+      {showShortcuts && (
+        <ShortcutsModal
+          open={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+          isDark={isDark}
+        />
+      )}
+
+      {showBackup && (
+        <BackupModal
+          open={showBackup}
+          onClose={() => setShowBackup(false)}
+          onExport={handleExportNotes}
+          onImport={handleImportNotes}
+        />
+      )}
+
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          open={showTemplatePicker}
+          onClose={() => setShowTemplatePicker(false)}
+          onSelect={createFromTemplate}
+        />
+      )}
+
     </div>
+  );
+}
+
+/* --- Home Page Widget Components --- */
+
+function StatCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-2xl border border-white/10 bg-white/3 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+          {icon}
+        </div>
+        <span className="text-[10px] text-zinc-500 font-bold">↗</span>
+      </div>
+      <div className="text-2xl font-black text-white">{value}</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{label}</div>
+    </div>
+  );
+}
+
+function QuickActionCard({ icon, title, desc, onClick, color }: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  onClick: () => void;
+  color: 'cyan' | 'purple' | 'indigo' | 'emerald';
+}) {
+  const colorConfigs: Record<string, { bg: string; border: string; text: string; hover: string; shadow: string }> = {
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', hover: 'hover:bg-cyan-500/20', shadow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' },
+    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400', hover: 'hover:bg-purple-500/20', shadow: 'shadow-[0_0_30px_rgba(168,85,247,0.15)]' },
+    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400', hover: 'hover:bg-indigo-500/20', shadow: 'shadow-[0_0_30px_rgba(79,70,229,0.15)]' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', hover: 'hover:bg-emerald-500/20', shadow: 'shadow-[0_0_30px_rgba(16,185,129,0.15)]' },
+  };
+  const c = colorConfigs[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'group relative flex flex-col gap-3 p-5 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden',
+        c.bg, c.border, c.shadow,
+        'hover:border-white/20 hover:bg-white/5'
+      )}
+    >
+      <div className="relative z-10">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 bg-white/5 border border-white/10">
+          <span className={c.text}>{icon}</span>
+        </div>
+        <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{title}</h3>
+        <p className="text-[11px] text-zinc-500 leading-relaxed">{desc}</p>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
   );
 }
