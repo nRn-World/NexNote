@@ -229,6 +229,63 @@ body {
   to { width: 0%; }
 }
 
+/* --- Print styles for notes --- */
+@media print {
+  .no-print,
+  .sidebar,
+  [class*="fixed"],
+  [class*="absolute"] {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 12pt;
+  }
+  .print-page {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: #fff !important;
+    color: #111 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print-page h1,
+  .print-page h2,
+  .print-page h3 {
+    color: #111 !important;
+    page-break-after: avoid;
+  }
+  .print-page .prose p {
+    color: #111 !important;
+  }
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 80%;
+    color: #666;
+  }
+}
+
+/* --- Focus mode --- */
+body.focus-mode,
+#root.focus-mode {
+  overflow: hidden !important;
+}
+.focus-mode .sidebar,
+.focus-mode [class*="fixed bottom"],
+.focus-mode .no-print {
+  display: none !important;
+}
+.focus-mode .note-panel {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
 /* Mobile swipe hint animation */
 @keyframes swipe-hint {
   0%, 100% { transform: translateX(0); }

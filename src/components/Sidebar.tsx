@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut } from 'lucide-react';
+import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut, Copy } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -35,7 +35,7 @@ interface SidebarProps {
   onMoveManyNotes: (noteIds: string[], categoryId: string | undefined) => void;
   onDeleteManyNotes: (noteIds: string[]) => void;
   onRenameNote: (noteId: string, title: string) => void;
-  onChangeCoverImage: (noteId: string) => void;
+  onDuplicateNote?: (id: string) => void;
   onChangeColor?: (id: string, color: string) => void;
   onOpenCommunity: () => void;
   onOpenProfile: () => void;
@@ -176,7 +176,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onChangeCoverImage, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
+  onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
   isLoading = false,
   isGuest = false,
 }: SidebarProps) {
@@ -227,26 +227,31 @@ export default function Sidebar({
 
     const items: ContextMenuItem[] = [
       {
-        label: 'Rename',
+        label: 'Duplicera anteckning',
+        icon: <Copy size={14} />,
+        onClick: () => { onDuplicateNote?.(note.id); setCtxMenu(null); },
+      },
+      {
+        label: 'Ändra namn',
         icon: <Pencil size={14} />,
         onClick: () => {
-          const newTitle = window.prompt('New name:', note.title);
+          const newTitle = window.prompt('Nytt namn:', note.title);
           if (newTitle !== null) onRenameNote(note.id, newTitle);
         },
       },
       {
-        label: 'Change cover image',
+        label: 'Ändra omslagsbild',
         icon: <Image size={14} />,
         onClick: () => { setPendingCoverNoteId(note.id); coverInputRef.current?.click(); },
       },
       {
-        label: 'Move to category →',
+        label: 'Flytta till kategori →',
         icon: <FolderInput size={14} />,
         divider: true,
         onClick: () => setSubMenu({ x: e.clientX, y: e.clientY, noteId: note.id }),
       },
       {
-        label: 'Delete note',
+        label: 'Flytta till papperskorg',
         icon: <Trash2 size={14} />,
         danger: true,
         divider: true,

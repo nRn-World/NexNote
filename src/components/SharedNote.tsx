@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Note } from '../types';
+import { Note, Attachment } from '../types';
+import { parseStoredJson } from '../lib/utils';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
@@ -23,7 +24,7 @@ export default function SharedNote({ shareId }: SharedNoteProps) {
         const data = snap.docs[0].data();
         setNote({
           id: snap.docs[0].id, uid: data.uid, title: data.title, content: data.content,
-          attachments: data.attachments ? JSON.parse(data.attachments) : [],
+          attachments: parseStoredJson<Attachment[]>(data.attachments, []),
           tags: data.tags || [], createdAt: data.createdAt, updatedAt: data.updatedAt,
         });
       } catch { setNotFound(true); }

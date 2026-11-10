@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, HistoryIcon,
-  ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2
+  ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2,
+  Printer, Copy, Maximize, Maximize2
 } from 'lucide-react';
 import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
@@ -24,12 +25,19 @@ interface NoteHeaderProps {
   onShare: () => void;
   onSave: () => void;
   onCategoryChange: (categoryId: string | undefined) => void;
+  onPrint: () => void;
+  onDuplicate: () => void;
+  onToggleFocus: () => void;
+  isFocusMode: boolean;
+  wordCount: number;
+  readingTime: number;
 }
 
 export default function NoteHeader({
   note, isAiProcessing, showHistory, categories, isSaving, isSaved,
   onBack, onTogglePin, onToggleHistory,
   onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
+  onPrint, onDuplicate, onToggleFocus, isFocusMode, wordCount, readingTime,
 }: NoteHeaderProps) {
   return (
     <div className="glass-panel border-b border-white/5 sticky top-0 z-20 transition-all">
@@ -45,6 +53,11 @@ export default function NoteHeader({
             </div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
               Revised {format(note.updatedAt, 'd MMM HH:mm', { locale: enUS })}
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5">
+              <span>{wordCount} ord</span>
+              <span className="w-px h-2 bg-slate-600/30 mx-1" />
+              <span>{readingTime} min lästid</span>
             </div>
           </div>
         </div>
@@ -86,6 +99,20 @@ export default function NoteHeader({
             </button>
           </div>
 
+            <button onClick={onPrint}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Skriv ut anteckning">
+              <Printer size={18} />
+            </button>
+          <button onClick={onDuplicate}
+            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="Duplicera anteckning">
+            <Copy size={18} />
+          </button>
+          <button onClick={onToggleFocus}
+            className={cn('p-2 rounded-xl transition-all',
+              isFocusMode ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-500 hover:text-white hover:bg-white/5'
+            )} title={isFocusMode ? 'Avsluta fokusläge' : 'Fokusläge'}>
+            {isFocusMode ? <Maximize2 size={18} /> : <Maximize size={18} />}
+          </button>
           <button
             onClick={onSave}
             disabled={isSaving || isSaved}

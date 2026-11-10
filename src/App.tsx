@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Download, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseNoteCode, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
@@ -34,6 +34,10 @@ import JamSession from './components/JamSession';
 import DesignAIModal from './components/DesignAIModal';
 import StarryBackground from './components/StarryBackground';
 import ProjectPickerModal from './components/ProjectPickerModal';
+import TrashModal from './components/TrashModal';
+import ShortcutsModal from './components/ShortcutsModal';
+import BackupModal from './components/BackupModal';
+import TemplatePickerModal from './components/TemplatePickerModal';
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -116,6 +120,13 @@ export default function App() {
   const [topDesigns, setTopDesigns] = useState<any[]>(Array(5).fill(null));
   const [showProjectPicker, setShowProjectPicker] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [trash, setTrash] = useState<Note[]>([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   const [communityPostId, setCommunityPostId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +149,9 @@ export default function App() {
   if (shareId) return <SharedNote shareId={shareId} />;
 
   const activeNote = notes.find(n => n.id === activeNoteId);
+  const plainText = activeNote?.content ? activeNote.content.replace(/<[^>]*>/g, ' ') : '';
+  const wordCount = plainText.split(/\s+/).filter(Boolean).length;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   useEffect(() => {
     const note = (activeNoteId && noteDraftsRef.current[activeNoteId]) || activeNote;
@@ -230,7 +244,25 @@ export default function App() {
             merged.push(draft);
           }
         }
-        return merged.sort((a, b) => {
+        const activeNotes = merged.filter(n => !n.isDeleted);
+        const trashed = merged.filter(n => n.isDeleted).sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt));
+        setTrash(trashed);
+
+        // Välkomstanteckning för nya användare (endast en gång per användare)
+        if (!user.isGuest && !hasSeenWelcome && activeNotes.length === 0 && trashed.length === 0) {
+          setHasSeenWelcome(true);
+          const welcome: Note = {
+            id: uuidv4(), uid: user.uid, title: 'Välkommen till NexNote 👋',
+            content: '<p>Det här är din första anteckning.</p><p>Prova att:<ul><li>Skriva i rich-text-editorn nedan</li><li>Koda i HTML/CSS/JS-fönstret och förhandsgranska live</li><li>Lägga till taggar, bilagor och ett omslag</li><li>Dela anteckningen med en publika länk</li></ul></p>',
+            attachments: [], tags: ['welcome'], order: 0,
+            createdAt: Date.now(), updatedAt: Date.now(),
+          };
+          noteDraftsRef.current[welcome.id] = welcome;
+          setNotes(prev => [welcome, ...prev]);
+          handleSave(welcome).catch(() => {});
+        }
+
+        return activeNotes.sort((a, b) => {
           if (a.isPinned && !b.isPinned) return -1;
           if (!a.isPinned && b.isPinned) return 1;
           return b.updatedAt - a.updatedAt;
@@ -239,7 +271,7 @@ export default function App() {
       setIsLoading(false);
     }, err => { handleFirestoreError(err, OperationType.LIST, 'notes'); setIsLoading(false); });
     return () => unsub();
-  }, [user, isAuthReady]);
+  }, [user, isAuthReady, hasSeenWelcome]);
 
   useEffect(() => {
     if (!isAuthReady || !user || user.isGuest) { setCategories([]); return; }
@@ -369,7 +401,9 @@ export default function App() {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleManualSave(); }
-      if (e.key === 'Escape') { setActiveNoteId(null); setShowHistory(false); setShowShare(false); }
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') { e.preventDefault(); setShowShortcuts(true); }
+      if (e.key === '?') { setShowShortcuts(true); }
+      if (e.key === 'Escape') { setActiveNoteId(null); setShowHistory(false); setShowShare(false); setShowShortcuts(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -389,6 +423,8 @@ export default function App() {
       order: note.order ?? 0,
       createdAt: note.createdAt || now,
       updatedAt: note.updatedAt || now,
+      isDeleted: note.isDeleted || false,
+      deletedAt: note.deletedAt || null,
       attachments: JSON.stringify(note.attachments || []),
     };
     if (note.categoryId) noteData.categoryId = note.categoryId;
@@ -637,8 +673,50 @@ export default function App() {
     const noteToDelete = notes.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Delete note', danger: true,
-      message: 'Are you sure? The note and all attachments will be permanently deleted.',
+      open: true, title: 'Flytta till papperskorg', danger: true,
+      message: 'Anteckningen flyttas till papperskorgen och kan återställas senare.',
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          const trashed = { ...noteToDelete, isDeleted: true, deletedAt: Date.now(), updatedAt: Date.now() };
+          noteDraftsRef.current[id] = trashed;
+          setNotes(prev => prev.filter(n => n.id !== id));
+          setTrash(prev => [trashed, ...prev].sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || a.updatedAt)));
+          if (activeNoteId === id) setActiveNoteId(null);
+          await writeNoteToFirestore(trashed);
+          addToast('Anteckning flyttad till papperskorgen.', 'success');
+        } catch (err) {
+          addToast('Kunde inte flytta anteckningen.', 'error');
+          handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
+        }
+      },
+    });
+  };
+
+  const restoreNote = async (id: string) => {
+    if (!user) return;
+    const note = trash.find(n => n.id === id);
+    if (!note) return;
+    try {
+      const restored = { ...note, isDeleted: false, deletedAt: undefined, updatedAt: Date.now() };
+      noteDraftsRef.current[id] = restored;
+      setTrash(prev => prev.filter(n => n.id !== id));
+      setNotes(prev => [restored, ...prev]);
+      if (!activeNoteId) setActiveNoteId(id);
+      await writeNoteToFirestore(restored);
+      addToast('Anteckning återställd.', 'success');
+    } catch (err) {
+      addToast('Kunde inte återställa anteckningen.', 'error');
+      handleFirestoreError(err, OperationType.UPDATE, `notes/${id}`);
+    }
+  };
+
+  const deleteForever = async (id: string) => {
+    const noteToDelete = trash.find(n => n.id === id);
+    if (!noteToDelete || !user) return;
+    setConfirm({
+      open: true, title: 'Radera permanent', danger: true,
+      message: 'Anteckningen och alla bilagor raderas permanent. Detta går inte att ångra.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
@@ -651,14 +729,151 @@ export default function App() {
           }
           await deleteDoc(doc(db, 'notes', id));
           delete noteDraftsRef.current[id];
+          setTrash(prev => prev.filter(n => n.id !== id));
           if (activeNoteId === id) setActiveNoteId(null);
-          addToast('Note deleted.', 'success');
+          addToast('Anteckning raderad permanent.', 'success');
         } catch (err) {
-          addToast('Could not delete the note.', 'error');
+          addToast('Kunde inte radera anteckningen.', 'error');
           handleFirestoreError(err, OperationType.DELETE, `notes/${id}`);
         }
       },
     });
+  };
+
+  const emptyTrash = async () => {
+    if (!user) return;
+    setConfirm({
+      open: true, title: 'Töm papperskorg', danger: true,
+      message: 'Alla anteckningar i papperskorgen raderas permanent.',
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          await Promise.all(trash.map(n => deleteDoc(doc(db, 'notes', n.id))));
+          trash.forEach(n => delete noteDraftsRef.current[n.id]);
+          setTrash([]);
+          addToast('Papperskorg tömd.', 'success');
+        } catch (err) {
+          addToast('Kunde inte tömma papperskorgen.', 'error');
+          handleFirestoreError(err, OperationType.DELETE, 'notes/trash');
+        }
+      },
+    });
+  };
+
+  const duplicateNote = (note: Note) => {
+    if (!user) return;
+    const copy: Note = {
+      id: uuidv4(), uid: user.uid,
+      title: `(Kopia) ${note.title || 'Anteckning'}`,
+      content: note.content, attachments: [], categoryId: note.categoryId,
+      code: note.code ? { ...note.code } : undefined,
+      coverImage: note.coverImage, isPinned: false,
+      tags: [...(note.tags || [])],
+      order: notes.length,
+      createdAt: Date.now(), updatedAt: Date.now(),
+    };
+    noteDraftsRef.current[copy.id] = copy;
+    setNotes(prev => [copy, ...prev]);
+    setActiveNoteId(copy.id);
+    handleSave(copy).catch(error => {
+      addToast('Kunde inte duplicera anteckningen.', 'error');
+      handleFirestoreError(error, OperationType.WRITE, `notes/${copy.id}`);
+    });
+    addToast('Anteckning duplicerad.', 'success');
+  };
+
+  const printNote = () => {
+    if (!activeNote) return;
+    const el = document.createElement('div');
+    el.className = 'print-page no-print';
+    el.innerHTML = `
+      <h1>${escapeHtml(activeNote.title || 'Untitled')}</h1>
+      <div class="prose">${activeNote.content}</div>
+      ${activeNote.attachments.filter(a => a.type.startsWith('image/')).map(a => `<img src="${a.data}" style="max-width:100%;margin:1rem 0;" alt="${escapeHtml(a.name)}"/>`).join('')}
+    `;
+    document.body.appendChild(el);
+    window.print();
+    document.body.removeChild(el);
+  };
+
+  const escapeHtml = (text: string) => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c));
+
+  const handleExportNotes = () => {
+    if (!user) return;
+    const data = {
+      exportedAt: Date.now(),
+      user: { uid: user.uid, displayName: user.displayName, email: user.email },
+      notes: notes.map(n => ({ ...n })),
+      trash: trash.map(n => ({ ...n })),
+      categories,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nexnote-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addToast('Säkerhetskopia nedladdad.', 'success');
+  };
+
+  const handleImportNotes = (file: File) => {
+    if (!user) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        const notesToImport: Note[] = data.notes || [];
+        if (notesToImport.length === 0) { addToast('Inga anteckningar hittades i filen.', 'error'); return; }
+        let imported = 0;
+        for (const n of notesToImport) {
+          const importedNote: Note = {
+            id: uuidv4(), uid: user.uid,
+            title: n.title || 'Importerad anteckning',
+            content: n.content || '',
+            attachments: n.attachments || [],
+            categoryId: n.categoryId,
+            code: n.code,
+            coverImage: n.coverImage,
+            tags: n.tags || [],
+            order: notes.length + imported,
+            createdAt: n.createdAt || Date.now(),
+            updatedAt: Date.now(),
+          };
+          noteDraftsRef.current[importedNote.id] = importedNote;
+          await writeNoteToFirestore(importedNote);
+          imported++;
+        }
+        addToast(`${imported} anteckning(er) importerade.`, 'success');
+      } catch (err) {
+        addToast('Kunde inte importera säkerhetskopian.', 'error');
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const toggleFocusMode = () => setIsFocusMode(d => {
+    const next = !d;
+    document.documentElement.classList.toggle('focus-mode', next);
+    return next;
+  });
+
+  const createFromTemplate = (template: { id: string; title: string; content: string; tags?: string[]; categoryId?: string }) => {
+    if (!user) return;
+    const n: Note = {
+      id: uuidv4(), uid: auth.currentUser?.uid || user.uid, title: template.title, content: template.content,
+      attachments: [], tags: template.tags || [], categoryId: template.categoryId || activeCategoryId || undefined,
+      order: notes.length, createdAt: Date.now(), updatedAt: Date.now(),
+    };
+    noteDraftsRef.current[n.id] = n;
+    setNotes(prev => [n, ...prev]);
+    setActiveNoteId(n.id);
+    setShowTemplatePicker(false);
+    if (!isGuest && auth.currentUser) handleSave(n).catch(() => {});
+    addToast(`Anteckning skapad från mall "${template.title}".`, 'success');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -727,23 +942,40 @@ export default function App() {
     debouncedSave(updated);
   };
 
-  const onChangeCoverImage = (noteId: string) => {};
-
   const onMoveManyNotes = (noteIds: string[], categoryId: string | undefined) => {
     noteIds.forEach(id => onMoveNote(id, categoryId));
     addToast(`${noteIds.length} notes moved.`, 'success');
   };
 
   const onDeleteManyNotes = (noteIds: string[]) => {
-    noteIds.forEach(id => {
-      const note = notes.find(n => n.id === id);
-      if (!note) return;
-      delete noteDraftsRef.current[id];
-      deleteDoc(doc(db, 'notes', id));
+    if (!user) return;
+    setConfirm({
+      open: true, title: 'Flytta till papperskorg', danger: true,
+      message: `${noteIds.length} anteckning(er) flyttas till papperskorgen.`,
+      onConfirm: async () => {
+        setConfirm(c => ({ ...c, open: false }));
+        try {
+          const now = Date.now();
+          await Promise.all(noteIds.map(id => {
+            const note = notes.find(n => n.id === id);
+            if (!note) return Promise.resolve();
+            const trashed = { ...note, isDeleted: true, deletedAt: now, updatedAt: now };
+            noteDraftsRef.current[id] = trashed;
+            return writeNoteToFirestore(trashed);
+          }));
+          setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
+          setTrash(prev => {
+            const merged = [...noteIds.map(id => notes.find(n => n.id === id)).filter(Boolean), ...prev];
+            return merged.sort((a, b) => (b.deletedAt || b.updatedAt) - (a.deletedAt || b.updatedAt));
+          });
+          if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
+          addToast(`${noteIds.length} anteckning(er) flyttade till papperskorgen.`, 'success');
+        } catch (err) {
+          addToast('Kunde inte flytta anteckningarna.', 'error');
+          handleFirestoreError(err, OperationType.WRITE, 'notes');
+        }
+      },
     });
-    setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
-    if (noteIds.includes(activeNoteId || '')) setActiveNoteId(null);
-    addToast(`${noteIds.length} notes deleted.`, 'success');
   };
 
   useEffect(() => {
@@ -1016,7 +1248,7 @@ export default function App() {
         onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}
         onMoveNote={onMoveNote} onMoveManyNotes={onMoveManyNotes}
         onDeleteManyNotes={onDeleteManyNotes}
-        onRenameNote={onRenameNote} onChangeCoverImage={onChangeCoverImage}
+        onRenameNote={onRenameNote} onDuplicateNote={(id) => { const n = notes.find(x => x.id === id); if (n) duplicateNote(n); }}
         onChangeColor={onChangeColor}
         onOpenCommunity={() => { setCommunityTab('trending'); setShowCommunity(true); }}
         onOpenProfile={() => setShowProfile(true)}
@@ -1045,6 +1277,12 @@ export default function App() {
               onShare={() => setShowShare(true)}
               onSave={handleManualSave}
               onCategoryChange={categoryId => updateActiveNote({ categoryId })}
+              onPrint={printNote}
+              onDuplicate={() => activeNote && duplicateNote(activeNote)}
+              onToggleFocus={toggleFocusMode}
+              isFocusMode={isFocusMode}
+              wordCount={wordCount}
+              readingTime={readingTime}
             />
 
             <input type="file" ref={imageInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" multiple />
@@ -1267,13 +1505,32 @@ export default function App() {
                     </p>
 
                     <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                      <button 
-                        onClick={createNote} 
+                      <button
+                        onClick={createNote}
                         className="group relative flex items-center gap-3 px-8 py-3.5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25"
                       >
                          <Plus size={18} /> Create new vault
                       </button>
-                      <button 
+                      <button
+                        onClick={() => setShowTemplatePicker(true)}
+                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
+                      >
+                        <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
+                        <span>Ny från mall</span>
+                      </button>
+                      <button
+                        onClick={() => setShowTrash(true)}
+                        className="flex items-center gap-3 px-8 py-3.5 bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
+                      >
+                        <Trash2 size={18} /> Papperskorg
+                      </button>
+                      <button
+                        onClick={() => setShowBackup(true)}
+                        className="flex items-center gap-3 px-8 py-3.5 bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
+                      >
+                        <Download size={18} /> Säkerhetskopia
+                      </button>
+                      <button
                         onClick={() => setShowCommunity(true)}
                         className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
                       >
@@ -1517,6 +1774,43 @@ export default function App() {
         initialPrompt={designAiPrompt}
         isDark={isDark}
       />
+
+      {showTrash && (
+        <TrashModal
+          open={showTrash}
+          trash={trash}
+          onClose={() => setShowTrash(false)}
+          onRestore={restoreNote}
+          onDeleteForever={deleteForever}
+          onEmpty={emptyTrash}
+        />
+      )}
+
+      {showShortcuts && (
+        <ShortcutsModal
+          open={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+          isDark={isDark}
+        />
+      )}
+
+      {showBackup && (
+        <BackupModal
+          open={showBackup}
+          onClose={() => setShowBackup(false)}
+          onExport={handleExportNotes}
+          onImport={handleImportNotes}
+        />
+      )}
+
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          open={showTemplatePicker}
+          onClose={() => setShowTemplatePicker(false)}
+          onSelect={createFromTemplate}
+        />
+      )}
+
     </div>
   );
 }

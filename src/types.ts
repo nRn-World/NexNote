@@ -38,6 +38,8 @@ export interface Note {
     updatedAt: number;
   }[];
   order?: number;
+  isDeleted?: boolean;
+  deletedAt?: number;
   createdAt: number;
   updatedAt: number;
 }

@@ -195,7 +195,9 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
     }
   };
 
-  const handleLinkAvatar = async () => {
+  const [uploading, setUploading] = useState(false);
+
+const handleLinkAvatar = async () => {
     const url = prompt('Paste a direct link to your image or animated GIF (e.g. from Imgur or Discord):');
     if (!url || !auth.currentUser) return;
     
@@ -219,8 +221,6 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
       setUploading(false);
     }
   };
-
-  const [uploading, setUploading] = useState(false);
 
   const displayName = profile?.displayName || allPosts.find(p => p.uid === uid)?.displayName || 'Anonymous';
   const photoURL = profile?.photoURL || allPosts.find(p => p.uid === uid)?.photoURL;
