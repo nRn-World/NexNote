@@ -65,11 +65,11 @@ export default function LoginShowcase() {
               </div>
               <div className="login-showcase__code-row login-showcase__code-row--4">
                 <span className="login-showcase__line-number">04</span>
-                <code>&nbsp;&nbsp;.<strong>with</strong>(<q>&quot;kod&quot;</q>)</code>
+                <code>&nbsp;&nbsp;.<strong>with</strong>(<q>&quot;code&quot;</q>)</code>
               </div>
               <div className="login-showcase__code-row login-showcase__code-row--5">
                 <span className="login-showcase__line-number">05</span>
-                <code>&nbsp;&nbsp;.<strong>and</strong>(<q>&quot;anteckningar&quot;</q>)<span className="login-showcase__cursor" /></code>
+                <code>&nbsp;&nbsp;.<strong>and</strong>(<q>&quot;notes&quot;</q>)<span className="login-showcase__cursor" /></code>
               </div>
             </div>
 

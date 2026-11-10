@@ -1404,7 +1404,7 @@ export default function App() {
                 <p className="text-sm text-zinc-500 font-medium tracking-wide">
                   By signing in you accept our{' '}
                   <button onClick={() => setShowPrivacy(true)} className="underline hover:text-cyan-400 transition-colors decoration-white/30 underline-offset-4">
-                    integritetspolicy
+                    privacy policy
                   </button>
                 </p>
               </div>
