@@ -203,6 +203,7 @@ export default function App() {
     return () => {
       cancelled = true;
       unsub();
+      if (signInTimeoutRef.current) clearTimeout(signInTimeoutRef.current);
     };
   }, []);
 
@@ -372,15 +373,29 @@ export default function App() {
     setUser({ uid: 'guest', displayName: 'Guest', email: 'guest@nexnote.app', isGuest: true });
   };
 
+  const signInTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleGoogleSignIn = async () => {
     if (isSigningIn) return;
     setAuthError(null);
     setIsSigningIn(true);
+    
+    // Safety timeout — never leave user stuck in signing-in state
+    if (signInTimeoutRef.current) clearTimeout(signInTimeoutRef.current);
+    signInTimeoutRef.current = setTimeout(() => {
+      setIsSigningIn(false);
+      setAuthError('Inloggningen tog för lång tid. Försök igen.');
+    }, 30000);
+
     try {
       await signInWithGoogle();
     } catch (error) {
       setAuthError(getAuthErrorMessage(error));
     } finally {
+      if (signInTimeoutRef.current) {
+        clearTimeout(signInTimeoutRef.current);
+        signInTimeoutRef.current = null;
+      }
       setIsSigningIn(false);
     }
   };
@@ -1303,7 +1318,6 @@ export default function App() {
           <div className="absolute inset-0 z-0">
              <video 
                src="./NexNote.mp4" 
-               autoPlay 
                loop 
                muted 
                playsInline 
