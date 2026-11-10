@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nexnote-v1';
+const CACHE_NAME = 'nexnote-v2';
 // Only cache small static assets — never HTML documents (can interfere with OAuth redirects)
 // Never cache the large video file
 const STATIC_ASSETS = [
