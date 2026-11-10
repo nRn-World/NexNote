@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Trash2, Download, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Download, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2, FileText, Share2, FolderOpen, Users } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseNoteCode, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
@@ -1501,11 +1501,18 @@ export default function App() {
             </div>
           </>
         ) : (
-          <div 
+          <div
             onMouseMove={handleMouseMove}
             className="flex-1 flex flex-col items-center justify-start py-12 px-8 hidden md:flex text-center bg-[#090A0F] relative overflow-hidden no-scrollbar"
           >
              <StarryBackground />
+
+             {/* Animated Background Orbs */}
+             <div className="absolute inset-0 -z-10 overflow-hidden">
+               <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[120px] animate-fluid-1" />
+               <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-fluid-2" />
+               <div className="absolute top-[30%] left-[50%] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] animate-float" />
+             </div>
 
              <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
                 
@@ -1537,175 +1544,248 @@ export default function App() {
                   </div>
                 </button>
 
-                <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start w-full">
+                {/* HERO SECTION */}
+                <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between w-full gap-8 px-4 lg:px-0">
                   
-                  {/* LEFT COLUMN: Main Illustration & Title */}
-                  <div className="flex-1 flex flex-col items-center text-center lg:text-left lg:items-start">
-                    <div 
-                      className="relative mb-12 transition-transform duration-200 ease-out preserve-3d"
-                      style={{ transform: `perspective(1000px) rotateY(${mousePos.x}deg) rotateX(${-mousePos.y}deg)` }}
-                    >
-                       <div className="absolute inset-0 bg-cyan-400/20 blur-[80px] rounded-full scale-150 animate-pulse" />
-                       <div className="relative flex justify-center lg:justify-start">
-                          <div className="relative">
-                             <div className="absolute inset-0 translate-x-4 translate-y-4 bg-blue-500/20 rounded-2xl blur-lg"></div>
-                             <div className="relative z-10 w-32 h-44 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-2xl border-2 border-white/20 backdrop-blur-xl shadow-[0_0_60px_rgba(0,242,255,0.15)] flex flex-col items-center justify-center -rotate-6 animate-float">
-                                <div className="w-20 h-1 bg-white/20 rounded-full mb-4" />
-                                <div className="w-16 h-1 bg-white/20 rounded-full mb-4 mr-6" />
-                                <div className="w-20 h-1 bg-white/20 rounded-full mb-4" />
-                                <div className="w-12 h-1 bg-white/20 rounded-full mr-10" />
-                             </div>
-                             <div className="absolute top-1/2 -right-6 z-20 w-10 h-28 bg-gradient-to-t from-cyan-300/40 to-blue-500/40 rounded-full border border-white/30 backdrop-blur text-white/50 rotate-12 flex justify-center items-end pb-3 shadow-2xl">
-                               <div className="w-1.5 h-4 bg-white/30 rounded-full" />
-                             </div>
-                          </div>
-                       </div>
+                  {/* LEFT: Hero Content */}
+                  <div className="flex-1 flex flex-col items-center lg:text-left lg:items-start">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-6">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      <span>Vault Active</span>
                     </div>
-
-                    <h2 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter mb-4 leading-none italic">
-                      Imagine. <br/>
-                      <span className="text-cyan-400">Code.</span> Create.
-                    </h2>
-                    <p className="text-[var(--text-secondary)] text-sm font-medium max-w-sm leading-relaxed mb-8">
-                       Every great project starts with a single line. Choose a starter or dive into your vault.
+                    
+                    <h1 className="text-5xl md:text-7xl font-black text-[var(--text-primary)] tracking-tighter mb-4 leading-none italic">
+                      Imagine.<br />
+                      <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Code.</span> Create.
+                    </h1>
+                    <p className="text-[var(--text-secondary)] text-base font-medium max-w-lg leading-relaxed mb-8 lg:mb-0">
+                      Bygg vackra anteckningar, kodsnuttar och designer. Allt på ett ställe — med live-förhandsgranskning och molnsynkronisering.
                     </p>
 
-                    <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                    <div className="flex flex-wrap gap-3 justify-center lg:justify-start mt-2">
                       <button
                         onClick={createNote}
-                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25"
+                        className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-500/25 overflow-hidden"
                       >
-                         <Plus size={18} /> Create new vault
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="relative z-10">Skapa ny anteckning</span>
                       </button>
                       <button
                         onClick={() => setShowTemplatePicker(true)}
-                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
+                        className="group relative flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 text-zinc-300 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 hover:text-white transition-all overflow-hidden"
                       >
-                        <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
-                        <span>Ny från mall</span>
-                      </button>
-                      <button
-                        onClick={() => setShowTrash(true)}
-                        className="flex items-center gap-3 px-8 py-3.5 bg-white/3 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
-                      >
-                        <Trash2 size={18} /> Papperskorg
-                      </button>
-                      <button
-                        onClick={() => setShowBackup(true)}
-                        className="flex items-center gap-3 px-8 py-3.5 bg-white/3 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:border-white/20 font-black text-xs uppercase tracking-widest rounded-2xl transition-all"
-                      >
-                        <Download size={18} /> Säkerhetskopia
-                      </button>
-                      <button
-                        onClick={() => setShowCommunity(true)}
-                        className="group relative flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/20"
-                      >
-                         <Globe size={18} className="group-hover:rotate-12 transition-transform" /> 
-                         <span>Community View</span>
-                         <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
+                        <Sparkles size={18} className="group-hover:rotate-12 transition-transform duration-500" />
+                        <span className="relative z-10">Ny från mall</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: Activities & Dashboard Widgets */}
-                  <div className="w-full lg:w-96 space-y-6">
-                    
-                    {/* Activity Heatmap Widget */}
-                    <div className="glass-panel p-6 rounded-[32px] border-white/5 space-y-4">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><History size={12}/> Dev Activity</h4>
-                          <span className="text-[10px] font-bold text-cyan-400">{notes.length} Active Notes</span>
-                       </div>
-                       <div className="grid grid-cols-7 gap-1.5">
-                          {Array.from({ length: 35 }).map((_, i) => (
-                            <div key={i} className={cn(
-                               "w-3.5 h-3.5 rounded-[3px] transition-colors",
-                               Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
-                            )} />
-                          ))}
-                       </div>
-                    </div>
+                  {/* RIGHT: Quick Stats */}
+                  <div className="hidden lg:flex flex-col gap-4">
+                    <StatCard label="Anteckningar" value={notes.length} icon={<FileText size={16} className="text-cyan-400" />} />
+                    <StatCard label="Kategorier" value={categories.length} icon={<FolderOpen size={16} className="text-purple-400" />} />
+                    <StatCard label="Delat" value={notes.filter(n => n.isShared).length} icon={<Share2 size={16} className="text-indigo-400" />} />
+                  </div>
+                </div>
 
-                    {/* AI Inspiration Starters */}
-                    <div className="space-y-3">
-                       <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Need Inspiration?</h4>
-                       <div className="grid grid-cols-1 gap-2">
-                          {[
-                            { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
-                            { label: 'Glassmorphism Card', icon: '🫧', prompt: 'a frosted glass card layout' },
-                            { label: 'SVG Wave Animation', icon: '🌊', prompt: 'flowing animated ocean waves' }
-                          ].map((item, i) => (
-                            <button 
-                              key={i}
-                              onClick={() => createInspiredNote(item.label)}
-                              className="w-full flex items-center gap-3 p-3 bg-white/2 border border-white/5 hover:bg-white/5 hover:border-white/10 rounded-2xl text-left transition-all group"
-                            >
-                               <span className="text-xl">{item.icon}</span>
-                               <span className="text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
-                               <Sparkles size={12} className="ml-auto text-zinc-600 opacity-0 group-hover:opacity-100 transition-all" />
-                            </button>
-                          ))}
-                       </div>
+                {/* GLOBAL CHALLENGE */}
+                <button
+                  onClick={() => { setCommunityTab('challenges'); setShowCommunity(true); }}
+                  className="w-full lg:w-auto group relative mb-8 p-6 rounded-3xl overflow-hidden border border-yellow-500/20 bg-[#0B0D17]/50 backdrop-blur-sm hover:border-yellow-500/40 transition-all shadow-[0_0_40px_rgba(245,158,11,0.15)]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-transparent to-yellow-500/10 animate-pulse" />
+                  <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:rotate-6 transition-transform">
+                        <Trophy className="text-white" size={20} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Live Challenge</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                        </div>
+                        <h3 className="text-xl font-black text-white italic tracking-tight">Neon Pulse <span className="text-yellow-400">#01</span></h3>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Skicka in ditt designer för att vinna</p>
+                      </div>
                     </div>
+                    <div className="flex -space-x-2">
+                      {communityPosts.slice(0, 3).map((p, i) => (
+                        <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0B0D17] bg-zinc-800 overflow-hidden shadow-xl">
+                          {p.photoURL ? <img src={p.photoURL} alt="" /> : <div className="w-full h-full bg-indigo-500" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </button>
 
-                    {/* My Top 5 Design Section */}
-                    <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
-                       <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2"><Trophy size={12} className="text-yellow-500"/> My Top 5 Design</h4>
-                          <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
-                       </div>
-                       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                          {topDesigns.map((p, i) => (
-                             <div key={i} className="relative group shrink-0">
-                                {p ? (
-                                   <div className="relative">
-                                      <div 
-                                        onClick={() => handleNavigateToProject(p)}
-                                        className="w-12 h-12 rounded-2xl ring-2 ring-indigo-500/30 bg-[#0B0D17] overflow-hidden cursor-pointer hover:ring-indigo-500 transition-all shadow-lg relative z-0"
-                                      >
-                                         {p.code ? (
-                                            <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
-                                               <iframe 
-                                                 title="preview"
-                                                 sandbox={PREVIEW_SANDBOX}
-                                                 srcDoc={(() => {
-                                                   if (typeof p.code === 'string') {
-                                                      const decoded = decodeContent(p.code);
-                                                      return (decoded.includes('<html') || decoded.includes('<!DOCTYPE'))
-                                                         ? decoded
-                                                         : `<!DOCTYPE html><html><body style="margin:0;overflow:hidden;background:transparent;">${decoded}</body></html>`;
-                                                   }
-                                                   return `<!DOCTYPE html><html><head><style>${p.code.css || ''}</style></head><body style="margin:0;overflow:hidden;background:transparent;">${p.code.html || ''}<script>${p.code.js || ''}<\/script></body></html>`;
-                                                 })()}
-                                                 className="w-full h-full border-none bg-transparent"
-                                               />
-                                            </div>
-                                         ) : p.image ? (
-                                            <img src={p.image} alt="" className="w-full h-full object-cover" />
-                                         ) : (
-                                            <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white italic">{p.title.charAt(0)}</div>
-                                         )}
-                                      </div>
-                                      {/* Hover Edit Action */}
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); setActiveSlot(i); setShowProjectPicker(true); }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 hover:scale-110 shadow-lg"
-                                        title="Edit Slot"
-                                      >
-                                         <Settings size={10} />
-                                      </button>
-                                   </div>
+                {/* MAIN ACTION GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-4xl">
+                  <QuickActionCard
+                    icon={<Code size={20} />}
+                    title="Kodredigerare"
+                    desc="HTML, CSS och JS med live-förhandsgranskning"
+                    onClick={() => { createNote(); setActiveCodeTab('html'); }}
+                    color="cyan"
+                  />
+                  <QuickActionCard
+                    icon={<FileText size={20} />}
+                    title="Rich Text"
+                    desc="Skriv formaterade anteckningar med Tiptap-editor"
+                    onClick={createNote}
+                    color="purple"
+                  />
+                  <QuickActionCard
+                    icon={<Users size={20} />}
+                    title="Community"
+                    desc="Upptäck och dela projekt med andra"
+                    onClick={() => setShowCommunity(true)}
+                    color="indigo"
+                  />
+                  <QuickActionCard
+                    icon={<Download size={20} />}
+                    title="Säkerhetskopia"
+                    desc="Exportera och importera alla dina anteckningar"
+                    onClick={() => setShowBackup(true)}
+                    color="emerald"
+                  />
+                </div>
+
+                {/* RECENT NOTES */}
+                {notes.length > 0 && (
+                  <div className="w-full max-w-6xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Clock size={12} /> Senaste anteckningar
+                      </h3>
+                      <button onClick={() => setActiveNoteId(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300 transition-colors">
+                        Visa alla
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {notes.slice(0, 6).map(note => (
+                        <div
+                          key={note.id}
+                          onClick={() => setActiveNoteId(note.id)}
+                          className="group p-4 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-bold text-white truncate">{note.title || 'Namnlös'}</h4>
+                            <span className="text-[10px] text-zinc-500">{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400 line-clamp-2 mb-3">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
+                          <div className="flex items-center gap-1">
+                            {note.tags.slice(0, 2).map(tag => (
+                              <span key={tag} className="px-2 py-0.5 bg-cyan-400/10 text-cyan-400 rounded-full text-[10px] font-bold border border-cyan-400/20">{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* RIGHT COLUMN WIDGETS (Mobile hidden) */}
+                <div className="hidden lg:flex lg:w-96 flex-col gap-6">
+                  
+                  {/* Activity Heatmap */}
+                  <div className="glass-panel p-6 rounded-[32px] border-white/5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2">
+                        <History size={12} /> Aktivitet
+                      </h4>
+                      <span className="text-[10px] font-bold text-cyan-400">{notes.length} anteckningar</span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {Array.from({ length: 35 }).map((_, i) => (
+                        <div key={i} className={cn(
+                           "w-3.5 h-3.5 rounded-[3px] transition-colors",
+                           Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
+                        )} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* AI Inspiration */}
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Behöver inspiration?</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { label: 'Neon UI Component', icon: '✨', prompt: 'a futuristic neon button with glow' },
+                        { label: 'Glassmorphism Card', icon: '🫧', prompt: 'a frosted glass card layout' },
+                        { label: 'SVG Wave Animation', icon: '🌊', prompt: 'flowing animated ocean waves' }
+                      ].map((item, i) => (
+                        <button
+                          key={i}
+                          onClick={() => createInspiredNote(item.label)}
+                          className="w-full flex items-center gap-3 p-3 bg-white/2 border border-white/5 hover:bg-white/5 hover:border-white/10 rounded-2xl text-left transition-all group"
+                        >
+                           <span className="text-xl">{item.icon}</span>
+                           <span className="text-xs font-bold text-zinc-400 group-hover:text-white transition-colors">{item.label}</span>
+                           <Sparkles size={12} className="ml-auto text-zinc-600 opacity-0 group-hover:opacity-100 transition-all" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Top 5 Designs */}
+                  <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-[32px] space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] uppercase font-black tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Trophy size={12} className="text-yellow-500"/> Topp 5 Designer
+                      </h4>
+                      <span className="text-[9px] font-bold text-zinc-600 italic">Curated by you</span>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                      {topDesigns.map((p, i) => (
+                        <div key={i} className="relative group shrink-0">
+                          {p ? (
+                            <div className="relative">
+                              <div
+                                onClick={() => handleNavigateToProject(p)}
+                                className="w-12 h-12 rounded-2xl ring-2 ring-indigo-500/30 bg-[#0B0D17] overflow-hidden cursor-pointer hover:ring-indigo-500 transition-all shadow-lg relative z-0"
+                              >
+                                {p.code ? (
+                                  <div className="w-full h-full pointer-events-none select-none origin-top-left" style={{ transform: 'scale(0.12)', width: '400px', height: '400px' }}>
+                                    <iframe
+                                      title="preview"
+                                      sandbox={PREVIEW_SANDBOX}
+                                      srcDoc={(() => {
+                                        if (typeof p.code === 'string') {
+                                          const decoded = decodeContent(p.code);
+                                          return (decoded.includes('<html') || decoded.includes('<!DOCTYPE'))
+                                            ? decoded
+                                            : `<!DOCTYPE html><html><body style="margin:0;overflow:hidden;background:transparent;">${decoded}</body></html>`;
+                                        }
+                                        return `<!DOCTYPE html><html><head><style>${p.code.css || ''}</style></head><body style="margin:0;overflow:hidden;background:transparent;">${p.code.html || ''}<script>${p.code.js || ''}<\/script></body></html>`;
+                                      })()}
+                                      className="w-full h-full border-none bg-transparent"
+                                    />
+                                  </div>
+                                ) : p.image ? (
+                                  <img src={p.image} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                   <button 
-                                     onClick={() => { setActiveSlot(i); setShowProjectPicker(true); }}
-                                     className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all"
-                                   >
-                                      <Plus size={18} />
-                                   </button>
+                                  <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white italic">{p.title.charAt(0)}</div>
                                 )}
-                             </div>
-                          ))}
-                       </div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setActiveSlot(i); setShowProjectPicker(true); }}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 hover:scale-110 shadow-lg"
+                                title="Redigera plats"
+                              >
+                                <Settings size={10} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setActiveSlot(i); setShowProjectPicker(true); }}
+                              className="w-12 h-12 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all"
+                            >
+                              <Plus size={18} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1878,5 +1958,58 @@ export default function App() {
       )}
 
     </div>
+  );
+}
+
+/* --- Home Page Widget Components --- */
+
+function StatCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-2xl border border-white/10 bg-white/3 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+          {icon}
+        </div>
+        <span className="text-[10px] text-zinc-500 font-bold">↗</span>
+      </div>
+      <div className="text-2xl font-black text-white">{value}</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{label}</div>
+    </div>
+  );
+}
+
+function QuickActionCard({ icon, title, desc, onClick, color }: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  onClick: () => void;
+  color: 'cyan' | 'purple' | 'indigo' | 'emerald';
+}) {
+  const colorConfigs: Record<string, { bg: string; border: string; text: string; hover: string; shadow: string }> = {
+    cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400', hover: 'hover:bg-cyan-500/20', shadow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' },
+    purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400', hover: 'hover:bg-purple-500/20', shadow: 'shadow-[0_0_30px_rgba(168,85,247,0.15)]' },
+    indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400', hover: 'hover:bg-indigo-500/20', shadow: 'shadow-[0_0_30px_rgba(79,70,229,0.15)]' },
+    emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', hover: 'hover:bg-emerald-500/20', shadow: 'shadow-[0_0_30px_rgba(16,185,129,0.15)]' },
+  };
+  const c = colorConfigs[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'group relative flex flex-col gap-3 p-5 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden',
+        c.bg, c.border, c.shadow,
+        'hover:border-white/20 hover:bg-white/5'
+      )}
+    >
+      <div className="relative z-10">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 bg-white/5 border border-white/10">
+          <span className={c.text}>{icon}</span>
+        </div>
+        <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{title}</h3>
+        <p className="text-[11px] text-zinc-500 leading-relaxed">{desc}</p>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
   );
 }
