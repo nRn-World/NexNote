@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Plus, Trash2, Download, File as FileIcon, X, Code, Play, Clock, Copy, Check, ClipboardCopy, Sparkles, Package, Zap, Globe, Trophy, History, MousePointer2, User, TrendingUp, Settings, Edit2, Loader2, FileText, Share2, FolderOpen, Users } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Note, Attachment, Category } from './types';
 import { cn, buildPreviewSrcDoc, compressCoverImage, handleFirestoreError, OperationType, parseNoteCode, parseStoredJson, PREVIEW_SANDBOX } from './lib/utils';
 import html2canvasAssetUrl from 'html2canvas/dist/html2canvas.min.js?url';
@@ -17,30 +16,32 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import Sidebar from './components/Sidebar';
 import NoteHeader from './components/NoteHeader';
 import AttachmentList from './components/AttachmentList';
-import RichEditor from './components/RichEditor';
-import CodeEditor from './components/CodeEditor';
 import Toast from './components/Toast';
 import ConfirmDialog from './components/ConfirmDialog';
 import ShareModal from './components/ShareModal';
-import SharedNote from './components/SharedNote';
-import CommunityView from './components/CommunityView';
-import PrivacyPolicy from './components/PrivacyPolicy';
-import UserProfilePage from './components/UserProfilePage';
 import MobileBottomNav from './components/MobileBottomNav';
-import AIModal from './components/AIModal';
-import ExportModal from './components/ExportModal';
-import AnimationEditor from './components/AnimationEditor';
-import JamSession from './components/JamSession';
-import DesignAIModal from './components/DesignAIModal';
 import StarryBackground from './components/StarryBackground';
-import ProjectPickerModal from './components/ProjectPickerModal';
-import TrashModal from './components/TrashModal';
-import ShortcutsModal from './components/ShortcutsModal';
-import BackupModal from './components/BackupModal';
-import TemplatePickerModal from './components/TemplatePickerModal';
-import LockModal from './components/LockModal';
-import CalendarView from './components/CalendarView';
-import RealTimeCollaborate from './components/RealTimeCollaborate';
+
+// Heavy views, editors and modals are split into their own chunks and loaded on demand.
+const RichEditor = lazy(() => import('./components/RichEditor'));
+const CodeEditor = lazy(() => import('./components/CodeEditor'));
+const SharedNote = lazy(() => import('./components/SharedNote'));
+const CommunityView = lazy(() => import('./components/CommunityView'));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
+const UserProfilePage = lazy(() => import('./components/UserProfilePage'));
+const AIModal = lazy(() => import('./components/AIModal'));
+const ExportModal = lazy(() => import('./components/ExportModal'));
+const AnimationEditor = lazy(() => import('./components/AnimationEditor'));
+const JamSession = lazy(() => import('./components/JamSession'));
+const DesignAIModal = lazy(() => import('./components/DesignAIModal'));
+const ProjectPickerModal = lazy(() => import('./components/ProjectPickerModal'));
+const TrashModal = lazy(() => import('./components/TrashModal'));
+const ShortcutsModal = lazy(() => import('./components/ShortcutsModal'));
+const BackupModal = lazy(() => import('./components/BackupModal'));
+const TemplatePickerModal = lazy(() => import('./components/TemplatePickerModal'));
+const LockModal = lazy(() => import('./components/LockModal'));
+const CalendarView = lazy(() => import('./components/CalendarView'));
+const RealTimeCollaborate = lazy(() => import('./components/RealTimeCollaborate'));
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -74,6 +75,15 @@ function hasPreviewCode(code?: Note['code'] | null) {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+/** Neutral placeholder while a lazily loaded view or editor chunk is fetched. */
+function LazyPanelFallback() {
+  return (
+    <div className="flex w-full items-center justify-center py-8 text-zinc-500">
+      <Loader2 size={16} className="animate-spin" />
+    </div>
+  );
+}
 
 interface ConfirmState {
   open: boolean; title: string; message: string; danger?: boolean; onConfirm: () => void;
@@ -156,7 +166,11 @@ export default function App() {
   activeNoteIdRef.current = activeNoteId;
 
   const shareId = new URLSearchParams(window.location.search).get('share');
-  if (shareId) return <SharedNote shareId={shareId} />;
+  if (shareId) return (
+    <Suspense fallback={<LazyPanelFallback />}>
+      <SharedNote shareId={shareId} />
+    </Suspense>
+  );
 
   const activeNote = notes.find(n => n.id === activeNoteId);
   const plainText = activeNote?.content ? activeNote.content.replace(/<[^>]*>/g, ' ') : '';
@@ -1401,7 +1415,11 @@ export default function App() {
               </div>
            </div>
         </div>
-        {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+        {showPrivacy && (
+          <Suspense fallback={null}>
+            <PrivacyPolicy onClose={() => setShowPrivacy(false)} />
+          </Suspense>
+        )}
       </div>
     );
   }
@@ -1652,12 +1670,14 @@ export default function App() {
                       
                       <div className={cn('bg-[#0E111C] relative transition-all duration-300', isCodeExpanded ? 'h-[500px]' : 'h-[120px]')}>
                         {(!isCodeExpanded || activeCodeTab !== 'preview') && (
-                          <CodeEditor 
-                            key={`${activeNoteId}-${isCodeExpanded ? activeCodeTab : 'snippet'}`} 
-                            value={isCodeExpanded ? (activeCodeTab === 'preview' ? '' : (activeNote.code[activeCodeTab] || '')) : (activeNote.code.html || '')} 
-                            language={isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html'} 
-                            onChange={val => updateCode(isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html', val)} 
-                          />
+                          <Suspense fallback={<LazyPanelFallback />}>
+                            <CodeEditor 
+                              key={`${activeNoteId}-${isCodeExpanded ? activeCodeTab : 'snippet'}`} 
+                              value={isCodeExpanded ? (activeCodeTab === 'preview' ? '' : (activeNote.code[activeCodeTab] || '')) : (activeNote.code.html || '')} 
+                              language={isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html'} 
+                              onChange={val => updateCode(isCodeExpanded ? (activeCodeTab === 'preview' ? 'html' : activeCodeTab) : 'html', val)} 
+                            />
+                          </Suspense>
                         )}
                         {!isCodeExpanded && (
                           <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#0E111C] to-transparent pointer-events-none" />
@@ -1671,7 +1691,9 @@ export default function App() {
                   <button onClick={handleCopyContent} className="absolute -left-12 top-0 p-2 text-slate-600 hover:text-[var(--text-primary)] opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-[var(--bg-panel-hover)] z-10">
                     {isContentCopied ? <Check size={18} className="text-cyan-400" /> : <Copy size={18} />}
                   </button>
-                  <RichEditor content={activeNote.content} onChange={val => updateActiveNote({ content: val })} isDark={isDark} />
+                  <Suspense fallback={<LazyPanelFallback />}>
+                    <RichEditor content={activeNote.content} onChange={val => updateActiveNote({ content: val })} isDark={isDark} />
+                  </Suspense>
                 </div>
 
                 <AttachmentList attachments={activeNote.attachments} onDownload={downloadAttachment} onRemove={removeAttachment} onImageClick={setSelectedImage} />
@@ -1972,6 +1994,7 @@ export default function App() {
         )}
       </div>
 
+      <Suspense fallback={null}>
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8" onClick={() => setSelectedImage(null)}>
           <button className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-full transition-all" onClick={e => { e.stopPropagation(); setSelectedImage(null); }}>
@@ -2164,6 +2187,7 @@ export default function App() {
           onSelect={createFromTemplate}
         />
       )}
+      </Suspense>
 
     </div>
   );
