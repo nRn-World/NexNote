@@ -1427,18 +1427,40 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 max-w-5xl mx-auto w-full flex flex-col relative no-scrollbar">
               {showHistory && (
-                <div className="absolute right-4 top-4 w-72 glass-panel border border-white/10 rounded-2xl shadow-2xl z-30 flex flex-col max-h-[80%] overflow-hidden">
+                <div className="absolute right-4 top-4 w-80 glass-panel border border-white/10 rounded-2xl shadow-2xl z-30 flex flex-col max-h-[80%] overflow-hidden">
                   <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><Clock size={14} /> History</span>
-                    <button onClick={() => setShowHistory(false)} className="text-slate-500 hover:text-white"><X size={16} /></button>
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">History ({activeNote.history?.length || 0})</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => {
+                        if (!activeNote) return;
+                        const manualVersion = { title: activeNote.title, content: activeNote.content, updatedAt: Date.now() };
+                        updateActiveNote({ history: [manualVersion, ...(activeNote.history || [])].slice(0, 10) });
+                        setShowHistory(false);
+                        addToast('Version skapad.', 'success');
+                      }} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300 flex items-center gap-1">
+                        <Plus size={12} /> Ny version
+                      </button>
+                      <button onClick={() => setShowHistory(false)} className="text-slate-500 hover:text-white"><X size={16} /></button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
                     {(!activeNote.history || activeNote.history.length === 0) ? (
-                      <div className="text-center py-12 text-xs text-slate-600 font-medium italic">No history yet</div>
+                      <div className="flex flex-col items-center justify-center py-12 text-xs text-slate-600 font-medium italic space-y-2">
+                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center mb-2"><Clock size={16} /></div>
+                        <div>Inga sparade versioner än</div>
+                        <div className="text-[10px] text-zinc-500">Versioner sparas automatiskt vid större ändringar</div>
+                      </div>
                     ) : activeNote.history.map((v, i) => (
                       <div key={i} className="p-3 rounded-xl border border-white/5 hover:bg-white/5 group transition-colors cursor-pointer" onClick={() => restoreVersion(v)}>
-                        <div className="text-[10px] text-cyan-400 font-black tracking-widest mb-1.5 uppercase">{format(v.updatedAt, 'MMM d, HH:mm', { locale: enUS })}</div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] text-cyan-400 font-black tracking-widest uppercase">{format(v.updatedAt, 'MMM d, HH:mm', { locale: enUS })}</div>
+                          <span className="text-[10px] text-zinc-500 font-bold">v.{i + 1}</span>
+                        </div>
                         <div className="text-xs font-semibold truncate mb-1 text-slate-200">{v.title || 'Untitled'}</div>
+                        <div className="text-[9px] text-zinc-500 mt-1">{v.content.replace(/<[^>]*>/g, '').slice(0, 80)}{v.content.replace(/<[^>]*>/g, '').length > 80 ? '...' : ''}</div>
                       </div>
                     ))}
                   </div>
