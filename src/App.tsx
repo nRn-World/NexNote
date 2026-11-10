@@ -49,7 +49,6 @@ function decodeContent(raw: string): string {
   return d.trim();
 }
 import { useToast } from './hooks/useToast';
-import { useDarkMode } from './hooks/useDarkMode';
 
 let html2canvasSourceCache: Promise<string> | null = null;
 function loadHtml2canvasSource() {
@@ -78,7 +77,7 @@ interface ConfirmState {
 }
 
 export default function App() {
-  const { isDark, toggle: toggleDark } = useDarkMode();
+  const isDark = true;
   const [user, setUser] = useState<any>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -1309,7 +1308,6 @@ export default function App() {
         onCreateNote={createNote} onDeleteNote={deleteNote}
         onLogout={handleLogout} onImageClick={setSelectedImage}
         onReorderNotes={handleReorderNotes}
-        isDark={isDark} onToggleDark={toggleDark}
         categories={categories} activeCategoryId={activeCategoryId}
         onSelectCategory={setActiveCategoryId}
         onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory}

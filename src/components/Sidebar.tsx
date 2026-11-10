@@ -23,8 +23,6 @@ interface SidebarProps {
   onLogout: () => void;
   onImageClick: (url: string) => void;
   onReorderNotes: (notes: Note[]) => void;
-  isDark: boolean;
-  onToggleDark: () => void;
   categories: Category[];
   activeCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
@@ -172,7 +170,7 @@ function SortableNote({
 export default function Sidebar({
   notes, activeNoteId, searchQuery, onSearchChange,
   onSelectNote, onCreateNote, onDeleteNote, onLogout, onImageClick,
-  onReorderNotes, isDark, onToggleDark,
+  onReorderNotes,
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
@@ -284,7 +282,7 @@ export default function Sidebar({
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
         <div className="flex justify-center w-full">
            <img 
-             src={isDark ? "./logoandtext2.png" : "./logoandtextWhite2.png"} 
+             src="./logoandtextWhite2.png" 
              alt="NexNote" 
              onClick={onGoHome} 
              className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 
@@ -293,9 +291,7 @@ export default function Sidebar({
         
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
-             <button onClick={onToggleDark} className="w-10 h-10 flex items-center justify-center text-lg hover:bg-white/5 transition-all rounded-xl border border-white/5 active:scale-95" title="Toggle Theme">
-               {isDark ? '🌙' : '☀️'}
-             </button>
+
              
              <div className="relative group cursor-pointer" onClick={onOpenProfile} title="Profile">
                 <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-cyan-500/50 transition-all group-hover:scale-105">
