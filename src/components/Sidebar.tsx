@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut, Copy, Tag, Star, Filter } from 'lucide-react';
+import { Plus, Search, Paperclip, Pin, Trash2, FolderInput, Pencil, Image, CheckSquare, Square, X, FolderOpen, Globe, UserCircle, LogOut, Copy, Tag, Star, Filter, Calendar } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -38,6 +38,7 @@ interface SidebarProps {
   onOpenCommunity: () => void;
   onOpenProfile: () => void;
   onOpenPrivacy: () => void;
+  onOpenCalendar: () => void;
   onGoHome: () => void;
   allPosts: any[];
   user: any;
@@ -179,7 +180,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onGoHome, allPosts, user,
+  onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onOpenCalendar, onGoHome, allPosts, user,
   isLoading = false,
   isGuest = false,
   activeTag = null,
@@ -355,6 +356,13 @@ export default function Sidebar({
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#1e3a8a] text-blue-300 rounded text-[10px] font-bold">
                Live
             </div>
+          </button>
+          <button
+            onClick={onOpenCalendar}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-zinc-400 hover:text-white transition-all group"
+          >
+            <Calendar size={16} className="text-[#3b82f6]" />
+            <span className="flex-1 text-left font-medium">Kalender</span>
           </button>
         </div>
 

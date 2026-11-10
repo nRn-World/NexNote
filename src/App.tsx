@@ -39,6 +39,7 @@ import ShortcutsModal from './components/ShortcutsModal';
 import BackupModal from './components/BackupModal';
 import TemplatePickerModal from './components/TemplatePickerModal';
 import LockModal from './components/LockModal';
+import CalendarView from './components/CalendarView';
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -130,6 +131,7 @@ export default function App() {
   const [showBackup, setShowBackup] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [lockPassword, setLockPassword] = useState('');
   const [lockingNoteId, setLockingNoteId] = useState<string | null>(null);
@@ -1412,6 +1414,7 @@ export default function App() {
         onOpenCommunity={() => { setCommunityTab('trending'); setShowCommunity(true); }}
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
+        onOpenCalendar={() => setShowCalendar(true)}
         onGoHome={() => setActiveNoteId(null)}
         allPosts={communityPosts}
         user={user}
@@ -2004,6 +2007,13 @@ export default function App() {
         setPassword={setLockPassword}
         onUnlock={p => handleLockUnlock(p)}
         onSetLock={p => handleLockUnlock(p)}
+      />
+
+      <CalendarView
+        open={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        notes={notes}
+        onSelectNote={(id) => { setActiveNoteId(id); setShowCalendar(false); }}
       />
 
       {showAiModal && (
