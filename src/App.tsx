@@ -86,7 +86,7 @@ function LazyPanelFallback() {
 }
 
 interface ConfirmState {
-  open: boolean; title: string; message: string; danger?: boolean; onConfirm: () => void;
+  open: boolean; title: string; message: string; danger?: boolean; confirmLabel?: string; onConfirm: () => void;
 }
 
 export default function App() {
@@ -709,7 +709,7 @@ export default function App() {
   const deleteCategory = (id: string) => {
     const cat = categories.find(c => c.id === id);
     setConfirm({
-      open: true, title: 'Delete category', danger: true,
+      open: true, title: 'Delete category', danger: true, confirmLabel: 'Radera',
       message: `Delete "${cat?.name}"? Notes in this category will not be affected.`,
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
@@ -761,7 +761,7 @@ export default function App() {
     const noteToDelete = notes.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Flytta till papperskorg', danger: true,
+      open: true, title: 'Flytta till papperskorg', danger: true, confirmLabel: 'Flytta',
       message: 'Anteckningen flyttas till papperskorgen och kan återställas senare.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
@@ -803,7 +803,7 @@ export default function App() {
     const noteToDelete = trash.find(n => n.id === id);
     if (!noteToDelete || !user) return;
     setConfirm({
-      open: true, title: 'Radera permanent', danger: true,
+      open: true, title: 'Radera permanent', danger: true, confirmLabel: 'Radera',
       message: 'Anteckningen och alla bilagor raderas permanent. Detta går inte att ångra.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
@@ -831,7 +831,7 @@ export default function App() {
   const emptyTrash = async () => {
     if (!user) return;
     setConfirm({
-      open: true, title: 'Töm papperskorg', danger: true,
+      open: true, title: 'Töm papperskorg', danger: true, confirmLabel: 'Töm',
       message: 'Alla anteckningar i papperskorgen raderas permanent.',
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
@@ -1139,7 +1139,7 @@ export default function App() {
   const onDeleteManyNotes = (noteIds: string[]) => {
     if (!user) return;
     setConfirm({
-      open: true, title: 'Flytta till papperskorg', danger: true,
+      open: true, title: 'Flytta till papperskorg', danger: true, confirmLabel: 'Flytta',
       message: `${noteIds.length} anteckning(er) flyttas till papperskorgen.`,
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
@@ -1228,7 +1228,7 @@ export default function App() {
     const note = notes.find(n => n.id === activeNoteId);
     if (!note) return;
     if (note.code) {
-      setConfirm({ open: true, title: 'Remove code', danger: true, message: 'Remove all code?',
+      setConfirm({ open: true, title: 'Remove code', danger: true, message: 'Remove all code?', confirmLabel: 'Ta bort',
         onConfirm: () => { setConfirm(c => ({ ...c, open: false })); updateActiveNote({ code: undefined }); } });
     } else { updateActiveNote({ code: { html: '', css: '', js: '' } }); setActiveCodeTab('html'); }
   };
@@ -2075,7 +2075,7 @@ export default function App() {
       <Toast toasts={toasts} onRemove={removeToast} />
       <ConfirmDialog
         open={confirm.open} title={confirm.title} message={confirm.message}
-        danger={confirm.danger} confirmLabel="Delete"
+        danger={confirm.danger} confirmLabel={confirm.confirmLabel || 'Bekräfta'}
         onConfirm={confirm.onConfirm} onCancel={() => setConfirm(c => ({ ...c, open: false }))}
       />
 

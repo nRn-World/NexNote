@@ -14,17 +14,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
       if ('serviceWorker' in navigator) {
-        // Unregister ALL old service workers first so cached broken versions are cleared
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((registration) => {
-            registration.unregister();
-            console.log('NexNote: Unregistered old service worker');
+        // Register once; sw.js already versions its cache and clears old ones on activate.
+        // Unregistering on every load would tear the worker down before it can serve offline.
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {
+            /* Offline support is optional — never block the app on it. */
           });
-        }).catch(() => {});
-        
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('NexNote: Service Worker registered'))
-          .catch(err => console.log('NexNote: SW registration failed', err));
+        });
       }
     </script>
   </head>
