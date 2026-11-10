@@ -41,23 +41,23 @@ export default function CategoryManager({
     e.stopPropagation();
     const items: ContextMenuItem[] = [
       {
-        label: 'Rename',
+        label: 'Ändra namn',
         icon: <span className="text-xs">✏️</span>,
         onClick: () => {
-          const name = window.prompt('New name:', cat.name);
+          const name = window.prompt('Nytt namn:', cat.name);
           if (name?.trim()) onRename(cat.id, name.trim());
         },
       },
       {
-        label: 'Change color',
+        label: 'Ändra färg',
         icon: <span className="text-xs">🎨</span>,
         onClick: () => {
-          const color = window.prompt('Hex color (e.g. #00F2FF):', cat.color);
+          const color = window.prompt('Hex-färg (t.ex. #00F2FF):', cat.color);
           if (color?.trim()) onChangeColor(cat.id, color.trim());
         },
       },
       {
-        label: 'Delete category',
+        label: 'Ta bort kategori',
         icon: <span className="text-xs">🗑️</span>,
         danger: true,
         divider: true,
@@ -78,11 +78,11 @@ export default function CategoryManager({
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group relative overflow-hidden mb-2',
           activeCategoryId === null
             ? 'bg-white/10 text-white'
-            : 'text-slate-400 hover:text-white hover:bg-white/5'
+            : 'text-zinc-400 hover:text-white hover:bg-white/3'
         )}
       >
-        <FolderOpen size={16} className={activeCategoryId === null ? 'text-slate-300' : 'text-slate-500'} />
-        <span className="flex-1 text-left font-medium">All notes</span>
+        <FolderOpen size={16} className={activeCategoryId === null ? 'text-zinc-300' : 'text-zinc-500'} />
+        <span className="flex-1 text-left font-medium">Alla anteckningar</span>
       </button>
 
       {/* Categories */}
@@ -95,15 +95,15 @@ export default function CategoryManager({
             className={cn(
               'w-full flex items-center justify-between px-3 py-1.5 rounded-md text-[13px] transition-all group relative',
               activeCategoryId === cat.id
-                ? 'bg-white/5 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-white/10 text-white'
+                : 'text-zinc-400 hover:text-white hover:bg-white/3'
             )}
           >
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
               <span className="font-medium truncate">{cat.name}</span>
             </div>
-            <span className="text-xs text-slate-500">{noteCountByCategory[cat.id] || 0}</span>
+            <span className="text-xs text-zinc-500">{noteCountByCategory[cat.id] || 0}</span>
           </button>
         ))}
       </div>
@@ -115,8 +115,8 @@ export default function CategoryManager({
             autoFocus value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsAdding(false); }}
-            placeholder="Category name..."
-            className="w-full text-xs font-bold uppercase tracking-widest bg-white/5 rounded-xl px-4 py-3 outline-none border border-white/5 focus:neon-border-cyan mb-4 text-white placeholder:text-slate-700 transition-all"
+            placeholder="Kategorinamn..."
+            className="w-full text-xs font-bold uppercase tracking-widest bg-zinc-800 rounded-xl px-4 py-3 outline-none border border-zinc-700 focus:neon-border-cyan mb-4 text-white placeholder:text-zinc-500 transition-all"
           />
           <div className="flex flex-wrap gap-2 mb-4">
             {PRESET_COLORS.map(c => (
@@ -127,15 +127,15 @@ export default function CategoryManager({
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCreate} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-white text-black rounded-xl hover:scale-105 transition-transform">Create</button>
-            <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-white/5 text-slate-500 rounded-xl hover:bg-white/10 transition-colors">Close</button>
+            <button onClick={handleCreate} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-white rounded-xl hover:scale-105 transition-transform">Skapa</button>
+            <button onClick={() => setIsAdding(false)} className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors">Stäng</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setIsAdding(true)}
-          className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-slate-500 hover:text-slate-300 transition-all mt-2 group">
-          <Plus size={14} className="text-slate-500" />
-          <span>New category</span>
+          className="w-full flex items-center gap-3 px-3 py-2 text-[13px] text-zinc-500 hover:text-zinc-300 transition-all mt-2 group">
+          <Plus size={14} className="text-zinc-500" />
+          <span>Ny kategori</span>
         </button>
       )}
 

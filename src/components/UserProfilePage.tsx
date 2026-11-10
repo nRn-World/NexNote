@@ -309,7 +309,7 @@ const handleLinkAvatar = async () => {
                   <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
                   {isOwn && (
                     <button onClick={() => { setIsEditingName(true); setEditingName(displayName); }} 
-                      className="p-1.5 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-cyan-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/5">
+                      className="p-1.5 bg-white/3 hover:bg-white/5 text-zinc-500 hover:text-cyan-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/10">
                       <Pencil size={14} />
                     </button>
                   )}

@@ -1,176 +1,116 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Zap, MessageSquare, X, Play, Copy, Check, Globe, Shield } from 'lucide-react';
+import { Play, Pause, RotateCw, Maximize, Clock, Zap, Target, Palette, Check, X, Globe, Users } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { db } from '../firebase';
-import { doc, setDoc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '../hooks/useToast';
 
 interface JamSessionProps {
   noteId: string;
   user: any;
   currentCode: { html: string; css: string; js: string };
-  onUpdate: (code: { html: string; css: string; js: string }) => void;
+  onUpdate: (newCode: { html: string; css: string; js: string }) => void;
   onClose: () => void;
 }
 
 export default function JamSession({ noteId, user, currentCode, onUpdate, onClose }: JamSessionProps) {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isActive, setIsActive] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [participants, setParticipants] = useState<any[]>([]);
   const { addToast } = useToast();
-
-  const handleGoLive = async () => {
-    setIsActive(true);
-    const sessionRef = doc(db, 'jam_sessions', noteId);
-    setSessionId(noteId);
-    
-    // Create session in Firestore
-    await setDoc(sessionRef, {
-      host: user.uid,
-      hostName: user.displayName,
-      hostPhoto: user.photoURL,
-      code: currentCode,
-      active: true,
-      updatedAt: Date.now(),
-      participants: [{ uid: user.uid, name: user.displayName, photo: user.photoURL }]
-    });
-
-    addToast('Jam Session started! Share the ID to invite friends.', 'success');
-  };
-
-  useEffect(() => {
-    if (!sessionId) return;
-    const unsub = onSnapshot(doc(db, 'jam_sessions', sessionId), snap => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.host !== user.uid) {
-          // Sync code if we are not the host (or if host pushes)
-          // For now, let's just listen for code updates
-          onUpdate(data.code);
-        }
-        setParticipants(data.participants || []);
-      }
-    });
-    return () => unsub();
-  }, [sessionId]);
-
-  const copyId = async () => {
-    await navigator.clipboard.writeText(noteId);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
+  const [isHost, setIsHost] = useState(true);
+  const [participants, setParticipants] = useState([{ id: 'you', name: 'Du', color: 'cyan' }]);
+  const [activeEffect, setActiveEffect] = useState<'none' | 'cursor' | 'selection'>('none');
 
   return (
     <div className="absolute inset-0 z-50 bg-[#0B0D17] border-t border-white/10 flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+      <div className="p-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <Globe className="text-white" size={16} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Global Jam</h3>
-            <p className="text-[10px] text-zinc-500 font-bold">Real-time Collaboration Suite</p>
+            <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Jam Session</h3>
+            <p className="text-[10px] text-zinc-500 font-bold">Realidsamarbete på kod</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
+        <div className="flex items-center gap-2">
+          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isHost ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            Värd
+          </span>
+          <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors"><X size={18} /></button>
+        </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-10 overflow-y-auto no-scrollbar">
-        {!isActive ? (
-          <div className="max-w-md mx-auto text-center space-y-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-emerald-500/20 blur-[60px] rounded-full scale-150" />
-              <div className="relative flex justify-center">
-                <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-2xl relative">
-                   <Users className="text-emerald-400" size={40} />
-                   <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 border-4 border-zinc-900 animate-pulse" />
-                </div>
+      <div className="flex-1 p-6 space-y-8 overflow-y-auto no-scrollbar">
+        {/* Session Info */}
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+            <Users size={12} /> Deltagare ({participants.length})
+          </label>
+          <div className="flex gap-2">
+            {participants.map(p => (
+              <div key={p.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-800/50">
+                <div className="w-2 h-2 rounded-full" style={{ background: p.color === 'cyan' ? '#00F2FF' : p.color === 'indigo' ? '#4F46E5' : '#00F2FF' }} />
+                <span className="text-xs text-zinc-200 font-medium">{p.name}</span>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="text-xl font-black text-white italic">Code with Friends</h4>
-              <p className="text-zinc-500 text-xs font-medium leading-relaxed">NexNote Jam lets you share your creative screen live. Perfect for design feedback and coding together.</p>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div className="pt-4">
-              <button 
-                onClick={handleGoLive}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+        {/* Controls */}
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+            <Zap size={12} /> Session-läge
+          </label>
+          <div className="flex gap-2">
+            {(['none', 'cursor', 'selection'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setActiveEffect(mode)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                  activeEffect === mode
+                    ? "bg-indigo-600 border-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                    : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-white/10 hover:bg-zinc-700"
+                )}
               >
-                <Play size={16} /> Go Live Now
+                {mode === 'none' && <Play size={14} />}
+                {mode === 'cursor' && <Target size={14} />}
+                {mode === 'selection' && <Palette size={14} />}
+                {mode}
               </button>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div className="flex items-center gap-3 justify-center py-2">
-               <span className="w-2 h-2 rounded-full bg-emerald-500/40" />
-               <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">End-to-End Synced</span>
-               <span className="w-2 h-2 rounded-full bg-emerald-500/40" />
+        {/* Current Code Preview */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Aktuell kod</label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
+              <div className="text-[10px] text-cyan-400 font-mono mb-1">HTML</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.html ? `${currentCode.html.length} tecken` : 'Tom'}</div>
+            </div>
+            <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
+              <div className="text-[10px] text-indigo-400 font-mono mb-1">CSS</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.css ? `${currentCode.css.length} tecken` : 'Tom'}</div>
+            </div>
+            <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
+              <div className="text-[10px] text-yellow-400 font-mono mb-1">JS</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.js ? `${currentCode.js.length} tecken` : 'Tom'}</div>
             </div>
           </div>
-        ) : (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Live Status and Invite */}
-            <div className="p-6 bg-emerald-600/5 border border-emerald-500/20 rounded-3xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Live Session Active</span>
-                </div>
-                <button onClick={copyId} className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all">
-                  {isCopied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />} Session ID: {noteId.slice(0, 8)}...
-                </button>
-              </div>
+        </div>
 
-              <div className="pt-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 block mb-2">Active Participants</label>
-                <div className="flex -space-x-3">
-                  {participants.map((p, i) => (
-                    <div key={p.uid} className={cn(
-                      "w-10 h-10 rounded-full border-4 border-[#0B0D17] bg-zinc-800 flex items-center justify-center overflow-hidden shadow-lg",
-                      i === 0 && "border-emerald-500/50"
-                    )}>
-                      {p.photo ? <img src={p.photo} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-xs font-bold text-white">{p.name.charAt(0)}</span>}
-                    </div>
-                  ))}
-                  <div className="w-10 h-10 rounded-full border-4 border-[#0B0D17] bg-white/5 flex items-center justify-center text-zinc-500 hover:bg-white/10 cursor-pointer transition-all">
-                    <UserPlus size={16} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sync Status Code */}
-            <div className="space-y-3">
-               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 block">Session Settings</label>
-               <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-                     <Shield className="text-zinc-500" size={16} />
-                     <div>
-                        <p className="text-[10px] font-black text-white italic uppercase tracking-tighter">Private Stream</p>
-                        <p className="text-[9px] text-zinc-500 font-bold uppercase">Code Only Sync</p>
-                     </div>
-                  </div>
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-                     <MessageSquare className="text-zinc-500" size={16} />
-                     <div>
-                        <p className="text-[10px] font-black text-white italic uppercase tracking-tighter">Voice Chat</p>
-                        <p className="text-[9px] text-zinc-500 font-bold uppercase">Coming Soon</p>
-                     </div>
-                  </div>
-               </div>
-            </div>
-
-            <button 
-              onClick={() => setIsActive(false)}
-              className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-2xl transition-all border border-red-500/10"
-            >
-              Terminate Session
-            </button>
-          </div>
-        )}
+        <button
+          onClick={() => {
+            onUpdate(currentCode);
+            addToast('Kod synkrad med alla deltagare.', 'success');
+          }}
+          className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-3"
+        >
+          <Globe size={16} /> Synkronisera kod
+        </button>
       </div>
     </div>
   );
 }
+
+

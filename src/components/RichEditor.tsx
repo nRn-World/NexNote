@@ -22,8 +22,8 @@ function ToolbarBtn({ onClick, active, title, children }: {
       onMouseDown={e => { e.preventDefault(); onClick(); }}
       title={title}
       className={cn(
-        "p-2 rounded-xl transition-all text-slate-500",
-        active ? "bg-cyan-400/10 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.1)] border border-cyan-400/20" : "hover:bg-white/5 hover:text-white"
+        "p-2 rounded-xl transition-all text-zinc-400",
+        active ? "bg-cyan-400/10 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.1)] border border-cyan-400/20" : "hover:bg-white/3 hover:text-white"
       )}
     >
       {children}
@@ -36,7 +36,7 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
     extensions: [
       StarterKit,
       Underline,
-      Placeholder.configure({ placeholder: 'Start visualizing your next creation here...' }),
+      Placeholder.configure({ placeholder: 'Börja visualisera din nästa skapelse här...' }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content,
@@ -45,7 +45,7 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
       attributes: {
         class: cn(
           'prose max-w-none outline-none min-h-[400px] leading-relaxed focus:outline-none py-4 text-lg font-medium selection:bg-cyan-400/30',
-          isDark ? 'prose-invert text-slate-300 selection:text-white' : 'text-[var(--text-primary)] selection:text-slate-900'
+          isDark ? 'prose-invert text-zinc-300 selection:text-white' : 'text-[var(--text-primary)] selection:text-slate-900'
         )
       },
     },
@@ -63,34 +63,34 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-1.5 p-1.5 glass-card border-white/5 rounded-2xl w-fit sticky top-2 z-10 mx-auto md:mx-0 shadow-2xl backdrop-blur-xl">
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold (Ctrl+B)">
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 glass-card border-white/10 rounded-2xl w-fit sticky top-2 z-10 mx-auto md:mx-0 shadow-2xl backdrop-blur-xl">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Fet (Ctrl+B)">
           <Bold size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic (Ctrl+I)">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Kursiv (Ctrl+I)">
           <Italic size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline (Ctrl+U)">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Understruken (Ctrl+U)">
           <UnderlineIcon size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Genomstruken">
           <Strikethrough size={16} />
         </ToolbarBtn>
         <div className="w-px h-6 bg-white/5 mx-1" />
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet List">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Punktlista">
           <List size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered List">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numrerad lista">
           <ListOrdered size={16} />
         </ToolbarBtn>
         <div className="w-px h-6 bg-white/5 mx-1" />
-        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Left">
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Vänster">
           <AlignLeft size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Center">
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Centrerad">
           <AlignCenter size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Right">
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Höger">
           <AlignRight size={16} />
         </ToolbarBtn>
       </div>

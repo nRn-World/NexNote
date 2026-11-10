@@ -45,20 +45,20 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
   const dateString = now.toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-lg w-full border border-zinc-200 dark:border-zinc-700 overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-zinc-100 dark:border-zinc-700 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 sm:p-6" onClick={onClose}>
+      <div className="bg-zinc-900 rounded-2xl shadow-2xl max-w-lg w-full border border-white/10 overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+        <div className="p-5 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-800/30">
           <div className="flex items-center gap-2">
             <Sparkles size={20} className="text-cyan-400" />
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white">Ny anteckning från mall</h2>
+            <h2 className="text-base font-bold text-white">Ny anteckning från mall</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
+          <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors">
             <X size={18} />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[65vh] no-scrollbar">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+          <p className="text-sm text-zinc-400 mb-6">
             Välj en mall. Datumet fylls i automatiskt i dagboksmallen.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -70,15 +70,15 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
                   onClick={() => { onSelect({ ...t, content }); }}
                   className={cn(
                     'flex flex-col gap-3 p-4 rounded-xl border transition-all text-left group',
-                    'bg-zinc-50 dark:bg-zinc-800/30 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-cyan-400/50'
+                    'bg-zinc-800/30 border-zinc-700 hover:bg-zinc-800/50 hover:border-cyan-500/50'
                   )}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 dark:text-cyan-400 group-hover:bg-cyan-400 group-hover:text-black transition-colors shrink-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-900/20 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-black transition-colors shrink-0">
                     {t.icon}
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-zinc-900 dark:text-white">{t.label}</div>
-                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">{t.desc}</div>
+                    <div className="text-sm font-bold text-white">{t.label}</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">{t.desc}</div>
                   </div>
                 </button>
               );
@@ -86,8 +86,8 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
           </div>
         </div>
 
-        <div className="p-4 border-t border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/30">
-          <button onClick={onClose} className="w-full py-2 px-4 rounded-xl text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+        <div className="p-4 border-t border-zinc-800/50 bg-zinc-800/30">
+          <button onClick={onClose} className="w-full py-2 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
             Avbryt
           </button>
         </div>

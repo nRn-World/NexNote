@@ -131,7 +131,7 @@ function PostCard({ post, index, userId, isAdmin, following, onLike, onFollow, o
         {/* Category badge */}
         {post.category && (
           <div className={cn('absolute top-2 left-2 px-2 py-0.5 backdrop-blur-md rounded-md border text-[9px] font-bold uppercase tracking-widest z-20',
-            post.isWinner ? 'bg-yellow-500 border-yellow-600 text-black font-black flex items-center gap-1' : 'bg-black/50 border-white/10 text-white/70'
+            post.isWinner ? 'bg-yellow-500 border-yellow-600 text-white font-black flex items-center gap-1' : 'bg-black/50 border-white/10 text-white/70'
           )}>
             {post.isWinner && <Trophy size={10} />}
             {post.isWinner ? 'CHALLENGE WINNER' : (COMMUNITY_CATEGORIES.find(c => c.id === post.category)?.label || post.category)}
@@ -805,11 +805,11 @@ export default function CommunityView({
           {([['trending', 'Trending', TrendingUp], ['following', 'Following', Users], ['challenges', 'Challenges', Trophy]] as const).map(([tab, label, Icon]) => (
             <button key={tab} onClick={() => setActiveTab(tab as any)}
               className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                activeTab === tab 
-                  ? (tab === 'challenges' ? 'bg-yellow-500 text-black' : 'bg-[var(--text-primary)] text-[var(--bg-deep)]')
+                activeTab === tab
+                  ? (tab === 'challenges' ? 'bg-yellow-500 text-white' : 'bg-zinc-900 text-white')
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}>
-              <Icon size={12} className={cn(activeTab === tab && tab === 'challenges' ? 'text-black' : '')} /> {label}
+              <Icon size={12} className={cn(activeTab === tab && tab === 'challenges' ? 'text-white' : '')} /> {label}
             </button>
           ))}
         </div>
@@ -898,14 +898,14 @@ export default function CommunityView({
                       <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Reward</p>
                       <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
                     </div>
-                    <div className="w-px h-8 bg-white/5" />
-<button onClick={() => { if (isGuest) { alert('Sign in to submit to challenges!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <div className="w-px h-8 bg-white/3" />
+<button onClick={() => { if (isGuest) { alert('Logga in för att skicka in till utmaningar!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                       {isGuest ? 'Login to Submit' : 'Submit Entry'}
                     </button>
                   </div>
                 </div>
 
-                <div className="w-full md:w-64 shrink-0 aspect-square rounded-[32px] overflow-hidden border border-white/10 bg-white/2 backdrop-blur-sm p-2 shadow-2xl rotate-2">
+                <div className="w-full md:w-64 shrink-0 aspect-square rounded-[32px] overflow-hidden border border-white/10 bg-zinc-900/20 backdrop-blur-sm p-2 shadow-2xl rotate-2">
                   <div className="w-full h-full rounded-[24px] overflow-hidden">
                     <LivePreview content={`<div style="font-family:sans-serif;font-weight:900;font-size:40px;color:#fff;text-shadow:0 0 10px #00f2ff,0 0 20px #a0f;animation:p 2s infinite;">NEON</div><style>@keyframes p{0%,100%{opacity:1;}50%{opacity:0.3;}}</style>`} title="demo" />
                   </div>

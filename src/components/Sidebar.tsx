@@ -58,12 +58,12 @@ function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
   return (
     <div style={style} className="w-56 glass-panel rounded-2xl shadow-2xl py-1.5 overflow-hidden border border-white/10">
       <button onClick={() => { onSelect(undefined); onClose(); }}
-        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 transition-colors">
-        <FolderOpen size={14} className="opacity-50" /> No category
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/3 transition-colors">
+        <FolderOpen size={14} className="opacity-50" /> Ingen kategori
       </button>
       {categories.map(cat => (
         <button key={cat.id} onClick={() => { onSelect(cat.id); onClose(); }}
-          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors">
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-200 hover:bg-white/3 transition-colors">
           <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ background: cat.color }} />
           {cat.name}
         </button>
@@ -104,10 +104,10 @@ function SortableNote({
       {isActive && !isSelecting && (
         <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyan-400 rounded-r-full shadow-[0_0_12px_rgba(34,211,238,0.8)]" />
       )}
-      
+
       {(note.coverImage || note.code || note.attachments?.some(a => a.type.startsWith('image/'))) && !isSelecting && (
         <div
-          className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-slate-800 border border-white/10 shadow-lg cursor-zoom-in group-hover:scale-105 transition-transform"
+          className="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-zinc-800 border border-white/10 shadow-lg cursor-zoom-in group-hover:scale-105 transition-transform"
           onClick={e => {
             e.stopPropagation();
             const url = note.coverImage || note.attachments?.find(a => a.type.startsWith('image/'))?.data;
@@ -119,7 +119,7 @@ function SortableNote({
           ) : note.code ? (
             <iframe
               title=""
-              srcDoc={`<!DOCTYPE html><html><head><base target="_self"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}${note.code.css || ''}</style></head><body>${note.code.html || ''}<script>${note.code.js || ''}<\/script></body></html>`}
+              srcDoc={`<!DOCTYPE html><html><head><base target="_self\"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}${note.code.css || ''}</style></head><body>${note.code.html || ''}<script>${note.code.js || ''}<\/script></body></html>`}
               sandbox={PREVIEW_SANDBOX}
               className="w-full h-full border-none pointer-events-none scale-[0.25] origin-top-left"
               style={{ width: '400%', height: '400%' }}
@@ -134,12 +134,12 @@ function SortableNote({
           {note.isPinned && <Pin size={12} className="text-cyan-400 fill-cyan-400 shrink-0" />}
           <h3 className={cn(
             'font-semibold truncate flex-1 tracking-tight',
-            isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
-          )}>{note.title || 'Untitled Note'}</h3>
+            isActive ? 'text-white' : 'text-zinc-300 group-hover:text-white'
+          )}>{note.title || 'Namnlös anteckning'}</h3>
         </div>
-        <p className="text-[11px] text-slate-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Empty note...'}</p>
+        <p className="text-[11px] text-zinc-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
         <div className="flex items-center justify-between mt-2.5">
-          <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider text-slate-500">
+          <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider text-zinc-500">
             <span>{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
             {note.attachments.length > 0 && <span className="flex items-center gap-1"><Paperclip size={10} /> {note.attachments.length}</span>}
           </div>
@@ -178,7 +178,7 @@ export default function Sidebar({
   isLoading = false,
   isGuest = false,
 }: SidebarProps) {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } })) ;
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
   const [subMenu, setSubMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -275,39 +275,38 @@ export default function Sidebar({
 
   return (
     <div className={cn(
-      'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-all duration-500 ease-in-out border-r border-white/5 shadow-2xl',
+      'flex-col w-full md:w-80 glass-panel h-full flex-shrink-0 z-20 absolute md:relative transition-all duration-500 ease-in-out border-r border-white/10 shadow-2xl',
       mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4',
       activeNoteId ? '-translate-x-full md:translate-x-0' : 'translate-x-0 flex'
     )}>
-      <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/5">
+      <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/10">
         <div className="flex justify-center w-full">
-           <img 
-             src="./logoandtextWhite2.png" 
-             alt="NexNote" 
-             onClick={onGoHome} 
-             className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300" 
+           <img
+             src="./logoandtextWhite2.png"
+             alt="NexNote"
+             onClick={onGoHome}
+             className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300"
            />
         </div>
-        
+
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
 
-             
              <div className="relative group cursor-pointer" onClick={onOpenProfile} title="Profile">
                 <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-cyan-500/50 transition-all group-hover:scale-105">
                    {user?.photoURL
-                     ? <img src={user.photoURL} alt="" className="w-full h-full bg-slate-800 object-cover" />
-                     : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-cyan-400"><UserCircle size={20} /></div>
+                     ? <img src={user.photoURL} alt="" className="w-full h-full bg-zinc-800 object-cover" />
+                     : <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-cyan-400"><UserCircle size={20} /></div>
                    }
                 </div>
              </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <button onClick={onLogout} className="text-[13px] font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
-              {isGuest ? 'Exit Guest' : 'Logout'}
+            <button onClick={onLogout} className="text-[13px] font-bold text-zinc-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
+              {isGuest ? 'Avsluta gäst' : 'Logga ut'}
             </button>
-            <button onClick={onCreateNote} className="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all shadow-lg active:scale-95" title="New Note">
+            <button onClick={onCreateNote} className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-zinc-800 transition-all shadow-lg active:scale-95" title="Ny anteckning">
                <Plus size={20} />
             </button>
           </div>
@@ -315,10 +314,10 @@ export default function Sidebar({
       </div>
 
       <div className="relative mt-2 px-4">
-        <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-        <input type="text" placeholder="Search notes..." value={searchQuery}
+        <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+        <input type="text" placeholder="Sök anteckningar..." value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-slate-500 border-none outline-none focus:ring-1 focus:ring-slate-500/20 transition-all font-medium"
+          className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-zinc-500 border-none outline-none focus:ring-1 focus:ring-zinc-600/20 transition-all font-medium"
         />
       </div>
 
@@ -336,7 +335,7 @@ export default function Sidebar({
         <div className="space-y-2">
           <button
             onClick={onOpenCommunity}
-            className="w-full flex items-center gap-3 px-4 py-2 mt-4 text-sm text-slate-500 hover:text-white transition-all group"
+            className="w-full flex items-center gap-3 px-4 py-2 mt-4 text-sm text-zinc-400 hover:text-white transition-all group"
           >
             <Globe size={16} className="text-[#3b82f6]" />
             <span className="flex-1 text-left font-medium">Community</span>
@@ -348,8 +347,8 @@ export default function Sidebar({
 
         <div className="mt-4 pt-2">
            <div className="flex items-center justify-between mb-4 px-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Notes</span>
-              {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Selected</span>}
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Anteckningar</span>
+              {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Valda</span>}
            </div>
 
           {isLoading ? (
@@ -359,9 +358,9 @@ export default function Sidebar({
           ) : filtered.length === 0 && searchQuery ? (
             <EmptyState variant="search" />
           ) : filtered.length === 0 && activeCategoryId ? (
-            <EmptyState variant="category" actionLabel="Create note" onAction={onCreateNote} />
+            <EmptyState variant="category" actionLabel="Skapa anteckning" onAction={onCreateNote} />
           ) : filtered.length === 0 ? (
-            <EmptyState variant="notes" actionLabel="Create your first note" onAction={onCreateNote} />
+            <EmptyState variant="notes" actionLabel="Skapa din första anteckning" onAction={onCreateNote} />
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>
@@ -385,17 +384,17 @@ export default function Sidebar({
         <div className="absolute bottom-16 left-4 right-4 p-3 glass-panel rounded-2xl flex items-center gap-3 shadow-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <button
             onClick={e => setBulkCatMenu({ x: e.clientX, y: e.clientY })}
-            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-white/5 hover:bg-white/10 rounded-xl text-slate-200 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-white/3 hover:bg-white/5 rounded-xl text-zinc-200 transition-all"
           >
-            <FolderInput size={14} /> Move
+            <FolderInput size={14} /> Flytta
           </button>
           <button
             onClick={() => { onDeleteManyNotes(Array.from(selectedIds)); clearSelection(); }}
             className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 rounded-xl text-red-400 transition-all border border-red-500/10"
           >
-            <Trash2 size={14} /> Delete
+            <Trash2 size={14} /> Radera
           </button>
-          <button onClick={clearSelection} className="p-2 text-slate-400 hover:text-white">
+          <button onClick={clearSelection} className="p-2 text-zinc-400 hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -403,9 +402,9 @@ export default function Sidebar({
 
       <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
 
-      <div className="p-4 border-t border-white/5 flex items-center justify-between">
-        <button onClick={onOpenPrivacy} className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
-          Privacy Policy
+      <div className="p-4 border-t border-white/10 flex items-center justify-between">
+        <button onClick={onOpenPrivacy} className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors">
+          Integritetspolicy
         </button>
       </div>
 

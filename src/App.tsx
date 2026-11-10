@@ -1819,7 +1819,7 @@ export default function App() {
       {showAnimationEditor && activeNote?.code && (
         <AnimationEditor
           onClose={() => setShowAnimationEditor(false)}
-          currentCode={activeNote.code}
+          currentCode={activeNote.code!}
           onUpdate={(newCss) => updateActiveNote({ code: { ...activeNote.code!, css: newCss } })}
         />
       )}
