@@ -1317,7 +1317,7 @@ export default function App() {
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
           <video
             className="absolute inset-0 w-full h-full object-cover z-0"
-            src="./NexNote.mp4"
+            src="/NexNote.mp4"
             loop
             muted
             playsInline
