@@ -181,7 +181,6 @@ export default function UserProfilePage({ uid, currentUser, allPosts, onClose }:
   const handleNameSave = async () => {
     if (!auth.currentUser || !editingName.trim()) return;
     try {
-      console.log('Attempting to save name:', editingName.trim());
       await setDoc(doc(db, 'community_profiles', auth.currentUser.uid), { 
         displayName: editingName.trim(),
         uid: auth.currentUser.uid 

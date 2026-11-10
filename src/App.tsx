@@ -131,7 +131,6 @@ export default function App() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCollaborate, setShowCollaborate] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
@@ -151,6 +150,7 @@ export default function App() {
   const noteDraftsRef = useRef<Record<string, Note>>({});
   const pendingCategoriesRef = useRef<Record<string, Category>>({});
   const notesRef = useRef<Note[]>([]);
+  const hasSeenWelcomeRef = useRef(false);
   const { toasts, addToast, removeToast } = useToast();
   notesRef.current = notes;
   activeNoteIdRef.current = activeNoteId;
@@ -216,7 +216,9 @@ export default function App() {
       const loaded: Note[] = snapshot.docs.map(d => {
         const data = d.data();
         return {
-          id: d.id, uid: data.uid, title: data.title, content: data.content,
+          id: d.id, uid: data.uid,
+          title: typeof data.title === 'string' ? data.title : '',
+          content: typeof data.content === 'string' ? data.content : '',
           attachments: parseStoredJson<Attachment[]>(data.attachments, []),
           code: parseNoteCode(data.code),
           coverImage: data.coverImage, isPinned: data.isPinned || false,
@@ -260,8 +262,8 @@ export default function App() {
         setTrash(trashed);
 
         // Välkomstanteckning för nya användare (endast en gång per användare)
-        if (!user.isGuest && !hasSeenWelcome && activeNotes.length === 0 && trashed.length === 0) {
-          setHasSeenWelcome(true);
+        if (!user.isGuest && !hasSeenWelcomeRef.current && activeNotes.length === 0 && trashed.length === 0) {
+          hasSeenWelcomeRef.current = true;
           const welcome: Note = {
             id: uuidv4(), uid: user.uid, title: 'Välkommen till NexNote 👋',
             content: '<p>Det här är din första anteckning.</p><p>Prova att:<ul><li>Skriva i rich-text-editorn nedan</li><li>Koda i HTML/CSS/JS-fönstret och förhandsgranska live</li><li>Lägga till taggar, bilagor och ett omslag</li><li>Dela anteckningen med en publika länk</li></ul></p>',
@@ -282,7 +284,7 @@ export default function App() {
       setIsLoading(false);
     }, err => { handleFirestoreError(err, OperationType.LIST, 'notes'); setIsLoading(false); });
     return () => unsub();
-  }, [user, isAuthReady, hasSeenWelcome]);
+  }, [user, isAuthReady]);
 
   useEffect(() => {
     if (!isAuthReady || !user || user.isGuest) { setCategories([]); return; }
@@ -310,7 +312,12 @@ export default function App() {
           if (typeof data.createdAt === 'number') createdAt = data.createdAt;
           else if (data.createdAt.toDate) createdAt = data.createdAt.toDate().getTime();
         }
-        return { id: d.id, ...data, createdAt };
+        return {
+          id: d.id, ...data, createdAt,
+          likes: Array.isArray(data.likes) ? data.likes : [],
+          title: typeof data.title === 'string' ? data.title : '',
+          displayName: typeof data.displayName === 'string' ? data.displayName : 'Anonym',
+        };
       });
       setCommunityPosts(loaded);
     });
@@ -319,8 +326,8 @@ export default function App() {
 
   useEffect(() => {
     const saved = localStorage.getItem(`topDesigns_${user?.uid}`);
-    if (saved) setTopDesigns(JSON.parse(saved));
-    else setTopDesigns(Array(5).fill(null));
+    const parsed = saved ? parseStoredJson<unknown>(saved, null) : null;
+    setTopDesigns(Array.isArray(parsed) && parsed.length === 5 ? parsed : Array(5).fill(null));
   }, [user?.uid]);
 
   const handleSelectProject = (project: any) => {
@@ -442,7 +449,7 @@ export default function App() {
       notes.forEach(n => {
         if (n.reminderAt && !n.reminderDone && n.reminderAt <= now) {
           addToast(`Påminnelse: ${n.title || 'Anteckning'}`, 'info');
-          updateActiveNote({ id: n.id, reminderDone: true });
+          markReminderDone(n.id);
         }
       });
     }, 30000);
@@ -629,6 +636,19 @@ export default function App() {
     setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
     if (isGuest) return;
     debouncedSave(updated);
+  };
+
+  /** Marks one specific note's reminder as done (never touches the active-note id). */
+  const markReminderDone = (noteId: string) => {
+    const note = noteDraftsRef.current[noteId] || notesRef.current.find(n => n.id === noteId);
+    if (!note || note.reminderDone) return;
+    const updated = { ...note, reminderDone: true, updatedAt: Date.now() };
+    noteDraftsRef.current[noteId] = updated;
+    setNotes(prev => prev.map(n => (n.id === noteId ? updated : n)));
+    if (isGuest || !auth.currentUser) return;
+    enqueueSave(updated).catch(error => {
+      handleFirestoreError(error, OperationType.WRITE, `notes/${noteId}`);
+    });
   };
 
   const createCategory = async (name: string, color: string) => {
@@ -837,7 +857,7 @@ export default function App() {
   const printNote = () => {
     if (!activeNote) return;
     const el = document.createElement('div');
-    el.className = 'print-page no-print';
+    el.className = 'print-page';
     el.innerHTML = `
       <h1>${escapeHtml(activeNote.title || 'Untitled')}</h1>
       <div class="prose">${activeNote.content}</div>
@@ -1166,8 +1186,9 @@ export default function App() {
   };
 
   const addTag = (tag: string) => {
+    if (!activeNote) return;
     const clean = tag.trim().toLowerCase();
-    if (activeNote.tags?.includes(clean)) return;
+    if (!clean || activeNote.tags?.includes(clean)) return;
     updateActiveNote({ tags: [...(activeNote.tags || []), clean] });
     setNewTag('');
   };
@@ -1436,6 +1457,8 @@ export default function App() {
         onOpenProfile={() => setShowProfile(true)}
         onOpenPrivacy={() => setShowPrivacy(true)}
         onOpenCalendar={() => setShowCalendar(true)}
+        onOpenTrash={() => setShowTrash(true)}
+        trashCount={trash.length}
         onGoHome={() => setActiveNoteId(null)}
         allPosts={communityPosts}
         user={user}
@@ -2009,7 +2032,7 @@ export default function App() {
         onGoHome={() => setActiveNoteId(null)}
         onCreateNote={createNote}
         onSearch={() => {
-          const input = document.querySelector('input[placeholder="Search notes..."]') as HTMLInputElement;
+          const input = document.getElementById('nexnote-search') as HTMLInputElement | null;
           if (input) input.focus();
         }}
         onCommunity={() => setShowCommunity(true)}
@@ -2042,7 +2065,7 @@ export default function App() {
 
       <RealTimeCollaborate
         open={showCollaborate}
-        note={activeNote}
+        note={activeNote ?? null}
         user={user}
         onContentChange={(content) => {
           if (activeNote) {

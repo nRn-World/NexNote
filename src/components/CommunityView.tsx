@@ -635,7 +635,21 @@ export default function CommunityView({
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'community'), orderBy('createdAt', 'desc')), snap => {
-      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityPost));
+      const loaded = snap.docs.map(d => {
+        const data = d.data();
+        const rawCreated = data.createdAt;
+        const createdAt = typeof rawCreated === 'number'
+          ? rawCreated
+          : (rawCreated && typeof rawCreated.toDate === 'function' ? rawCreated.toDate().getTime() : Date.now());
+        return {
+          ...data, id: d.id, createdAt,
+          uid: typeof data.uid === 'string' ? data.uid : '',
+          displayName: typeof data.displayName === 'string' ? data.displayName : 'Anonym',
+          title: typeof data.title === 'string' ? data.title : 'Namnlös',
+          content: typeof data.content === 'string' ? data.content : '',
+          likes: Array.isArray(data.likes) ? data.likes : [],
+        } as CommunityPost;
+      });
       loaded.sort((a, b) => b.likes.length - a.likes.length);
       setPosts(loaded); setLoading(false);
     });
@@ -657,6 +671,16 @@ export default function CommunityView({
     });
     return () => unsub();
   }, [user]);
+
+  // Load the users this account follows so the Following tab survives reloads.
+  useEffect(() => {
+    if (!user?.uid || isGuest) { setFollowing([]); return; }
+    const unsub = onSnapshot(doc(db, 'community_following', user.uid), snap => {
+      const uids = snap.exists() ? snap.data()?.uids : [];
+      setFollowing(Array.isArray(uids) ? uids.filter((u: unknown): u is string => typeof u === 'string') : []);
+    });
+    return () => unsub();
+  }, [user?.uid, isGuest]);
 
   const weeklyCount = user ? posts.filter(p => {
     if (p.uid !== user.uid) return false;
@@ -918,7 +942,7 @@ export default function CommunityView({
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">Challenge Entries</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {posts.filter(p => (p.fullCode || p.content).toLowerCase().includes('neon')).map((p, i) => (
+                  {posts.filter(p => p.category === 'challenges').map((p, i) => (
                     <PostCard 
                       key={p.id} post={p} index={i} userId={user?.uid || ''} isAdmin={isAdmin} 
                       following={following} onLike={() => handleLike(p)} onFollow={() => handleFollow(p.uid)}

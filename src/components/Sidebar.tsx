@@ -39,6 +39,8 @@ interface SidebarProps {
   onOpenProfile: () => void;
   onOpenPrivacy: () => void;
   onOpenCalendar: () => void;
+  onOpenTrash?: () => void;
+  trashCount?: number;
   onGoHome: () => void;
   allPosts: any[];
   user: any;
@@ -180,7 +182,7 @@ export default function Sidebar({
   categories, activeCategoryId, onSelectCategory,
   onCreateCategory, onRenameCategory, onDeleteCategory,
   onMoveNote, onMoveManyNotes, onDeleteManyNotes,
-  onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onOpenCalendar, onGoHome, allPosts, user,
+  onRenameNote, onDuplicateNote, onChangeColor, onOpenCommunity, onOpenProfile, onOpenPrivacy, onOpenCalendar, onOpenTrash, trashCount = 0, onGoHome, allPosts, user,
   isLoading = false,
   isGuest = false,
   activeTag = null,
@@ -329,7 +331,7 @@ export default function Sidebar({
 
       <div className="relative mt-2 px-4">
         <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-        <input type="text" placeholder="Sök anteckningar..." value={searchQuery}
+        <input id="nexnote-search" type="text" placeholder="Sök anteckningar..." value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
           className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-zinc-500 border-none outline-none focus:ring-1 focus:ring-zinc-600/20 transition-all font-medium"
         />
@@ -468,7 +470,10 @@ export default function Sidebar({
 
       <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
 
-      <div className="p-4 border-t border-white/10 flex items-center justify-between">
+      <div className="p-4 border-t border-white/10 flex items-center justify-between gap-3">
+        <button onClick={onOpenTrash} className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-white transition-colors">
+          <Trash2 size={12} /> Papperskorg{trashCount > 0 ? ` (${trashCount})` : ''}
+        </button>
         <button onClick={onOpenPrivacy} className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors">
           Integritetspolicy
         </button>

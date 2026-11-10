@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, User2, Activity, Lock, Send, Code, FileText, X } from 'lucide-react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -6,7 +6,7 @@ import { Note } from '../types';
 
 interface RealTimeCollaborateProps {
   open: boolean;
-  note: Note;
+  note?: Note | null;
   user: any;
   onContentChange: (content: string) => void;
   onClose: () => void;
@@ -14,21 +14,22 @@ interface RealTimeCollaborateProps {
 }
 
 export default function RealTimeCollaborate({
-  note, user, onContentChange, onClose, isDark = true,
+  open, note, user, onContentChange, onClose, isDark = true,
 }: RealTimeCollaborateProps) {
-  const [collaborators, setCollaborators] = useState<any[]>([{ ...user, cursor: { x: 0, y: 0 }, color: 'cyan' }]);
+  const [collaborators, setCollaborators] = useState<any[]>([{ ...(user || {}), cursor: { x: 0, y: 0 }, color: 'cyan' }]);
   const [localUsers, setLocalUsers] = useState<Record<string, any>>({});
+  const onContentChangeRef = useRef(onContentChange);
+  onContentChangeRef.current = onContentChange;
+  const noteId = note?.id;
 
   useEffect(() => {
-    if (!note.id) return;
+    if (!open || !noteId) return;
 
     // Listen for real-time changes to the note
-    const unsub = onSnapshot(doc(db, 'notes', note.id), (snapshot) => {
+    const unsub = onSnapshot(doc(db, 'notes', noteId), (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        const content = data.content || '';
-        // Only update if different from local (avoid loops)
-        onContentChange(content);
+        onContentChangeRef.current(data.content || '');
       }
     });
 
@@ -36,10 +37,12 @@ export default function RealTimeCollaborate({
     // In a real app, use Firebase Realtime Database or Firestore presence
     // For now, simulate with local state
     return () => unsub();
-  }, [note.id, onContentChange]);
+  }, [open, noteId]);
 
   // Simulate cursor movement for other users
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+
+  if (!open || !note) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] flex flex-col bg-[var(--bg-deep)]">

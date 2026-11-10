@@ -14,9 +14,9 @@ interface CalendarViewProps {
 export default function CalendarView({
   open, onClose, notes, onSelectNote,
 }: CalendarViewProps) {
-  if (!open) return null;
-
   const [viewDate, setViewDate] = useState(new Date());
+
+  if (!open) return null;
 
   const monthStart = startOfMonth(viewDate);
   const monthEnd = endOfMonth(viewDate);
