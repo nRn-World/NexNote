@@ -40,6 +40,7 @@ import BackupModal from './components/BackupModal';
 import TemplatePickerModal from './components/TemplatePickerModal';
 import LockModal from './components/LockModal';
 import CalendarView from './components/CalendarView';
+import RealTimeCollaborate from './components/RealTimeCollaborate';
 
 function decodeContent(raw: string): string {
   if (!raw) return '';
@@ -132,6 +133,7 @@ export default function App() {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showCollaborate, setShowCollaborate] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [lockPassword, setLockPassword] = useState('');
   const [lockingNoteId, setLockingNoteId] = useState<string | null>(null);
@@ -1597,6 +1599,9 @@ export default function App() {
                                 <button onClick={() => activeNote && exportNoteAsMarkdown(activeNote)} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-400/5 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/10 transition-all">
                                   <FileText size={12} /> Markdown
                                 </button>
+                                <button onClick={() => { setShowCollaborate(true); }} className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-400 bg-purple-400/5 border border-purple-500/20 rounded-lg hover:bg-purple-500/10 transition-all">
+                                  <User size={12} /> Samarbete
+                                </button>
                               </>
                             )}
                           <button onClick={toggleCodeEditor} className="p-2 text-slate-500 hover:text-red-400 transition-colors"><X size={18} /></button>
@@ -2014,6 +2019,19 @@ export default function App() {
         onClose={() => setShowCalendar(false)}
         notes={notes}
         onSelectNote={(id) => { setActiveNoteId(id); setShowCalendar(false); }}
+      />
+
+      <RealTimeCollaborate
+        open={showCollaborate}
+        note={activeNote}
+        user={user}
+        onContentChange={(content) => {
+          if (activeNote) {
+            updateActiveNote({ content });
+          }
+        }}
+        onClose={() => setShowCollaborate(false)}
+        isDark={isDark}
       />
 
       {showAiModal && (
