@@ -77,6 +77,7 @@ export default function ${componentName}() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     addToast('File download started!', 'success');
   };
 

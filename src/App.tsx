@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -162,6 +162,8 @@ export default function App() {
   const notesRef = useRef<Note[]>([]);
   const hasSeenWelcomeRef = useRef(false);
   const { toasts, addToast, removeToast } = useToast();
+  // Stable pseudo-random pattern for the activity heatmap; regenerating it on every render made it flicker while typing.
+  const activityHeatmap = useMemo(() => Array.from({ length: 35 }, () => Math.random()), []);
   notesRef.current = notes;
   activeNoteIdRef.current = activeNoteId;
 
@@ -834,7 +836,16 @@ export default function App() {
       onConfirm: async () => {
         setConfirm(c => ({ ...c, open: false }));
         try {
-          await Promise.all(trash.map(n => deleteDoc(doc(db, 'notes', n.id))));
+          await Promise.all(trash.map(async n => {
+            if (n.attachments?.length) {
+              await Promise.all(n.attachments.map(async a => {
+                if (a.data.includes('firebasestorage')) {
+                  try { await deleteObject(ref(storage, `users/${user.uid}/notes/${n.id}/${a.id}_${a.name}`)); } catch { /* already removed */ }
+                }
+              }));
+            }
+            await deleteDoc(doc(db, 'notes', n.id));
+          }));
           trash.forEach(n => delete noteDraftsRef.current[n.id]);
           setTrash([]);
           addToast('Papperskorg tömd.', 'success');
@@ -1705,7 +1716,6 @@ export default function App() {
             onMouseMove={handleMouseMove}
             className="flex-1 flex flex-col items-center justify-start py-12 px-8 hidden md:flex text-center bg-[#090A0F] relative overflow-hidden no-scrollbar"
           >
-             <StarryBackground />
 
              {/* Animated Background Orbs */}
              <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -1897,10 +1907,10 @@ export default function App() {
                       <span className="text-[10px] font-bold text-cyan-400">{notes.length} anteckningar</span>
                     </div>
                     <div className="grid grid-cols-7 gap-1.5">
-                      {Array.from({ length: 35 }).map((_, i) => (
+                      {activityHeatmap.map((value, i) => (
                         <div key={i} className={cn(
                            "w-3.5 h-3.5 rounded-[3px] transition-colors",
-                           Math.random() > 0.6 ? (Math.random() > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
+                           value > 0.6 ? (value > 0.8 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(0,242,255,0.4)]' : 'bg-cyan-500/50') : 'bg-zinc-800'
                         )} />
                       ))}
                     </div>

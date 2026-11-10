@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Download, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -11,6 +11,7 @@ interface BackupModalProps {
 
 export default function BackupModal({ open, onClose, onExport, onImport }: BackupModalProps) {
   const [imported, setImported] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
@@ -56,12 +57,14 @@ export default function BackupModal({ open, onClose, onExport, onImport }: Backu
             <p className="text-sm text-zinc-400 mb-4">
               Välj en tidigare exporterad NexNote-fil (.json). Anteckningarna läggs till i ditt nuvarande konto.
             </p>
-            <label className="block w-full">
-              <input type="file" accept=".json" className="sr-only" onChange={handleImportChange} />
-              <button className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors flex items-center justify-center gap-2">
-                <Upload size={16} /> Välj säkerhetskopia…
-              </button>
-            </label>
+            <input ref={fileInputRef} type="file" accept=".json" className="sr-only" onChange={handleImportChange} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Upload size={16} /> Välj säkerhetskopia…
+            </button>
             {imported && (
               <p className="mt-2 text-xs flex items-center gap-1.5 text-green-400">
                 <CheckCircle size={14} /> Importerade: <span className="font-mono truncate max-w-xs">{imported}</span>

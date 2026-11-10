@@ -40,10 +40,15 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.includes('oauth')) return;
 
   // For HTML documents, always go to network (fresh index.html on OAuth redirect)
+  // and fall back to the cached shell when the network is unavailable.
   if (request.destination === 'document') {
-    return fetch(request).catch(() => {
-      return caches.match('./index.html');
-    });
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cached = await caches.match('./index.html');
+        return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+      })
+    );
+    return;
   }
 
   // For static assets, try cache first then network

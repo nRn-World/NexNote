@@ -57,7 +57,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
   return (
     <div
       className={cn(
-        'flex items-start gap-3 px-4 py-3 bg-zinc-800/90 border rounded-xl shadow-2xl text-sm max-w-sm w-full backdrop-blur-xl transition-all duration-300',
+        'relative flex items-start gap-3 px-4 py-3 bg-zinc-800/90 border rounded-xl shadow-2xl text-sm max-w-sm w-full backdrop-blur-xl transition-all duration-300',
         borders[toast.type],
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
