@@ -61,7 +61,7 @@ export default function NoteHeader({
             <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-0.5">
               <span>{wordCount} ord</span>
               <span className="w-px h-2 bg-zinc-700 mx-1" />
-              <span>{readingTime} min lästid</span>
+              <span>{readingTime} min read</span>
             </div>
           </div>
         </div>
@@ -71,13 +71,13 @@ export default function NoteHeader({
             <button onClick={onTogglePin}
               className={cn('p-2 rounded-xl transition-all',
                 note.isPinned ? 'text-cyan-400 bg-cyan-400/10 shadow-[0_0_15px_rgba(0,242,255,0.15)] neon-border-cyan' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={note.isPinned ? 'Avfäst' : 'Fäst'}>
+              )} title={note.isPinned ? 'Unpin' : 'Pin'}>
               <Pin size={18} className={cn(note.isPinned && 'fill-cyan-400')} />
             </button>
             <button onClick={onToggleLock}
               className={cn('p-2 rounded-xl transition-all',
                 note.isLocked ? 'text-yellow-400 bg-yellow-400/10 shadow-[0_0_15px_rgba(234,179,8,0.15)]' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={note.isLocked ? 'Lås upp anteckning' : 'Lås anteckning'}>
+              )} title={note.isLocked ? 'Unlock note' : 'Lock note'}>
               {note.isLocked ? <LockOpen size={18} className="fill-yellow-400" /> : <Lock size={18} />}
             </button>
             <button onClick={onToggleHistory}
@@ -89,13 +89,13 @@ export default function NoteHeader({
             <button onClick={onShare}
               className={cn('p-2 rounded-xl transition-all',
                 note.isShared ? 'text-purple-400 bg-purple-400/10 shadow-[0_0_15px_rgba(188,0,255,0.15)]' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title="Dela anteckning">
+              )} title="Share note">
               <Share2 size={18} />
             </button>
           </div>
 
           <div className="flex items-center gap-1">
-            <button onClick={onImageClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Lägg till bild">
+            <button onClick={onImageClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Add image">
               <ImageIcon size={18} />
             </button>
             <button onClick={onFileClick} className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Bifoga fil">
@@ -104,31 +104,31 @@ export default function NoteHeader({
             <button onClick={onToggleCode}
               className={cn('p-2 rounded-xl transition-all',
                 note.code ? 'text-cyan-400 bg-cyan-400/10' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title="Kodeditor">
+              )} title="Codeeditor">
               <Code size={18} />
             </button>
             <button onClick={onPrint}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Skriv ut anteckning">
+              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Print note">
               <Printer size={18} />
             </button>
             <button onClick={onDuplicate}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Duplicera anteckning">
+              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Duplicate note">
               <Copy size={18} />
             </button>
             <button onClick={onToggleFocus}
               className={cn('p-2 rounded-xl transition-all',
                 isFocusMode ? 'text-cyan-400 bg-cyan-400/10' : 'text-zinc-500 hover:text-white hover:bg-white/3'
-              )} title={isFocusMode ? 'Avsluta fokusläge' : 'Fokusläge'}>
+              )} title={isFocusMode ? 'Exit focus mode' : 'Focus mode'}>
               {isFocusMode ? <Maximize2 size={18} /> : <Maximize size={18} />}
             </button>
             <button onClick={onDownloadImage}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Ladda ned som bild">
+              className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Download as image">
               <Image size={18} />
             </button>
             <button onClick={() => onSetReminder(note.reminderAt ? null : Date.now() + 3600000)}
               className={cn('p-2 rounded-xl transition-all', 
                 note.reminderAt ? 'text-yellow-400 bg-yellow-400/10' : 'text-zinc-500 hover:text-yellow-400 hover:bg-white/3'
-              )} title={note.reminderAt ? 'Ta bort påminnelse' : 'Sätt påminnelse (1 timme)'}>
+              )} title={note.reminderAt ? 'Remove reminder' : 'Set reminder (1 hour)'}>
               <Bell size={18} />
               {note.reminderAt && <span className="text-[10px] font-bold text-yellow-400">⏰</span>}
             </button>
@@ -143,7 +143,7 @@ export default function NoteHeader({
                 ? 'bg-transparent text-green-400 border border-green-400/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]'
                 : 'bg-zinc-900 text-white hover:scale-105 active:scale-95 disabled:opacity-50'
             )}
-            title="Spara (Ctrl+S)"
+            title="Save (Ctrl+S)"
           >
             {isSaving
               ? <Loader2 size={14} className="animate-spin" />
@@ -151,7 +151,7 @@ export default function NoteHeader({
                 ? <Check size={14} />
                 : <Save size={14} />}
             <span className="hidden sm:inline">
-              {isSaving ? 'Synkar...' : isSaved ? 'Sparad' : 'Spara'}
+              {isSaving ? 'Syncing…' : isSaved ? 'Saved' : 'Save'}
             </span>
           </button>
         </div>
@@ -164,7 +164,7 @@ export default function NoteHeader({
           onChange={e => onCategoryChange(e.target.value || undefined)}
           className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 bg-transparent border-none outline-none cursor-pointer hover:text-cyan-400 transition-colors"
         >
-          <option value="" className="bg-[#0B0D17]">Ingen kategori</option>
+          <option value="" className="bg-[#0B0D17]">No category</option>
           {categories.map(c => (
             <option key={c.id} value={c.id} className="bg-[#0B0D17]">{c.name}</option>
           ))}

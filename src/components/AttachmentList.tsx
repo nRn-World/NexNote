@@ -47,7 +47,7 @@ export default function AttachmentList({ attachments, onDownload, onRemove, onIm
               <p className="text-xs text-zinc-500">{formatFileSize(a.size)}</p>
             </div>
             <div className="flex items-center gap-1 opacity-0 md:opacity-100 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700 rounded-md" title="Ladda ned">
+              <button onClick={() => onDownload(a)} className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700 rounded-md" title="Download">
                 <Download size={16} />
               </button>
               <button onClick={() => onRemove(a.id)} className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-900/20 rounded-md" title="Ta bort">

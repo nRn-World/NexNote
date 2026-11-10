@@ -10,6 +10,7 @@ import { cn, PREVIEW_SANDBOX } from '../lib/utils';
 import CategoryManager from './CategoryManager';
 import ContextMenu, { ContextMenuItem } from './ContextMenu';
 import Skeleton from './Skeleton';
+import BrandLogo from './BrandLogo';
 import EmptyState from './EmptyState';
 
 interface SidebarProps {
@@ -65,7 +66,7 @@ function CategorySubmenu({ categories, onSelect, onClose, anchorX, anchorY }: {
     <div style={style} className="w-56 glass-panel rounded-2xl shadow-2xl py-1.5 overflow-hidden border border-white/10">
       <button onClick={() => { onSelect(undefined); onClose(); }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/3 transition-colors">
-        <FolderOpen size={14} className="opacity-50" /> Ingen kategori
+        <FolderOpen size={14} className="opacity-50" /> No category
       </button>
       {categories.map(cat => (
         <button key={cat.id} onClick={() => { onSelect(cat.id); onClose(); }}
@@ -141,9 +142,9 @@ function SortableNote({
           <h3 className={cn(
             'font-semibold truncate flex-1 tracking-tight',
             isActive ? 'text-white' : 'text-zinc-300 group-hover:text-white'
-          )}>{note.title || 'Namnlös anteckning'}</h3>
+          )}>{note.title || 'Untitled note'}</h3>
         </div>
-        <p className="text-[11px] text-zinc-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Tom anteckning...'}</p>
+        <p className="text-[11px] text-zinc-400 mt-1 truncate leading-relaxed">{note.content.replace(/<[^>]*>/g, '') || 'Empty note…'}</p>
         <div className="flex items-center justify-between mt-2.5">
           <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider text-zinc-500">
             <span>{format(note.updatedAt, 'MMM d', { locale: enUS })}</span>
@@ -239,31 +240,31 @@ export default function Sidebar({
 
     const items: ContextMenuItem[] = [
       {
-        label: 'Duplicera anteckning',
+        label: 'Duplicate note',
         icon: <Copy size={14} />,
         onClick: () => { onDuplicateNote?.(note.id); setCtxMenu(null); },
       },
       {
-        label: 'Ändra namn',
+        label: 'Rename',
         icon: <Pencil size={14} />,
         onClick: () => {
-          const newTitle = window.prompt('Nytt namn:', note.title);
+          const newTitle = window.prompt('New name:', note.title);
           if (newTitle !== null) onRenameNote(note.id, newTitle);
         },
       },
       {
-        label: 'Ändra omslagsbild',
+        label: 'Change cover image',
         icon: <Image size={14} />,
         onClick: () => { setPendingCoverNoteId(note.id); coverInputRef.current?.click(); },
       },
       {
-        label: 'Flytta till kategori →',
+        label: 'Move to category →',
         icon: <FolderInput size={14} />,
         divider: true,
         onClick: () => setSubMenu({ x: e.clientX, y: e.clientY, noteId: note.id }),
       },
       {
-        label: 'Flytta till papperskorg',
+        label: 'Move to trash',
         icon: <Trash2 size={14} />,
         danger: true,
         divider: true,
@@ -294,14 +295,10 @@ export default function Sidebar({
       activeNoteId ? '-translate-x-full md:translate-x-0' : 'translate-x-0 flex'
     )}>
       <div className="p-5 pb-6 flex flex-col gap-6 border-b border-white/10">
-        <div className="flex justify-center w-full">
-           <img
-             src="./logoandtextWhite2.png"
-             alt="NexNote"
-             onClick={onGoHome}
-             className="h-20 w-auto cursor-pointer hover:scale-105 transition-all duration-300"
-           />
-        </div>
+        <BrandLogo
+          onClick={onGoHome}
+          className="w-full cursor-pointer transition-transform duration-300 hover:scale-105"
+        />
 
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-3">
@@ -318,9 +315,9 @@ export default function Sidebar({
 
           <div className="flex items-center gap-4">
             <button onClick={onLogout} className="text-[13px] font-bold text-zinc-400 hover:text-white transition-all uppercase tracking-widest" title="Logout">
-              {isGuest ? 'Avsluta gäst' : 'Logga ut'}
+              {isGuest ? 'Exit guest mode' : 'Sign out'}
             </button>
-            <button onClick={onCreateNote} className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-zinc-800 transition-all shadow-lg active:scale-95" title="Ny anteckning">
+            <button onClick={onCreateNote} className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-zinc-800 transition-all shadow-lg active:scale-95" title="New note">
                <Plus size={20} />
             </button>
           </div>
@@ -329,7 +326,7 @@ export default function Sidebar({
 
       <div className="relative mt-2 px-4">
         <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-        <input type="text" placeholder="Sök anteckningar..." value={searchQuery}
+        <input type="text" placeholder="Search notes…" value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
           className="w-full pl-9 pr-4 py-2 bg-[var(--bg-panel-hover)] rounded-lg text-sm placeholder:text-zinc-500 border-none outline-none focus:ring-1 focus:ring-zinc-600/20 transition-all font-medium"
         />
@@ -370,9 +367,9 @@ export default function Sidebar({
         {allTags.length > 0 && (
           <div className="mt-4 px-2 mb-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Taggar</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Tags</span>
               {activeTag && (
-                <button onClick={() => onSelectTag(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300">Rensa</button>
+                <button onClick={() => onSelectTag(null)} className="text-[10px] text-cyan-400 font-bold hover:text-cyan-300">Clear</button>
               )}
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -401,7 +398,7 @@ export default function Sidebar({
 
         <div className="mt-4 pt-2">
            <div className="flex items-center justify-between mb-4 px-2">
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Anteckningar</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Notes</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={onTogglePinnedOnly}
@@ -413,7 +410,7 @@ export default function Sidebar({
                   <Star size={12} className="fill-yellow-400" />
                   <span>Pinnade</span>
                 </button>
-                {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} Valda</span>}
+                {isSelecting && <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest animate-pulse">{selectedIds.size} selected</span>}
               </div>
            </div>
 
@@ -424,9 +421,9 @@ export default function Sidebar({
           ) : filtered.length === 0 && searchQuery ? (
             <EmptyState variant="search" />
           ) : filtered.length === 0 && activeCategoryId ? (
-            <EmptyState variant="category" actionLabel="Skapa anteckning" onAction={onCreateNote} />
+            <EmptyState variant="category" actionLabel="Create a note" onAction={onCreateNote} />
           ) : filtered.length === 0 ? (
-            <EmptyState variant="notes" actionLabel="Skapa din första anteckning" onAction={onCreateNote} />
+            <EmptyState variant="notes" actionLabel="Create your first note" onAction={onCreateNote} />
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={filtered.map(n => n.id)} strategy={verticalListSortingStrategy}>
@@ -452,13 +449,13 @@ export default function Sidebar({
             onClick={e => setBulkCatMenu({ x: e.clientX, y: e.clientY })}
             className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-white/3 hover:bg-white/5 rounded-xl text-zinc-200 transition-all"
           >
-            <FolderInput size={14} /> Flytta
+            <FolderInput size={14} /> Move
           </button>
           <button
             onClick={() => { onDeleteManyNotes(Array.from(selectedIds)); clearSelection(); }}
             className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold bg-red-500/20 hover:bg-red-500/30 rounded-xl text-red-400 transition-all border border-red-500/10"
           >
-            <Trash2 size={14} /> Radera
+            <Trash2 size={14} /> Delete
           </button>
           <button onClick={clearSelection} className="p-2 text-zinc-400 hover:text-white">
             <X size={16} />

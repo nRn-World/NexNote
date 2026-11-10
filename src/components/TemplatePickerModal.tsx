@@ -15,20 +15,20 @@ interface Template {
 
 const TEMPLATES: Template[] = [
   {
-    id: 'blank', title: 'Tom anteckning', content: '<p>Börja skriva här…</p>', tags: [],
-    icon: <FileText size={16} />, label: 'Tom', desc: 'En blank anteckning att fylla i.',
+    id: 'blank', title: 'Blank note', content: '<p>Start writing here…</p>', tags: [],
+    icon: <FileText size={16} />, label: 'Blank', desc: 'A blank note ready for you to fill in.',
   },
   {
-    id: 'code', title: 'Kodsnutt', content: '<h3>Beskrivning</h3><p>Vad gör koden?</p><h3>Kod</h3><pre><code>// Din kod här</code></pre>', tags: ['kod'],
-    icon: <Code2 size={16} />, label: 'Kod', desc: 'För kodsnuttar och tekniska anteckningar.',
+    id: 'code', title: 'Code snippet', content: '<h3>Description</h3><p>What does the code do?</p><h3>Code</h3><pre><code>// Your code here</code></pre>', tags: ['code'],
+    icon: <Code2 size={16} />, label: 'Code', desc: 'For code snippets and technical notes.',
   },
   {
-    id: 'meeting', title: 'Mötesanteckningar', content: '<h3>Möte</h3><p><strong>Datum:</strong> <br/><strong>Deltagare:</strong> <br/><strong>Ämne:</strong> </p><h3>Diskuterades</h3><ul><li></li></ul><h3>Att göra</h3><ul><li>[ ] </li></ul>', tags: ['möte', 'arbete'],
-    icon: <Mail size={16} />, label: 'Möte', desc: 'Struktur för mötesanteckningar och åtgärder.',
+    id: 'meeting', title: 'Meeting notes', content: '<h3>Meeting</h3><p><strong>Date:</strong> <br/><strong>Attendees:</strong> <br/><strong>Topic:</strong> </p><h3>Discussion</h3><ul><li></li></ul><h3>To do</h3><ul><li>[ ] </li></ul>', tags: ['meeting', 'work'],
+    icon: <Mail size={16} />, label: 'Meeting', desc: 'A structure for meeting notes and action items.',
   },
   {
-    id: 'journal', title: 'Dagbok / Journal', content: '<h3>{date}</h3><p>Idag känns det…</p><h3>Bra saker idag</h3><ul><li></li></ul><h3>Att komma ihåg</h3><ul><li></li></ul>', tags: ['dagbok', 'personligt'],
-    icon: <Calendar size={16} />, label: 'Dagbok', desc: 'En mall för dina dagliga tankar.',
+    id: 'journal', title: 'Daily journal', content: '<h3>{date}</h3><p>Today I feel…</p><h3>Good things today</h3><ul><li></li></ul><h3>Things to remember</h3><ul><li></li></ul>', tags: ['journal', 'personal'],
+    icon: <Calendar size={16} />, label: 'Journal', desc: 'A template for your daily thoughts.',
   },
 ];
 
@@ -42,7 +42,7 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
   if (!open) return null;
 
   const now = new Date();
-  const dateString = now.toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateString = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 sm:p-6" onClick={onClose}>
@@ -50,7 +50,7 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
         <div className="p-5 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-800/30">
           <div className="flex items-center gap-2">
             <Sparkles size={20} className="text-cyan-400" />
-            <h2 className="text-base font-bold text-white">Ny anteckning från mall</h2>
+            <h2 className="text-base font-bold text-white">New note from template</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors">
             <X size={18} />
@@ -59,7 +59,7 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
 
         <div className="p-6 overflow-y-auto max-h-[65vh] no-scrollbar">
           <p className="text-sm text-zinc-400 mb-6">
-            Välj en mall. Datumet fylls i automatiskt i dagboksmallen.
+            Choose a template. The date is filled in automatically in the journal template.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {TEMPLATES.map(t => {
@@ -88,7 +88,7 @@ export default function TemplatePickerModal({ open, onClose, onSelect }: Templat
 
         <div className="p-4 border-t border-zinc-800/50 bg-zinc-800/30">
           <button onClick={onClose} className="w-full py-2 px-4 rounded-xl text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
-            Avbryt
+            Cancel
           </button>
         </div>
       </div>

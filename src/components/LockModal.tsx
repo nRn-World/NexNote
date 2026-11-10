@@ -23,7 +23,7 @@ export default function LockModal({
           <div className="flex items-center gap-2">
             {isLocked ? <Lock size={24} className="text-yellow-400" /> : <LockOpen size={24} className="text-cyan-400" />}
             <h3 className="text-lg font-bold text-white">
-              {isLocked ? 'Lås upp anteckning' : 'Lås anteckning'}
+              {isLocked ? 'Unlock note' : 'Lock note'}
             </h3>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-white">
@@ -33,13 +33,13 @@ export default function LockModal({
 
         <div className="space-y-4">
           <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-            {isLocked ? 'Ange lösenord' : 'Ställ in lösenord'}
+            {isLocked ? 'Enter password' : 'Set a password'}
           </label>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            placeholder={isLocked ? 'Lösenord...' : 'Välj lösenord...'}
+            placeholder={isLocked ? 'Password…' : 'Choose a password…'}
             className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-700 text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
           />
 
@@ -48,7 +48,7 @@ export default function LockModal({
               onClick={onClose}
               className="flex-1 py-3 rounded-xl bg-transparent border border-white/10 text-zinc-300 hover:bg-white/5 transition-all"
             >
-              Avbryt
+              Cancel
             </button>
             <button
               onClick={() => (isLocked ? onUnlock(password) : onSetLock(password))}
@@ -59,7 +59,7 @@ export default function LockModal({
                   : 'bg-yellow-500 hover:bg-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.3)]'
               }`}
             >
-              {isLocked ? 'Lås upp' : 'Sätt lås'}
+              {isLocked ? 'Unlock' : 'Set lock'}
               {!isLocked && <Check size={16} className="ml-2" />}
             </button>
           </div>
@@ -68,8 +68,8 @@ export default function LockModal({
         <div className="mt-4 pt-4 border-t border-white/10">
           <p className="text-[10px] text-zinc-500 text-center">
             {isLocked
-              ? 'Lösenordet sparas lokalt. Glömt lösenord = förlorad åtkomst.'
-              : 'Anteckningen kommer att vara låst med detta lösenord.'}
+              ? 'The password is stored locally. If you forget it, access will be lost.'
+              : 'This note will be locked with this password.'}
           </p>
         </div>
       </div>

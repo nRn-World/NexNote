@@ -26,13 +26,13 @@ export default function JamSession({ noteId, user, currentCode, onUpdate, onClos
           </div>
           <div>
             <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Jam Session</h3>
-            <p className="text-[10px] text-zinc-500 font-bold">Realidsamarbete på kod</p>
+            <p className="text-[10px] text-zinc-500 font-bold">Real-time code collaboration</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isHost ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}>
             <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            Värd
+            Host
           </span>
           <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors"><X size={18} /></button>
         </div>
@@ -42,7 +42,7 @@ export default function JamSession({ noteId, user, currentCode, onUpdate, onClos
         {/* Session Info */}
         <div className="space-y-3">
           <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-            <Users size={12} /> Deltagare ({participants.length})
+            <Users size={12} /> Participants ({participants.length})
           </label>
           <div className="flex gap-2">
             {participants.map(p => (
@@ -57,7 +57,7 @@ export default function JamSession({ noteId, user, currentCode, onUpdate, onClos
         {/* Controls */}
         <div className="space-y-3">
           <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-            <Zap size={12} /> Session-läge
+            <Zap size={12} /> Session mode
           </label>
           <div className="flex gap-2">
             {(['none', 'cursor', 'selection'] as const).map(mode => (
@@ -82,19 +82,19 @@ export default function JamSession({ noteId, user, currentCode, onUpdate, onClos
 
         {/* Current Code Preview */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Aktuell kod</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Current code</label>
           <div className="grid grid-cols-3 gap-2">
             <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
               <div className="text-[10px] text-cyan-400 font-mono mb-1">HTML</div>
-              <div className="text-[10px] text-zinc-500 truncate">{currentCode.html ? `${currentCode.html.length} tecken` : 'Tom'}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.html ? `${currentCode.html.length} tecken` : 'Blank'}</div>
             </div>
             <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
               <div className="text-[10px] text-indigo-400 font-mono mb-1">CSS</div>
-              <div className="text-[10px] text-zinc-500 truncate">{currentCode.css ? `${currentCode.css.length} tecken` : 'Tom'}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.css ? `${currentCode.css.length} tecken` : 'Blank'}</div>
             </div>
             <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-xl">
               <div className="text-[10px] text-yellow-400 font-mono mb-1">JS</div>
-              <div className="text-[10px] text-zinc-500 truncate">{currentCode.js ? `${currentCode.js.length} tecken` : 'Tom'}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{currentCode.js ? `${currentCode.js.length} tecken` : 'Blank'}</div>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function JamSession({ noteId, user, currentCode, onUpdate, onClos
         <button
           onClick={() => {
             onUpdate(currentCode);
-            addToast('Kod synkrad med alla deltagare.', 'success');
+            addToast('Code synced with all participants.', 'success');
           }}
           className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-3"
         >

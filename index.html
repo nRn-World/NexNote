@@ -13,22 +13,35 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
+      // A previous service worker cached stale app bundles and could leave the
+      // page blank after a deployment. Remove it and its cache; do not register
+      // another worker until the offline cache can be versioned safely.
       if ('serviceWorker' in navigator) {
-        // Unregister ALL old service workers first so cached broken versions are cleared
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((registration) => {
-            registration.unregister();
-            console.log('NexNote: Unregistered old service worker');
-          });
-        }).catch(() => {});
-        
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('NexNote: Service Worker registered'))
-          .catch(err => console.log('NexNote: SW registration failed', err));
+        navigator.serviceWorker.getRegistrations()
+          .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+          .catch(() => {});
       }
+      if ('caches' in window) {
+        caches.keys()
+          .then((keys) => Promise.all(keys.filter((key) => key.startsWith('nexnote-')).map((key) => caches.delete(key))))
+          .catch(() => {});
+      }
+      window.addEventListener('error', (event) => {
+        const status = document.getElementById('boot-status');
+        if (status && (event.target?.tagName === 'SCRIPT' || !event.target)) {
+          status.textContent = 'NexNote could not load. Check your connection and reload the page.';
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', () => {
+        const status = document.getElementById('boot-status');
+        if (status) status.textContent = 'NexNote could not start. Reload the page and try again.';
+      });
     </script>
   </head>
   <body>
+    <div id="boot-status" role="status" style="position:fixed;inset:0;display:grid;place-items:center;background:#0D0F16;color:#94A3B8;font:500 14px system-ui,sans-serif;z-index:2147483647">
+      Loading NexNote…
+    </div>
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

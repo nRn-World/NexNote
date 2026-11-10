@@ -50,8 +50,8 @@ export default function RealTimeCollaborate({
             {user?.displayName?.[0] || 'U'}
           </div>
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-white">Redigerar tillsammans</h3>
-            <p className="text-[10px] text-zinc-500">{note.title || 'Namnlös anteckning'}</p>
+            <h3 className="text-sm font-bold text-white">Collaborating live</h3>
+            <p className="text-[10px] text-zinc-500">{note.title || 'Untitled note'}</p>
           </div>
         </div>
 
@@ -70,13 +70,13 @@ export default function RealTimeCollaborate({
       <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/3">
         <div className="flex items-center gap-2">
           <User2 size={14} className="text-zinc-500" />
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Deltagare</span>
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Participants</span>
         </div>
         <div className="flex gap-2">
           {collaborators.map((c, i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
               <div className={`w-2 h-2 rounded-full ${c.color === 'cyan' ? 'bg-cyan-400' : c.color === 'purple' ? 'bg-purple-400' : 'bg-emerald-400'}`} />
-              <span className="text-[10px] font-bold text-zinc-300">{c.displayName || 'Användare'}</span>
+              <span className="text-[10px] font-bold text-zinc-300">{c.displayName || 'User'}</span>
             </div>
           ))}
           <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
@@ -93,26 +93,26 @@ export default function RealTimeCollaborate({
           </div>
           <h4 className="text-lg font-bold text-white mb-2">Realidsamarbete aktivt</h4>
           <p className="text-zinc-500 text-sm mb-6 max-w-md">
-            Ändringar synkroniseras automatiskt mellan alla deltagare i realtid.
-            Se andra användares markörer och val när de skriver.
+            Changes sync automatically between all participants in real time.
+            See other users’ cursors and selections as they type.
           </p>
           
           <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
             <button className="px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all">
-              <Code size={16} className="mr-2" /> Kodläge
+              <Code size={16} className="mr-2" /> Code mode
             </button>
             <button className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-zinc-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
-              <FileText size={16} className="mr-2" /> Textläge
+              <FileText size={16} className="mr-2" /> Text mode
             </button>
           </div>
 
           <div className="mt-8 p-4 rounded-xl bg-white/3 border border-white/5">
             <div className="flex items-center gap-3 mb-2">
               <Lock size={16} className="text-zinc-500" />
-              <span className="text-xs font-bold text-zinc-400">Säkerhet</span>
+              <span className="text-xs font-bold text-zinc-400">Security</span>
             </div>
             <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Alla ändringar krypteras och sparas i molnet. Endast inbjudna deltagare kan se och redigera.
+              All changes are encrypted and saved to the cloud. Only invited participants can view and edit.
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function RealTimeCollaborate({
             </button>
           </div>
           <button onClick={onClose} className="px-6 py-2 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all">
-            Stäng samarbete
+            Close samarbete
           </button>
         </div>
       </div>

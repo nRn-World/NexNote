@@ -36,7 +36,7 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
     extensions: [
       StarterKit,
       Underline,
-      Placeholder.configure({ placeholder: 'Börja visualisera din nästa skapelse här...' }),
+      Placeholder.configure({ placeholder: 'Start shaping your next creation here…' }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content,
@@ -70,7 +70,7 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
         <ToolbarBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Kursiv (Ctrl+I)">
           <Italic size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Understruken (Ctrl+U)">
+        <ToolbarBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline (Ctrl+U)">
           <UnderlineIcon size={16} />
         </ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Genomstruken">
@@ -84,13 +84,13 @@ export default function RichEditor({ content, onChange, isDark = true }: RichEdi
           <ListOrdered size={16} />
         </ToolbarBtn>
         <div className="w-px h-6 bg-white/5 mx-1" />
-        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Vänster">
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Left">
           <AlignLeft size={16} />
         </ToolbarBtn>
         <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Centrerad">
           <AlignCenter size={16} />
         </ToolbarBtn>
-        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Höger">
+        <ToolbarBtn onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Right">
           <AlignRight size={16} />
         </ToolbarBtn>
       </div>

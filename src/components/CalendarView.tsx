@@ -35,7 +35,7 @@ export default function CalendarView({
   const nextMonth = () => setViewDate(addMonths(viewDate, 1));
 
   const monthName = format(viewDate, 'MMMM yyyy', { locale: enUS });
-  const weekdays = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Find first day of week for the first day of month
   const firstDayOfMonth = days[0];
@@ -123,12 +123,12 @@ export default function CalendarView({
         </div>
 
         <div className="mt-6 pt-4 border-t border-white/10">
-          <p className="text-[10px] text-zinc-500 mb-2">Anteckningar denna månad</p>
+          <p className="text-[10px] text-zinc-500 mb-2">Notes this month</p>
           <div className="space-y-1">
             {days.flatMap(day => notesByDate[format(day, 'yyyy-MM-dd')] || []).slice(0, 10).map(n => (
               <div key={n.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors" onClick={() => { onSelectNote(n.id); onClose(); }}>
                 <div className="flex-1">
-                  <div className="text-xs font-semibold text-white truncate">{n.title || 'Namnlös'}</div>
+                  <div className="text-xs font-semibold text-white truncate">{n.title || 'Untitled'}</div>
                   <div className="text-[9px] text-zinc-500">{format(new Date(n.updatedAt), 'd MMM HH:mm', { locale: enUS })}</div>
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />

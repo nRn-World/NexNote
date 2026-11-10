@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import UserProfilePage from './UserProfilePage';
 import CommunityBackground from './CommunityBackground';
+import BrandLogo from './BrandLogo';
 
 export interface CommunityPost {
   id: string;
@@ -792,12 +793,7 @@ export default function CommunityView({
         {/* Top nav */}
         <div className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-glass)] bg-[var(--bg-panel)] backdrop-blur-sm">
         <div className="flex items-center gap-4">
-           <img 
-             src={isDark ? "./logoandtext2.png" : "./logoandtextWhite2.png"} 
-             alt="NexNote Community" 
-             onClick={onClose}
-             className="h-20 w-auto cursor-pointer hover:scale-105 transition-all" 
-           />
+           <BrandLogo onClick={onClose} className="cursor-pointer transition-transform hover:scale-105" />
            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-500/15 text-green-500 border border-green-500/25 rounded-full uppercase tracking-wider -ml-1 mt-1">Live</span>
         </div>
 
@@ -889,7 +885,7 @@ export default function CommunityView({
                   <div className="space-y-4">
                     <h2 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-tight">Neon Pulse <span className="text-yellow-400">#01</span></h2>
                     <p className="text-zinc-400 text-sm font-medium leading-relaxed max-w-lg">
-                      Create the most stunning neon-themed UI elements or animations. Focus on glow effects, dark backgrounds, and vibrant colors.
+                      Create stunning neon-themed UI elements or animations with glow effects, dark backgrounds, and vibrant colors.
                     </p>
                   </div>
 
@@ -899,7 +895,7 @@ export default function CommunityView({
                       <p className="text-white font-bold text-xs">"Neon Master" Badge</p>
                     </div>
                     <div className="w-px h-8 bg-white/3" />
-<button onClick={() => { if (isGuest) { alert('Logga in för att skicka in till utmaningar!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+<button onClick={() => { if (isGuest) { alert('Sign in to submit to challenges!'); return; } setShowUpload(true); }} className="px-6 py-3 bg-yellow-500 text-white font-black text-xs uppercase tracking-widest rounded-full hover:bg-yellow-400 transition-all shadow-xl shadow-yellow-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                       {isGuest ? 'Login to Submit' : 'Submit Entry'}
                     </button>
                   </div>
