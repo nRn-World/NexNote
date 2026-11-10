@@ -398,6 +398,21 @@ export default function App() {
     return () => window.removeEventListener('pagehide', onPageHide);
   }, []);
 
+  // Reminder checker — fires toast when a reminder is due
+  useEffect(() => {
+    if (!user || user.isGuest) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      notes.forEach(n => {
+        if (n.reminderAt && !n.reminderDone && n.reminderAt <= now) {
+          addToast(`Påminnelse: ${n.title || 'Anteckning'}`, 'info');
+          updateActiveNote({ id: n.id, reminderDone: true });
+        }
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user, notes, addToast]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); createNote(); }
@@ -1380,6 +1395,10 @@ export default function App() {
               isFocusMode={isFocusMode}
               wordCount={wordCount}
               readingTime={readingTime}
+              onSetReminder={(reminderAt) => {
+                if (!activeNote) return;
+                updateActiveNote({ reminderAt, reminderDone: false });
+              }}
             />
 
             <input type="file" ref={imageInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" multiple />

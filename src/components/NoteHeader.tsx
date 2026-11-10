@@ -4,7 +4,7 @@ import { enUS } from 'date-fns/locale';
 import {
   ChevronLeft, Pin, HistoryIcon,
   ImageIcon, Paperclip, Code, Share2, FolderOpen, Save, Check, Loader2,
-  Printer, Copy, Maximize, Maximize2, Image
+  Printer, Copy, Maximize, Maximize2, Image, Clock, Bell
 } from 'lucide-react';
 import { Note, Category } from '../types';
 import { cn } from '../lib/utils';
@@ -32,6 +32,7 @@ interface NoteHeaderProps {
   isFocusMode: boolean;
   wordCount: number;
   readingTime: number;
+  onSetReminder: (reminderAt: number | null) => void;
 }
 
 export default function NoteHeader({
@@ -39,7 +40,7 @@ export default function NoteHeader({
   onBack, onTogglePin, onToggleHistory,
   onImageClick, onFileClick, onToggleCode, onShare, onSave, onCategoryChange,
   onPrint, onDuplicate, onToggleFocus, onDownloadImage, isFocusMode,
-  wordCount, readingTime,
+  wordCount, readingTime, onSetReminder,
 }: NoteHeaderProps) {
   return (
     <div className="glass-panel border-b border-white/10 sticky top-0 z-20 transition-all">
@@ -116,6 +117,13 @@ export default function NoteHeader({
             <button onClick={onDownloadImage}
               className="p-2 text-zinc-400 hover:text-white hover:bg-white/3 rounded-xl transition-colors" title="Ladda ned som bild">
               <Image size={18} />
+            </button>
+            <button onClick={() => onSetReminder(note.reminderAt ? null : Date.now() + 3600000)}
+              className={cn('p-2 rounded-xl transition-all', 
+                note.reminderAt ? 'text-yellow-400 bg-yellow-400/10' : 'text-zinc-500 hover:text-yellow-400 hover:bg-white/3'
+              )} title={note.reminderAt ? 'Ta bort påminnelse' : 'Sätt påminnelse (1 timme)'}>
+              <Bell size={18} />
+              {note.reminderAt && <span className="text-[10px] font-bold text-yellow-400">⏰</span>}
             </button>
           </div>
 
