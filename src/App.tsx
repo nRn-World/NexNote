@@ -1315,9 +1315,18 @@ export default function App() {
     return (
       <div className="flex flex-col md:flex-row h-screen w-full bg-[#0B0D17]">
         <div className="hidden md:flex md:w-1/2 relative bg-[#0B0D17] overflow-hidden">
+          <video
+            className="absolute inset-0 w-full h-full object-cover z-0"
+            src="/NexNote.mp4"
+            loop
+            muted
+            playsInline
+            preload="metadata"
+          />
           <div className="absolute inset-0 z-0">
             <div className="w-full h-full bg-gradient-to-br from-[#0B0D17] to-[#1a1a2e]"></div>
-            <div className="absolute top-0 left-0 w-full h-full opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(188,0,255,0.1) 0%, transparent 50%)' }}></div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-40" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(6,182,212,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(188,0,255,0.1) 0%, transparent 50%)' }}></div>
+            <div className="absolute inset-0 bg-black/20"></div>
           </div>
            <div className="absolute top-8 left-8 z-10 flex items-center gap-3">
               <img src="./favicon.png" alt="NexNote" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20" />
